@@ -1,27 +1,48 @@
 # Phase 3: ACP メソッド（agent→client）+ テスト
 
-## タスク
+kiro-cli エージェントから Electron アプリ（クライアント）へ送られてくるリクエストを処理するメソッドを実装する。
+各メソッドは ACP プロトコルで定義されたインターフェースを実装する。
 
-- [ ] `methods/read-text-file.ts` 実装
-  - `fs.readFile(params.path, "utf-8")` で全体を読み込み `{ content }` を返す
-  - MVP では `params.limit` / `params.line` は無視（詳細は `implementation-plan.md` 参照）
-- [ ] `read-text-file.test.ts` 作成・パス
-  - 正常系: 指定パスの内容を返す
-  - 異常系: 存在しないファイルでエラーを投げる
-- [ ] `methods/write-text-file.ts` 実装
-  - `fs.writeFile(params.path, params.content, "utf-8")` して `{}` を返す
-- [ ] `write-text-file.test.ts` 作成・パス
-- [ ] `methods/request-permission.ts` 実装
-  - MVP: 最初のオプションを自動承認
-  - `{ outcome: { outcome: "selected", optionId: firstOption.optionId } }` を返す
-  - レンダラーに承認通知を送信
-- [ ] `request-permission.test.ts` 作成・パス
-- [ ] `methods/session-update.ts` 実装
-  - `agent_message_chunk` → `messageRepo.appendAgentChunk()` + レンダラー通知
-  - `tool_call` → `messageRepo.addToolCall()` + レンダラー通知
-  - `tool_call_update` → `messageRepo.updateToolCall()` + レンダラー通知
-  - その他 → レンダラーに転送のみ
-- [ ] `session-update.test.ts` 作成・パス
-- [ ] `client-handler.ts` ルーター実装
-  - `KiroductorClientHandler implements Client`
-  - 各メソッドに委譲するだけ
+## readTextFile — エージェントが指定したファイルを読み込んで返す
+
+- [ ] リクエスト・レスポンスの型（`ReadTextFileRequest` / `ReadTextFileResponse`）を定義する
+- [ ] `ReadTextFileMethod` クラスを作成し、ファイルシステム（`fs`）を依存注入で受け取るようにする
+- [ ] 指定されたパスのファイルを UTF-8 で読み込む処理を実装する
+- [ ] 読み込んだ内容を `{ content }` の形で返すよう実装する
+- [ ] テスト: 存在するファイルを指定すると内容が返ること
+- [ ] テスト: 存在しないファイルを指定するとエラーが投げられること
+- [ ] 備考: `params.limit`（最大行数）/ `params.line`（開始行）は MVP では無視する（`implementation-plan.md` 参照）
+
+## writeTextFile — エージェントが指定した内容をファイルへ書き込む
+
+- [ ] リクエスト・レスポンスの型（`WriteTextFileRequest` / `WriteTextFileResponse`）を定義する
+- [ ] `WriteTextFileMethod` クラスを作成し、ファイルシステム（`fs`）を依存注入で受け取るようにする
+- [ ] 指定されたパスへ内容を UTF-8 で書き込む処理を実装する
+- [ ] 書き込み成功時に空オブジェクト `{}` を返すよう実装する
+- [ ] テスト: ファイルが正しく書き込まれること
+- [ ] テスト: 書き込みに失敗した場合エラーが投げられること
+
+## requestPermission — エージェントが操作の許可を求めてきたときに応答する
+
+- [ ] リクエスト・レスポンスの型（`RequestPermissionRequest` / `RequestPermissionResponse`）を定義する
+- [ ] `RequestPermissionMethod` クラスを作成し、通知サービスを依存注入で受け取るようにする
+- [ ] MVP として最初の選択肢を自動承認する処理を実装する（`optionId` を返す）
+- [ ] 承認内容をレンダラー（画面）へ通知する処理を実装する
+- [ ] テスト: 最初のオプション ID が返されること
+- [ ] テスト: レンダラーへの通知が実行されること
+
+## sessionUpdate — エージェントの進捗や発言をリアルタイムで画面に反映する
+
+- [ ] `SessionUpdateMethod` クラスを作成し、メッセージ Repository と通知サービスを依存注入で受け取るようにする
+- [ ] `agent_message_chunk` イベント: エージェント返答のテキストを追記し、画面へ通知する処理を実装する
+- [ ] `tool_call` イベント: ツール呼び出しの開始を記録し、画面へ通知する処理を実装する
+- [ ] `tool_call_update` イベント: ツール呼び出しの結果を更新し、画面へ通知する処理を実装する
+- [ ] 上記以外のイベント: 画面へ転送するだけのフォールスルー処理を実装する
+- [ ] テスト: 各イベントで Repository と通知サービスが期待通りに呼ばれること
+- [ ] テスト: 未知イベントでは画面通知のみ呼ばれること
+
+## client-handler — 上記メソッドをひとつのクラスにまとめてルーティングする
+
+- [ ] `KiroductorClientHandler implements Client` のクラスを作成する
+- [ ] 各メソッドインスタンスをコンストラクタで受け取るよう実装する
+- [ ] 受け取ったリクエストを対応するメソッドへ委譲するだけの実装をする
