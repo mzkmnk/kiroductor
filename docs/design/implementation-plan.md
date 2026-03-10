@@ -358,6 +358,8 @@ class ReadTextFileMethod {
 }
 ```
 
+> **注意:** `ReadTextFileRequest` には `limit`（最大行数）と `line`（開始行番号、1-based）のオプションフィールドが存在する。MVP では無視してファイル全体を返す実装で問題ないが、kiro-cli が部分読み込みを要求した場合に対応できない。将来的に対応が必要になる可能性がある。
+
 #### `methods/write-text-file.ts`
 
 ```typescript
@@ -609,7 +611,13 @@ type Message =
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "vite": "^5.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-react": "^7.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0"
   }
 }
 ```
@@ -627,11 +635,42 @@ export default defineConfig(async () => {
 
 ### スクリプト
 
-- `npm start` — `electron-forge start`（HMR付き開発モード）
-- `npm run make` — `electron-forge make`（パッケージアプリ）
-- `npm run test` — `vitest run`（テスト実行）
-- `npm run test:watch` — `vitest`（ウォッチモード）
-- `npm run lint` — ESLint
+- `pnpm start` — `electron-forge start`（HMR付き開発モード）
+- `pnpm make` — `electron-forge make`（パッケージアプリ）
+- `pnpm test` — `vitest run`（テスト実行）
+- `pnpm test:watch` — `vitest`（ウォッチモード）
+- `pnpm lint` — `eslint .`（ESLint）
+- `pnpm format` — `prettier --write .`（フォーマット適用）
+- `pnpm format:check` — `prettier --check .`（フォーマット確認、CI用）
+
+### コード品質ツール
+
+| ツール | 用途 | 設定ファイル |
+|--------|------|------------|
+| **Prettier** | コードフォーマット | `.prettierrc`, `.prettierignore` |
+| **ESLint** | 静的解析 | `eslint.config.ts`（flat config） |
+| **TypeScript** | 型チェック（`strict: true`） | `tsconfig.json` |
+| **Vitest** | ユニットテスト | `vitest.config.ts` |
+
+#### ESLint 主要プラグイン
+
+- `@eslint/js` — ESLint 組み込みルール
+- `typescript-eslint` — TypeScript 対応
+- `eslint-plugin-react` — React ルール
+- `eslint-plugin-react-hooks` — Hooks のルール（exhaustive-deps 等）
+
+### CI（GitHub Actions）
+
+`.github/workflows/ci.yml` で以下の3ジョブを並列実行:
+
+```
+push / PR → main
+         ├── [lint]  Prettier check + ESLint
+         ├── [test]  vitest run
+         └── [build] tsc --noEmit + Vite bundles ×3
+```
+
+> **注意:** `electron-forge make` は実行バイナリ生成まで行うため CI では省略し、型チェックと Vite バンドルのビルドのみを検証する。バイナリ生成は別途 release ワークフローで対応する。
 
 ## 7. 段階的実装順序
 
