@@ -26,10 +26,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prettier check
-        run: pnpm prettier --check .
+        run: pnpm format:check
 
       - name: ESLint
-        run: pnpm eslint .
+        run: pnpm lint
 
   test:
     name: Test
@@ -74,7 +74,10 @@ jobs:
         run: pnpm tsc --noEmit
 
       # electron-forge make はパッケージ生成を伴うため、
-      # CI では型チェック + Vite ビルドのみ実施する。
+      # CI では型チェック + Vite バンドルのみ実施する。
       # 実際のバイナリ生成は release ワークフローで行う。
       - name: Build (Vite bundles only)
-        run: pnpm vite build --config vite.main.config.ts && pnpm vite build --config vite.preload.config.ts && pnpm vite build --config vite.renderer.config.ts
+        run: |
+          pnpm vite build --config vite.main.config.ts
+          pnpm vite build --config vite.preload.config.ts
+          pnpm vite build --config vite.renderer.config.ts
