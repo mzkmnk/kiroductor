@@ -358,6 +358,8 @@ class ReadTextFileMethod {
 }
 ```
 
+> **注意:** `ReadTextFileRequest` には `limit`（最大行数）と `line`（開始行番号、1-based）のオプションフィールドが存在する。MVP では無視してファイル全体を返す実装で問題ないが、kiro-cli が部分読み込みを要求した場合に対応できない。将来的に対応が必要になる可能性がある。
+
 #### `methods/write-text-file.ts`
 
 ```typescript
