@@ -1,6 +1,0 @@
-node_modules/
-out/
-dist/
-.vite/
-*.js.map
-.DS_Store
