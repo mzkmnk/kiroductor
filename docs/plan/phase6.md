@@ -1,33 +1,42 @@
 # Phase 6: チャット UI
 
 エージェントとのチャット画面を React コンポーネントで実装する。
+スタイリングは **Tailwind CSS**、UI プリミティブは **shadcn/ui** を使う。
+
+## 関連ドキュメント
+
+- [実装計画](../design/implementation-plan.md) — UI コンポーネント構成の設計
+- 前フェーズ: [Phase 5 — Handler 層](./phase5.md)
+- 次フェーズ: [Phase 7 — ポリッシュ](./phase7.md)
 
 ## PromptInput — ユーザーがテキストを入力して送信するフォーム
 
-- [ ] テキストエリアと送信ボタンのマークアップを作成する
+- [ ] shadcn/ui の `Textarea` と `Button` を追加する（`pnpm dlx shadcn@latest add textarea button`）
+- [ ] `Textarea` と送信 `Button` を並べたレイアウトを Tailwind で組む
 - [ ] Enter キーで送信、Shift+Enter で改行する動作を実装する
-- [ ] エージェントが処理中の間は入力と送信を無効化する処理を実装する
+- [ ] エージェントが処理中の間は `Textarea` と `Button` を `disabled` にする
 
 ## MessageBubble — 一件分のメッセージを表示するコンポーネント
 
-- [ ] ユーザー発言（右寄せ・青）とエージェント返答（左寄せ・グレー）のスタイルを切り替える実装をする
+- [ ] ユーザー発言（右寄せ・青背景）とエージェント返答（左寄せ・グレー背景）を Tailwind のクラスで切り替える
 - [ ] ストリーミング受信中にカーソルを表示する処理を実装する
 
 ## ToolCallCard — エージェントが実行中のツール操作を表示するカード
 
-- [ ] カードのマークアップ（ツール名・入力・出力）を作成する
-- [ ] クリックで詳細を展開・折りたたむ動作を実装する
-- [ ] 実行中（running）/ 完了（done）/ エラー（error）のステータスを色やアイコンで表示する
+- [ ] shadcn/ui の `Collapsible` を追加する（`pnpm dlx shadcn@latest add collapsible`）
+- [ ] `Collapsible` でツール名・入力・出力を折りたたみ表示する
+- [ ] 実行中（running）/ 完了（done）/ エラー（error）のステータスを Tailwind の色クラスで表示する
 
 ## ChatView — メッセージ一覧を表示するスクロール可能なコンテナ
 
-- [ ] `MessageBubble` と `ToolCallCard` を並べるリストレイアウトを実装する
+- [ ] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
 - [ ] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
 
 ## SessionBar — セッションの状態と操作ボタンを表示するヘッダーバー
 
-- [ ] 接続状態を示すドット・セッション ID・作業ディレクトリ（cwd）を表示する
-- [ ] エージェントを停止するボタンを実装する
+- [ ] shadcn/ui の `Badge` を追加して接続状態を表示する（`pnpm dlx shadcn@latest add badge`）
+- [ ] セッション ID・作業ディレクトリ（cwd）を Tailwind でレイアウトする
+- [ ] shadcn/ui の `Button` でエージェント停止ボタンを実装する
 
 ## useSession — チャット状態を管理するカスタムフック
 

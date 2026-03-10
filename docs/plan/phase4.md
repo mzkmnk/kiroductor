@@ -2,6 +2,13 @@
 
 kiro-cli プロセスの起動・セッション管理・プロンプト送信といったビジネスロジックを実装する。
 
+## 関連ドキュメント
+
+- [ACP プロトコル仕様](../research/acp-protocol.md) — `ClientSideConnection` の初期化・セッション・プロンプト API の詳細
+- [実装計画](../design/implementation-plan.md) — Service 層のアーキテクチャ設計
+- 前フェーズ: [Phase 3 — ACP メソッド](./phase3.md)
+- 次フェーズ: [Phase 5 — Handler 層](./phase5.md)
+
 ## notificationService — メインプロセスからレンダラー（画面）へ通知を送る
 
 - [ ] `BrowserWindow.webContents.send()` をラップして `sendToRenderer(channel, data)` を実装する

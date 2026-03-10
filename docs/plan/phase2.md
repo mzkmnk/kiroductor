@@ -2,6 +2,12 @@
 
 アプリが実行中に保持するメモリ上の状態（接続情報・セッション・メッセージ）を管理するクラスを実装する。
 
+## 関連ドキュメント
+
+- [実装計画](../design/implementation-plan.md) — Repository 層の設計
+- 前フェーズ: [Phase 1 — スキャフォールド](./phase1.md)
+- 次フェーズ: [Phase 3 — ACP メソッド](./phase3.md)
+
 ## connectionRepository — kiro-cli プロセスの接続状態を管理する
 
 - [ ] kiro-cli プロセスのオブジェクト（`ChildProcess`）を保持・取得する `getProcess` / `setProcess` を実装する

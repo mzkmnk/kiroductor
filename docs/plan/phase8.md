@@ -2,6 +2,12 @@
 
 MVP リリース後に検討する機能拡張。優先度は未定。
 
+## 関連ドキュメント
+
+- [Phase 3 — readTextFile の MVP 注記](./phase3.md#readtextfile--エージェントが指定したファイルを読み込んで返す)（`limit` / `line` 対応の起点）
+- [ACP プロトコル仕様](../research/acp-protocol.md) — 各機能の ACP レベルの制約確認に
+- 前フェーズ: [Phase 7 — ポリッシュ](./phase7.md)
+
 ## マルチセッション
 
 - [ ] 複数のエージェントセッションを同時に開き、タブで切り替えられるようにする

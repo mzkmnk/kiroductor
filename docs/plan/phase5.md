@@ -3,6 +3,12 @@
 レンダラー（画面）からの操作要求を受け取り、対応する Service へつなぐ IPC ハンドラーを実装する。
 あわせて、メインプロセスの起動エントリーポイントと preload スクリプトを整備する。
 
+## 関連ドキュメント
+
+- [実装計画](../design/implementation-plan.md) — IPC チャンネル一覧と Handler 層の設計
+- 前フェーズ: [Phase 4 — Service 層](./phase4.md)
+- 次フェーズ: [Phase 6 — チャット UI](./phase6.md)
+
 ## acp.handler — ACP 接続の開始・終了・状態確認を IPC 経由で受け付ける
 
 - [ ] `acp:start` チャンネル: レンダラーから呼ばれたら `acpConnectionService.start()` を実行するハンドラーを実装する
