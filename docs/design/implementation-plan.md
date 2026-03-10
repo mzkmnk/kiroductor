@@ -159,14 +159,14 @@ class AcpConnectionService {
     private notificationService: NotificationService,
   ) {}
 
-  async start(): Promise<void>
+  async start(): Promise<void>;
   // kiro-cli acp を spawn
   // ClientSideConnection を作成
   // connection.initialize() を呼び出し
   // connectionRepo に connection と process を保存
   // プロセスのexit/errorイベントをハンドリング
 
-  async stop(): Promise<void>
+  async stop(): Promise<void>;
   // プロセスを kill
   // connectionRepo をクリア
 }
@@ -182,12 +182,12 @@ class SessionService {
     private messageRepo: MessageRepository,
   ) {}
 
-  async create(cwd: string): Promise<string>
+  async create(cwd: string): Promise<string>;
   // connection.newSession({ cwd, mcpServers: [] })
   // sessionRepo に sessionId を保存
   // messageRepo をリセット
 
-  async cancel(): Promise<void>
+  async cancel(): Promise<void>;
   // connection.cancel({ sessionId })
 }
 ```
@@ -202,7 +202,7 @@ class PromptService {
     private messageRepo: MessageRepository,
   ) {}
 
-  async send(text: string): Promise<PromptResult>
+  async send(text: string): Promise<PromptResult>;
   // messageRepo にユーザーメッセージを追加
   // messageRepo に空のエージェントメッセージを追加
   // connection.prompt({ sessionId, prompt: [...] }) を呼び出し（ブロッキング）
@@ -217,7 +217,7 @@ class PromptService {
 class NotificationService {
   constructor(private getWindow: () => BrowserWindow | null) {}
 
-  sendToRenderer(channel: string, data: unknown): void
+  sendToRenderer(channel: string, data: unknown): void;
   // BrowserWindow.webContents.send() のラッパー
   // ウィンドウが存在しない / destroyed の場合は無視
 }
@@ -235,18 +235,18 @@ class NotificationService {
 class ConnectionRepository {
   private connection: ClientSideConnection | null = null;
   private process: ChildProcess | null = null;
-  private status: AcpStatus = "disconnected";
+  private status: AcpStatus = 'disconnected';
   private stderrBuffer: string[] = [];
 
-  getConnection(): ClientSideConnection | null
-  setConnection(conn: ClientSideConnection | null): void
-  getProcess(): ChildProcess | null
-  setProcess(proc: ChildProcess | null): void
-  getStatus(): AcpStatus
-  setStatus(status: AcpStatus): void
-  appendStderr(line: string): void
-  getStderrLogs(): string[]
-  clear(): void
+  getConnection(): ClientSideConnection | null;
+  setConnection(conn: ClientSideConnection | null): void;
+  getProcess(): ChildProcess | null;
+  setProcess(proc: ChildProcess | null): void;
+  getStatus(): AcpStatus;
+  setStatus(status: AcpStatus): void;
+  appendStderr(line: string): void;
+  getStderrLogs(): string[];
+  clear(): void;
 }
 ```
 
@@ -256,9 +256,9 @@ class ConnectionRepository {
 class SessionRepository {
   private sessionId: string | null = null;
 
-  getSessionId(): string | null
-  setSessionId(id: string | null): void
-  hasActiveSession(): boolean
+  getSessionId(): string | null;
+  setSessionId(id: string | null): void;
+  hasActiveSession(): boolean;
 }
 ```
 
@@ -268,14 +268,14 @@ class SessionRepository {
 class MessageRepository {
   private messages: Message[] = [];
 
-  getAll(): Message[]
-  addUserMessage(text: string): void
-  addAgentMessage(): void
-  appendAgentChunk(text: string): void
-  completeAgentMessage(): void
-  addToolCall(toolCallId: string, name: string, rawInput?: unknown): void
-  updateToolCall(toolCallId: string, updates: Partial<ToolCallMessage>): void
-  clear(): void
+  getAll(): Message[];
+  addUserMessage(text: string): void;
+  addAgentMessage(): void;
+  appendAgentChunk(text: string): void;
+  completeAgentMessage(): void;
+  addToolCall(toolCallId: string, name: string, rawInput?: unknown): void;
+  updateToolCall(toolCallId: string, updates: Partial<ToolCallMessage>): void;
+  clear(): void;
 }
 ```
 
@@ -324,7 +324,7 @@ class SessionUpdateMethod {
     private notificationService: NotificationService,
   ) {}
 
-  async handle(params: SessionNotification): Promise<void>
+  async handle(params: SessionNotification): Promise<void>;
   // params.update.sessionUpdate で分岐:
   //   "agent_message_chunk" → messageRepo.appendAgentChunk() + レンダラー通知
   //   "tool_call"           → messageRepo.addToolCall() + レンダラー通知
@@ -339,7 +339,7 @@ class SessionUpdateMethod {
 class RequestPermissionMethod {
   constructor(private notificationService: NotificationService) {}
 
-  async handle(params: RequestPermissionRequest): Promise<RequestPermissionResponse>
+  async handle(params: RequestPermissionRequest): Promise<RequestPermissionResponse>;
   // MVP: 最初のオプションを自動承認
   // レンダラーに承認通知を送信
   // { outcome: { outcome: "selected", optionId: firstOption.optionId } } を返す
@@ -352,7 +352,7 @@ class RequestPermissionMethod {
 class ReadTextFileMethod {
   constructor(private fs: { readFile: typeof fsPromises.readFile }) {}
 
-  async handle(params: ReadTextFileRequest): Promise<ReadTextFileResponse>
+  async handle(params: ReadTextFileRequest): Promise<ReadTextFileResponse>;
   // fs.readFile(params.path, "utf-8")
   // { content } を返す
 }
@@ -366,7 +366,7 @@ class ReadTextFileMethod {
 class WriteTextFileMethod {
   constructor(private fs: { writeFile: typeof fsPromises.writeFile }) {}
 
-  async handle(params: WriteTextFileRequest): Promise<WriteTextFileResponse>
+  async handle(params: WriteTextFileRequest): Promise<WriteTextFileResponse>;
   // fs.writeFile(params.path, params.content, "utf-8")
   // {} を返す
 }
@@ -497,11 +497,11 @@ interface KiroductorAPI {
 
 ```typescript
 // acp-connection.service.ts の擬似コード
-import { spawn } from "child_process";
-import { Readable, Writable } from "stream";
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import { spawn } from 'child_process';
+import { Readable, Writable } from 'stream';
+import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 
-const proc = spawn("kiro-cli", ["acp"], { stdio: ["pipe", "pipe", "pipe"] });
+const proc = spawn('kiro-cli', ['acp'], { stdio: ['pipe', 'pipe', 'pipe'] });
 
 // SDKはWeb ReadableStream / WritableStreamを期待する
 const readStream = Readable.toWeb(proc.stdout);
@@ -509,19 +509,20 @@ const writeStream = Writable.toWeb(proc.stdin);
 const stream = ndJsonStream(writeStream, readStream);
 
 const connection = new ClientSideConnection(
-  (agent) => new KiroductorClientHandler(
-    agent,
-    sessionUpdateMethod,
-    requestPermissionMethod,
-    readTextFileMethod,
-    writeTextFileMethod,
-  ),
-  stream
+  (agent) =>
+    new KiroductorClientHandler(
+      agent,
+      sessionUpdateMethod,
+      requestPermissionMethod,
+      readTextFileMethod,
+      writeTextFileMethod,
+    ),
+  stream,
 );
 
 await connection.initialize({
   protocolVersion: PROTOCOL_VERSION, // number型（現在は1）
-  clientInfo: { name: "kiroductor", version: "0.1.0" },
+  clientInfo: { name: 'kiroductor', version: '0.1.0' },
   clientCapabilities: {
     fs: { readTextFile: true, writeTextFile: true },
   },
@@ -579,10 +580,17 @@ MVPではReactの`useReducer` + Context を使用 — この規模ではReduxや
 
 ```typescript
 type Message =
-  | { type: "user"; text: string; timestamp: number }
-  | { type: "agent"; chunks: string[]; complete: boolean; timestamp: number }
-  | { type: "tool_call"; toolCallId: string; name: string; rawInput?: unknown;
-      rawOutput?: unknown; status: "running" | "done" | "error"; timestamp: number };
+  | { type: 'user'; text: string; timestamp: number }
+  | { type: 'agent'; chunks: string[]; complete: boolean; timestamp: number }
+  | {
+      type: 'tool_call';
+      toolCallId: string;
+      name: string;
+      rawInput?: unknown;
+      rawOutput?: unknown;
+      status: 'running' | 'done' | 'error';
+      timestamp: number;
+    };
 ```
 
 ## 6. ビルドとDev環境
@@ -645,12 +653,12 @@ export default defineConfig(async () => {
 
 ### コード品質ツール
 
-| ツール | 用途 | 設定ファイル |
-|--------|------|------------|
-| **Prettier** | コードフォーマット | `.prettierrc`, `.prettierignore` |
-| **ESLint** | 静的解析 | `eslint.config.ts`（flat config） |
-| **TypeScript** | 型チェック（`strict: true`） | `tsconfig.json` |
-| **Vitest** | ユニットテスト | `vitest.config.ts` |
+| ツール         | 用途                         | 設定ファイル                      |
+| -------------- | ---------------------------- | --------------------------------- |
+| **Prettier**   | コードフォーマット           | `.prettierrc`, `.prettierignore`  |
+| **ESLint**     | 静的解析                     | `eslint.config.ts`（flat config） |
+| **TypeScript** | 型チェック（`strict: true`） | `tsconfig.json`                   |
+| **Vitest**     | ユニットテスト               | `vitest.config.ts`                |
 
 #### ESLint 主要プラグイン
 
@@ -766,98 +774,98 @@ push / PR → main
 
 ### 層別テスト方針
 
-| 層 | テストファイル配置 | モック対象 | テスト内容 |
-|----|------------------|-----------|-----------|
-| **Repository** | `repositories/__tests__/` | なし（純粋な状態管理） | add/get/update/clear の動作 |
-| **ACP Methods** | `acp/__tests__/` | Repository, NotificationService, fs | 各メソッドの入力→出力、副作用呼び出し |
-| **Service** | `services/__tests__/` | Repository, ClientSideConnection | ビジネスロジック、エラーハンドリング |
-| **Handler** | `handlers/__tests__/` | Service | IPC → Service 委譲の検証 |
+| 層              | テストファイル配置        | モック対象                          | テスト内容                            |
+| --------------- | ------------------------- | ----------------------------------- | ------------------------------------- |
+| **Repository**  | `repositories/__tests__/` | なし（純粋な状態管理）              | add/get/update/clear の動作           |
+| **ACP Methods** | `acp/__tests__/`          | Repository, NotificationService, fs | 各メソッドの入力→出力、副作用呼び出し |
+| **Service**     | `services/__tests__/`     | Repository, ClientSideConnection    | ビジネスロジック、エラーハンドリング  |
+| **Handler**     | `handlers/__tests__/`     | Service                             | IPC → Service 委譲の検証              |
 
 ### ACPメソッドのテスト例
 
 ```typescript
 // acp/__tests__/read-text-file.test.ts
-import { describe, it, expect, vi } from "vitest";
-import { ReadTextFileMethod } from "../methods/read-text-file";
+import { describe, it, expect, vi } from 'vitest';
+import { ReadTextFileMethod } from '../methods/read-text-file';
 
-describe("ReadTextFileMethod", () => {
-  it("指定パスのファイル内容を返す", async () => {
+describe('ReadTextFileMethod', () => {
+  it('指定パスのファイル内容を返す', async () => {
     const mockFs = {
-      readFile: vi.fn().mockResolvedValue("file content"),
+      readFile: vi.fn().mockResolvedValue('file content'),
     };
     const method = new ReadTextFileMethod(mockFs);
 
     const result = await method.handle({
-      path: "/tmp/test.txt",
-      sessionId: "sess-1",
+      path: '/tmp/test.txt',
+      sessionId: 'sess-1',
     });
 
-    expect(mockFs.readFile).toHaveBeenCalledWith("/tmp/test.txt", "utf-8");
-    expect(result).toEqual({ content: "file content" });
+    expect(mockFs.readFile).toHaveBeenCalledWith('/tmp/test.txt', 'utf-8');
+    expect(result).toEqual({ content: 'file content' });
   });
 
-  it("存在しないファイルでエラーを投げる", async () => {
+  it('存在しないファイルでエラーを投げる', async () => {
     const mockFs = {
-      readFile: vi.fn().mockRejectedValue(new Error("ENOENT")),
+      readFile: vi.fn().mockRejectedValue(new Error('ENOENT')),
     };
     const method = new ReadTextFileMethod(mockFs);
 
-    await expect(
-      method.handle({ path: "/tmp/no.txt", sessionId: "sess-1" })
-    ).rejects.toThrow("ENOENT");
+    await expect(method.handle({ path: '/tmp/no.txt', sessionId: 'sess-1' })).rejects.toThrow(
+      'ENOENT',
+    );
   });
 });
 ```
 
 ```typescript
 // acp/__tests__/session-update.test.ts
-import { describe, it, expect, vi } from "vitest";
-import { SessionUpdateMethod } from "../methods/session-update";
-import { MessageRepository } from "../../repositories/message.repository";
+import { describe, it, expect, vi } from 'vitest';
+import { SessionUpdateMethod } from '../methods/session-update';
+import { MessageRepository } from '../../repositories/message.repository';
 
-describe("SessionUpdateMethod", () => {
-  it("agent_message_chunk でメッセージにチャンクを追加する", async () => {
+describe('SessionUpdateMethod', () => {
+  it('agent_message_chunk でメッセージにチャンクを追加する', async () => {
     const messageRepo = new MessageRepository();
     messageRepo.addAgentMessage();
     const notificationService = { sendToRenderer: vi.fn() };
 
     const method = new SessionUpdateMethod(messageRepo, notificationService);
     await method.handle({
-      sessionId: "sess-1",
+      sessionId: 'sess-1',
       update: {
-        sessionUpdate: "agent_message_chunk",
-        content: { type: "text", text: "Hello" },
+        sessionUpdate: 'agent_message_chunk',
+        content: { type: 'text', text: 'Hello' },
       },
     });
 
     const messages = messageRepo.getAll();
-    expect(messages[0].type).toBe("agent");
-    if (messages[0].type === "agent") {
-      expect(messages[0].chunks).toEqual(["Hello"]);
+    expect(messages[0].type).toBe('agent');
+    if (messages[0].type === 'agent') {
+      expect(messages[0].chunks).toEqual(['Hello']);
     }
     expect(notificationService.sendToRenderer).toHaveBeenCalled();
   });
 
-  it("tool_call でツール呼び出しを追加する", async () => {
+  it('tool_call でツール呼び出しを追加する', async () => {
     const messageRepo = new MessageRepository();
     const notificationService = { sendToRenderer: vi.fn() };
 
     const method = new SessionUpdateMethod(messageRepo, notificationService);
     await method.handle({
-      sessionId: "sess-1",
+      sessionId: 'sess-1',
       update: {
-        sessionUpdate: "tool_call",
-        toolCallId: "tc-1",
-        name: "edit_file",
-        status: "running",
+        sessionUpdate: 'tool_call',
+        toolCallId: 'tc-1',
+        name: 'edit_file',
+        status: 'running',
       },
     });
 
     const messages = messageRepo.getAll();
-    expect(messages[0].type).toBe("tool_call");
-    if (messages[0].type === "tool_call") {
-      expect(messages[0].name).toBe("edit_file");
-      expect(messages[0].status).toBe("running");
+    expect(messages[0].type).toBe('tool_call');
+    if (messages[0].type === 'tool_call') {
+      expect(messages[0].name).toBe('edit_file');
+      expect(messages[0].status).toBe('running');
     }
   });
 });
@@ -871,33 +879,29 @@ describe("SessionUpdateMethod", () => {
 // Service テストの例
 const mockConnectionRepo = {
   getConnection: vi.fn().mockReturnValue(mockConnection),
-  getStatus: vi.fn().mockReturnValue("connected"),
+  getStatus: vi.fn().mockReturnValue('connected'),
 };
 const mockSessionRepo = {
-  getSessionId: vi.fn().mockReturnValue("sess-1"),
+  getSessionId: vi.fn().mockReturnValue('sess-1'),
 };
 const mockMessageRepo = new MessageRepository(); // 実物を使ってもOK
 
-const service = new PromptService(
-  mockConnectionRepo,
-  mockSessionRepo,
-  mockMessageRepo,
-);
+const service = new PromptService(mockConnectionRepo, mockSessionRepo, mockMessageRepo);
 ```
 
 Repository層は副作用がないため、テスト時にモックせず実物を使うことも可能。これにより、テストの信頼性が向上する。
 
 ## 9. 主要な技術判断とトレードオフ
 
-| 判断 | 選択 | 理由 | トレードオフ |
-|------|------|------|------------|
-| バックエンドアーキテクチャ | Handler / Service / Repository 3層 | 各層の責務が明確。テスト時にモック差し替えが容易。変更影響の局所化 | ファイル数が増える。小規模MVPにはやや重いが、テスタビリティを優先 |
-| ACPメソッド分離 | メソッドごとに1ファイル | 各メソッドを独立してユニットテスト可能。新メソッド追加時に既存コードに触れない | `client-handler.ts`がルーターとして各メソッドに委譲する間接層が増える |
-| DI方式 | コンストラクタインジェクション（手動） | DIコンテナなしでシンプル。`main.ts`のComposition Rootで組み立て | クラス数が増えるとComposition Rootが長くなる。必要になったらDIコンテナ（tsyringe等）を導入 |
-| テストフレームワーク | Vitest | Viteベースのプロジェクトとネイティブ統合。TypeScript組み込みサポート。Jestと互換API | Electron固有のテスト（IPC等）はモックが必要 |
-| ACP SDK vs 自前JSON-RPC | 公式SDK使用 | `ClientSideConnection`、型付きメッセージ、`ndJsonStream`トランスポートを提供。再実装は無駄 | pre-1.0パッケージへの依存。Service層でラップして変更を局所化 |
-| Electron Forge + Vite | Forge + Viteプラグイン | 公式推奨ビルドツール。Viteプラグインで高速HMR | 3つのVite設定ファイルが必要だが、適切なプロセス分離を提供 |
-| ストリーミング方式 | `webContents.send`によるプッシュ | エージェントの通知をUIに即座に表示する必要がある。ポーリングはレイテンシと複雑性を追加 | preloadスクリプトでイベントリスナーのクリーンアップに注意が必要 |
-| 状態管理（フロント） | `useReducer` + Context | 単一セッション+メッセージリストの規模にはReact組み込みで十分 | マルチセッション対応時にはZustandへのアップグレードが必要 |
-| パーミッション処理 | MVPでは自動承認 | 開発速度優先 | セキュリティ低下。将来的に承認/拒否ダイアログを追加 |
-| 認証 | 延期 | `kiro-cli login`済みを前提。OAuth実装はMVPの範囲外 | 未ログイン時のUXが悪い |
+| 判断                       | 選択                                   | 理由                                                                                       | トレードオフ                                                                               |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| バックエンドアーキテクチャ | Handler / Service / Repository 3層     | 各層の責務が明確。テスト時にモック差し替えが容易。変更影響の局所化                         | ファイル数が増える。小規模MVPにはやや重いが、テスタビリティを優先                          |
+| ACPメソッド分離            | メソッドごとに1ファイル                | 各メソッドを独立してユニットテスト可能。新メソッド追加時に既存コードに触れない             | `client-handler.ts`がルーターとして各メソッドに委譲する間接層が増える                      |
+| DI方式                     | コンストラクタインジェクション（手動） | DIコンテナなしでシンプル。`main.ts`のComposition Rootで組み立て                            | クラス数が増えるとComposition Rootが長くなる。必要になったらDIコンテナ（tsyringe等）を導入 |
+| テストフレームワーク       | Vitest                                 | Viteベースのプロジェクトとネイティブ統合。TypeScript組み込みサポート。Jestと互換API        | Electron固有のテスト（IPC等）はモックが必要                                                |
+| ACP SDK vs 自前JSON-RPC    | 公式SDK使用                            | `ClientSideConnection`、型付きメッセージ、`ndJsonStream`トランスポートを提供。再実装は無駄 | pre-1.0パッケージへの依存。Service層でラップして変更を局所化                               |
+| Electron Forge + Vite      | Forge + Viteプラグイン                 | 公式推奨ビルドツール。Viteプラグインで高速HMR                                              | 3つのVite設定ファイルが必要だが、適切なプロセス分離を提供                                  |
+| ストリーミング方式         | `webContents.send`によるプッシュ       | エージェントの通知をUIに即座に表示する必要がある。ポーリングはレイテンシと複雑性を追加     | preloadスクリプトでイベントリスナーのクリーンアップに注意が必要                            |
+| 状態管理（フロント）       | `useReducer` + Context                 | 単一セッション+メッセージリストの規模にはReact組み込みで十分                               | マルチセッション対応時にはZustandへのアップグレードが必要                                  |
+| パーミッション処理         | MVPでは自動承認                        | 開発速度優先                                                                               | セキュリティ低下。将来的に承認/拒否ダイアログを追加                                        |
+| 認証                       | 延期                                   | `kiro-cli login`済みを前提。OAuth実装はMVPの範囲外                                         | 未ログイン時のUXが悪い                                                                     |
