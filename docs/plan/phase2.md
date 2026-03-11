@@ -19,9 +19,9 @@
 
 ## sessionRepository — 現在のセッション情報を管理する
 
-- [ ] セッション ID を保持・取得する `getSessionId` / `setSessionId` を実装する
-- [ ] セッションが有効かどうかを返す `hasActiveSession` を実装する
-- [ ] 上記すべての動作をテストで確認する
+- [x] セッション ID を保持・取得する `getSessionId` / `setSessionId` を実装する
+- [x] セッションが有効かどうかを返す `hasActiveSession` を実装する
+- [x] 上記すべての動作をテストで確認する
 
 ## messageRepository — チャット上のメッセージ一覧を管理する
 
