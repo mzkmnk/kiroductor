@@ -5,8 +5,15 @@ import path from 'path';
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+/** アプリケーションのメインウィンドウインスタンス。未生成または破棄済みの場合は `null`。 */
 let mainWindow: BrowserWindow | null = null;
 
+/**
+ * Electron の `BrowserWindow` を生成してアプリケーションウィンドウを初期化する。
+ *
+ * 開発時は Vite 開発サーバーの URL を読み込み、
+ * プロダクションビルドでは生成済み HTML ファイルを読み込む。
+ */
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,

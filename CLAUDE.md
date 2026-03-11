@@ -91,6 +91,25 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - **Prettier**: コードフォーマッター
 - **Vitest**: ユニットテスト
 
+## ドキュメントコメント規約
+
+クラス・関数・変数・型には **TSDoc 形式**でコメントを記載する。
+
+```ts
+/**
+ * 一文で概要を書く。
+ *
+ * 必要であれば詳細を続ける。
+ *
+ * @param name - パラメータの説明
+ * @returns 戻り値の説明
+ */
+```
+
+- `/** ... */` 形式を使用（`//` コメントは実装詳細のみ）
+- 自明な getter/setter にも一文の概要は必ず書く
+- 型参照は `{@link TypeName}` で記述する
+
 ## 主要な依存関係
 
 - `@agentclientprotocol/sdk` — ACP プロトコル実装（`ClientSideConnection`、型付きメッセージ）
@@ -103,4 +122,4 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - IPC境界を越えるデータはシリアライズ可能なプレーンオブジェクトのみ（関数・クラスインスタンス不可）
 - `kiro-cli login` 済みであることを前提とする
 - `requestPermission` は MVP では最初のオプションを自動承認
-- vite.renderer.config.ts は `@vitejs/plugin-react` が ESM only のため動的 import を使用
+- vite.renderer.config.ts は静的 import を使用（`@vitejs/plugin-react` は ESM only だが問題なし）
