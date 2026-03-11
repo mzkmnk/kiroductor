@@ -103,4 +103,4 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - IPC境界を越えるデータはシリアライズ可能なプレーンオブジェクトのみ（関数・クラスインスタンス不可）
 - `kiro-cli login` 済みであることを前提とする
 - `requestPermission` は MVP では最初のオプションを自動承認
-- vite.renderer.config.ts は `@vitejs/plugin-react` が ESM only のため動的 import を使用
+- vite.renderer.config.ts は静的 import を使用（`@vitejs/plugin-react` は ESM only だが問題なし）

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ChildProcess } from 'child_process';
+import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { ConnectionRepository } from '../connection.repository';
 import type { AcpStatus } from '../connection.repository';
 
@@ -29,13 +31,13 @@ describe('ConnectionRepository', () => {
 
   describe('getProcess / setProcess', () => {
     it('setProcess で保存した値を getProcess で取得できる', () => {
-      const mockProcess = { pid: 1234 } as unknown as import('child_process').ChildProcess;
+      const mockProcess = { pid: 1234 } as unknown as ChildProcess;
       repo.setProcess(mockProcess);
       expect(repo.getProcess()).toBe(mockProcess);
     });
 
     it('setProcess(null) で null を設定できる', () => {
-      const mockProcess = { pid: 1234 } as unknown as import('child_process').ChildProcess;
+      const mockProcess = { pid: 1234 } as unknown as ChildProcess;
       repo.setProcess(mockProcess);
       repo.setProcess(null);
       expect(repo.getProcess()).toBeNull();
@@ -44,13 +46,13 @@ describe('ConnectionRepository', () => {
 
   describe('getConnection / setConnection', () => {
     it('setConnection で保存した値を getConnection で取得できる', () => {
-      const mockConnection = { id: 'conn-1' } as unknown as import('@agentclientprotocol/sdk').ClientSideConnection;
+      const mockConnection = { id: 'conn-1' } as unknown as ClientSideConnection;
       repo.setConnection(mockConnection);
       expect(repo.getConnection()).toBe(mockConnection);
     });
 
     it('setConnection(null) で null を設定できる', () => {
-      const mockConnection = { id: 'conn-1' } as unknown as import('@agentclientprotocol/sdk').ClientSideConnection;
+      const mockConnection = { id: 'conn-1' } as unknown as ClientSideConnection;
       repo.setConnection(mockConnection);
       repo.setConnection(null);
       expect(repo.getConnection()).toBeNull();
@@ -85,8 +87,8 @@ describe('ConnectionRepository', () => {
 
   describe('clear', () => {
     it('clear で全状態を初期値に戻す', () => {
-      const mockProcess = { pid: 1234 } as unknown as import('child_process').ChildProcess;
-      const mockConnection = { id: 'conn-1' } as unknown as import('@agentclientprotocol/sdk').ClientSideConnection;
+      const mockProcess = { pid: 1234 } as unknown as ChildProcess;
+      const mockConnection = { id: 'conn-1' } as unknown as ClientSideConnection;
 
       repo.setProcess(mockProcess);
       repo.setConnection(mockConnection);
