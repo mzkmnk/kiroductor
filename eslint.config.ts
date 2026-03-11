@@ -6,7 +6,14 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 export default tseslint.config(
   // グローバル無視設定
   {
-    ignores: ['node_modules/**', 'out/**', '.vite/**', 'dist/**', 'src/renderer/dist/**'],
+    ignores: [
+      'node_modules/**',
+      'out/**',
+      '.vite/**',
+      'dist/**',
+      'src/renderer/dist/**',
+      'docs/**',
+    ],
   },
 
   // ベースルール（全 JS/TS ファイル）
