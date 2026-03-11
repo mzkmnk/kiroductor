@@ -36,7 +36,12 @@ describe('MessageRepository', () => {
       repo.addAgentMessage('agent-1');
       const messages = repo.getAll();
       expect(messages).toHaveLength(1);
-      expect(messages[0]).toMatchObject({ id: 'agent-1', type: 'agent', text: '', status: 'streaming' });
+      expect(messages[0]).toMatchObject({
+        id: 'agent-1',
+        type: 'agent',
+        text: '',
+        status: 'streaming',
+      });
     });
   });
 
