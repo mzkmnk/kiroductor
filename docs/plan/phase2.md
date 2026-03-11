@@ -10,12 +10,12 @@
 
 ## connectionRepository — kiro-cli プロセスの接続状態を管理する
 
-- [ ] kiro-cli プロセスのオブジェクト（`ChildProcess`）を保持・取得する `getProcess` / `setProcess` を実装する
-- [ ] ACP 接続オブジェクトを保持・取得する `getConnection` / `setConnection` を実装する
-- [ ] 接続状態（`disconnected` / `connecting` / `connected` / `error`）を保持・取得する `getStatus` / `setStatus` を実装する
-- [ ] kiro-cli の標準エラー出力ログを追記・取得する `appendStderr` / `getStderrLogs` を実装する
-- [ ] 全状態を初期値に戻す `clear` を実装する
-- [ ] 上記すべての動作をテストで確認する
+- [x] kiro-cli プロセスのオブジェクト（`ChildProcess`）を保持・取得する `getProcess` / `setProcess` を実装する
+- [x] ACP 接続オブジェクトを保持・取得する `getConnection` / `setConnection` を実装する
+- [x] 接続状態（`disconnected` / `connecting` / `connected` / `error`）を保持・取得する `getStatus` / `setStatus` を実装する
+- [x] kiro-cli の標準エラー出力ログを追記・取得する `appendStderr` / `getStderrLogs` を実装する
+- [x] 全状態を初期値に戻す `clear` を実装する
+- [x] 上記すべての動作をテストで確認する
 
 ## sessionRepository — 現在のセッション情報を管理する
 

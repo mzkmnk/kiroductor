@@ -117,6 +117,19 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - `react` / `react-dom` — UI ライブラリ
 - `vite` — バンドラー（メイン・preload・レンダラー用に3設定）
 
+## フェーズ進捗
+
+実装計画の各フェーズの進捗状況。詳細は `docs/plan/` 配下の各フェーズファイルを参照。
+
+- [x] Phase 1: スキャフォールド + テスト基盤
+- [ ] Phase 2: Repository 層 + テスト（connectionRepository のみ完了）
+- [ ] Phase 3: ACP メソッド
+- [ ] Phase 4: ACP Service + Handler
+- [ ] Phase 5: IPC 配線（メインプロセス → レンダラー）
+- [ ] Phase 6: React UI（チャット画面）
+- [ ] Phase 7: 統合テスト・動作確認
+- [ ] Phase 8: リリース・配布
+
 ## 注意事項
 
 - IPC境界を越えるデータはシリアライズ可能なプレーンオブジェクトのみ（関数・クラスインスタンス不可）
