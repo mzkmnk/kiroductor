@@ -42,6 +42,24 @@ export type ToolCallMessage = {
 export type Message = UserMessage | AgentMessage | ToolCallMessage;
 
 /**
+ * メッセージ配列から `id` と `type` に一致するメッセージを返す。
+ *
+ * @param messages - 検索対象のメッセージ配列
+ * @param id - 検索対象のメッセージ ID
+ * @param type - メッセージ種別
+ * @returns 一致するメッセージ、存在しない場合は `undefined`
+ */
+function findByType<T extends Message['type']>(
+  messages: Message[],
+  id: string,
+  type: T,
+): Extract<Message, { type: T }> | undefined {
+  return messages.find((m) => m.id === id && m.type === type) as
+    | Extract<Message, { type: T }>
+    | undefined;
+}
+
+/**
  * チャット上のメッセージ一覧をインメモリで管理するリポジトリ。
  *
  * ユーザーメッセージ・エージェントメッセージ・ツール呼び出しを追加順に保持する。
@@ -86,22 +104,6 @@ export class MessageRepository {
   }
 
   /**
-   * 指定した `id` と `type` に一致するメッセージを返す。
-   *
-   * @param id - 検索対象のメッセージ ID
-   * @param type - メッセージ種別
-   * @returns 一致するメッセージ、存在しない場合は `undefined`
-   */
-  private findByType<T extends Message['type']>(
-    id: string,
-    type: T,
-  ): Extract<Message, { type: T }> | undefined {
-    return this.messages.find((m) => m.id === id && m.type === type) as
-      | Extract<Message, { type: T }>
-      | undefined;
-  }
-
-  /**
    * ストリーミング中のエージェントメッセージにテキストチャンクを追記する。
    *
    * 指定した `id` のメッセージが存在しない場合は何もしない。
@@ -110,7 +112,7 @@ export class MessageRepository {
    * @param chunk - 追記するテキストチャンク
    */
   appendAgentChunk(id: string, chunk: string): void {
-    const message = this.findByType(id, 'agent');
+    const message = findByType(this.messages, id, 'agent');
     if (message) {
       message.text += chunk;
     }
@@ -124,7 +126,7 @@ export class MessageRepository {
    * @param id - 対象メッセージの ID
    */
   completeAgentMessage(id: string): void {
-    const message = this.findByType(id, 'agent');
+    const message = findByType(this.messages, id, 'agent');
     if (message) {
       message.status = 'completed';
     }
@@ -164,7 +166,7 @@ export class MessageRepository {
     id: string,
     update: Partial<Pick<ToolCallMessage, 'status' | 'result'>>,
   ): void {
-    const message = this.findByType(id, 'tool_call');
+    const message = findByType(this.messages, id, 'tool_call');
     if (message) {
       if (update.status !== undefined) {
         message.status = update.status;
