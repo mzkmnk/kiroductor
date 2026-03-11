@@ -38,10 +38,14 @@ class StubClientHandler {
         }
         break;
       case 'tool_call':
-        console.log(`\n[StubClient] tool_call: ${update.title} (id=${update.toolCallId}, status=${update.status ?? 'none'})`);
+        console.log(
+          `\n[StubClient] tool_call: ${update.title} (id=${update.toolCallId}, status=${update.status ?? 'none'})`,
+        );
         break;
       case 'tool_call_update':
-        console.log(`[StubClient] tool_call_update: id=${update.toolCallId}, status=${update.status ?? 'none'}`);
+        console.log(
+          `[StubClient] tool_call_update: id=${update.toolCallId}, status=${update.status ?? 'none'}`,
+        );
         break;
       default:
         console.log(`[StubClient] sessionUpdate: ${update.sessionUpdate}`);
@@ -110,7 +114,9 @@ async function main() {
     });
     console.log(`    OK - protocolVersion: ${initResult.protocolVersion}`);
     console.log(`    agentInfo: ${JSON.stringify(initResult.agentInfo ?? '(none)')}`);
-    console.log(`    capabilities: ${JSON.stringify(initResult.agentCapabilities ?? initResult.capabilities ?? '(none)')}`);
+    console.log(
+      `    capabilities: ${JSON.stringify(initResult.agentCapabilities ?? initResult.capabilities ?? '(none)')}`,
+    );
 
     // [3] newSession
     console.log('\n[3] session/new...');
@@ -149,8 +155,10 @@ async function main() {
       .map((e) => e.update);
 
     console.log('\n=== Phase 3 実装上の注意点 ===');
-    console.log('受信した sessionUpdate の種類:', [...new Set(sessionUpdateTypes)].join(', ') || '(なし)');
-
+    console.log(
+      '受信した sessionUpdate の種類:',
+      [...new Set(sessionUpdateTypes)].join(', ') || '(なし)',
+    );
   } catch (err) {
     console.error('\n[ERROR]', err.message ?? err);
     if (err.code !== undefined) {

@@ -162,10 +162,7 @@ export class MessageRepository {
    * @param id - 対象ツール呼び出しの ID
    * @param update - 更新する値（`status`・`result` の部分更新）
    */
-  updateToolCall(
-    id: string,
-    update: Partial<Pick<ToolCallMessage, 'status' | 'result'>>,
-  ): void {
+  updateToolCall(id: string, update: Partial<Pick<ToolCallMessage, 'status' | 'result'>>): void {
     const message = findByType(this.messages, id, 'tool_call');
     if (message) {
       if (update.status !== undefined) {

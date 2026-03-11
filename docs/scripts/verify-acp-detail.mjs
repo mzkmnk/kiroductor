@@ -32,7 +32,9 @@ class InspectClientHandler {
 
     if (update.sessionUpdate === 'agent_message_chunk') {
       // messageId フィールドの有無を確認
-      process.stdout.write(update.content.type === 'text' ? update.content.text : `[${update.content.type}]`);
+      process.stdout.write(
+        update.content.type === 'text' ? update.content.text : `[${update.content.type}]`,
+      );
     } else {
       // tool_call, tool_call_update などは全フィールドを表示
       console.log(`\n\n[${update.sessionUpdate}]`, JSON.stringify(update, null, 2));
@@ -101,12 +103,19 @@ async function main() {
     console.log(`[newSession] sessionId=${sessionId}\n`);
 
     // ツール呼び出しを確実に発生させるプロンプト
-    console.log('[prompt] "What is in the file scripts/verify-acp.mjs? Read it and list its first 3 lines."\n');
+    console.log(
+      '[prompt] "What is in the file scripts/verify-acp.mjs? Read it and list its first 3 lines."\n',
+    );
     console.log('--- エージェント返答 ---');
 
     const result = await connection.prompt({
       sessionId,
-      prompt: [{ type: 'text', text: 'What is in the file scripts/verify-acp.mjs? Read it and list its first 3 lines.' }],
+      prompt: [
+        {
+          type: 'text',
+          text: 'What is in the file scripts/verify-acp.mjs? Read it and list its first 3 lines.',
+        },
+      ],
     });
 
     console.log('\n--- 返答終了 ---');
@@ -155,7 +164,6 @@ async function main() {
     for (const [type, count] of Object.entries(updateTypes)) {
       console.log(`  ${type}: ${count}件`);
     }
-
   } catch (err) {
     console.error('\n[ERROR]', err.message ?? err);
   } finally {
