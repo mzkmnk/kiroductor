@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, assert } from 'vitest';
 import { MessageRepository } from '../message.repository';
-import type { AgentMessage, ToolCallMessage } from '../message.repository';
 
 describe('MessageRepository', () => {
   let repo: MessageRepository;
@@ -48,13 +47,17 @@ describe('MessageRepository', () => {
       repo.appendAgentChunk('agent-1', ' ');
       repo.appendAgentChunk('agent-1', 'World');
       const messages = repo.getAll();
-      expect((messages[0] as AgentMessage).text).toBe('Hello World');
+      const msg = messages[0];
+      assert(msg.type === 'agent');
+      expect(msg.text).toBe('Hello World');
     });
 
     it('存在しない id に対しては何も起きない', () => {
       repo.addAgentMessage('agent-1');
       repo.appendAgentChunk('unknown-id', 'chunk');
-      expect((repo.getAll()[0] as AgentMessage).text).toBe('');
+      const msg = repo.getAll()[0];
+      assert(msg.type === 'agent');
+      expect(msg.text).toBe('');
     });
   });
 
@@ -64,13 +67,17 @@ describe('MessageRepository', () => {
       repo.appendAgentChunk('agent-1', 'response text');
       repo.completeAgentMessage('agent-1');
       const messages = repo.getAll();
-      expect((messages[0] as AgentMessage).status).toBe('completed');
+      const msg = messages[0];
+      assert(msg.type === 'agent');
+      expect(msg.status).toBe('completed');
     });
 
     it('存在しない id に対しては何も起きない', () => {
       repo.addAgentMessage('agent-1');
       repo.completeAgentMessage('unknown-id');
-      expect((repo.getAll()[0] as AgentMessage).status).toBe('streaming');
+      const msg = repo.getAll()[0];
+      assert(msg.type === 'agent');
+      expect(msg.status).toBe('streaming');
     });
   });
 
@@ -100,7 +107,9 @@ describe('MessageRepository', () => {
     it('存在しない id に対しては何も起きない', () => {
       repo.addToolCall('tool-1', 'read_file', {});
       repo.updateToolCall('unknown-id', { status: 'completed' });
-      expect((repo.getAll()[0] as ToolCallMessage).status).toBe('running');
+      const msg = repo.getAll()[0];
+      assert(msg.type === 'tool_call');
+      expect(msg.status).toBe('running');
     });
   });
 
