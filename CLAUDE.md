@@ -60,14 +60,29 @@ src/
 
 ## テスト戦略
 
-Vitest を採用。コンストラクタインジェクションにより各層を独立してテスト可能。
+Vitest を採用。**TDD古典派**スタイルで実装する。コンストラクタインジェクションにより各層を独立してテスト可能。
 
-| 層 | テスト方針 |
-|---|---|
-| **Repository** | モックなし、純粋な状態操作を直接テスト |
-| **ACP Methods** | Repository・NotificationService・fs をモック注入 |
-| **Service** | Repository と ClientSideConnection をモック注入 |
-| **Handler** | Service をモックして IPC→Service の委譲を検証 |
+### 基本方針
+
+- **ビジネスロジック（Service・Repository・ACP Methods）を主なテスト対象とする**
+- **UI（renderer）のテストは最小限に抑える**
+- この優先順位の背景：ユーザから見える部分（UI）ほど仕様変更が頻繁で、見えない部分（ビジネスロジック）ほど変更しにくく安定しているため、テストの費用対効果が高い層に注力する
+
+### TDD古典派の進め方
+
+- テストを先に書き、実装はテストを通すための最小限のコードとする
+- モックは外部システム（fs、ACP SDK の `ClientSideConnection`）に限定し、同一モジュール内のクラスは実物を使う
+- リファクタリング時にテストが壊れないよう、実装詳細ではなく振る舞いを検証する
+
+### 層別テスト方針
+
+| 層 | 優先度 | モック対象 | テスト内容 |
+|---|---|---|---|
+| **Repository** | 高 | なし（純粋な状態管理） | add/get/update/clear の振る舞い |
+| **ACP Methods** | 高 | fs、NotificationService | 各メソッドの入力→出力、副作用呼び出し |
+| **Service** | 高 | ClientSideConnection | ビジネスロジック、エラーハンドリング |
+| **Handler** | 中 | Service | IPC → Service 委譲の検証 |
+| **UI（renderer）** | 低 | — | 最小限（主要な統合動作のみ） |
 
 ## コード品質
 
