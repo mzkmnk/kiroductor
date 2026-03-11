@@ -117,18 +117,9 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - `react` / `react-dom` — UI ライブラリ
 - `vite` — バンドラー（メイン・preload・レンダラー用に3設定）
 
-## フェーズ進捗
+## タスク管理ルール
 
-実装計画の各フェーズの進捗状況。詳細は `docs/plan/` 配下の各フェーズファイルを参照。
-
-- [x] Phase 1: スキャフォールド + テスト基盤
-- [ ] Phase 2: Repository 層 + テスト（connectionRepository のみ完了）
-- [ ] Phase 3: ACP メソッド
-- [ ] Phase 4: ACP Service + Handler
-- [ ] Phase 5: IPC 配線（メインプロセス → レンダラー）
-- [ ] Phase 6: React UI（チャット画面）
-- [ ] Phase 7: 統合テスト・動作確認
-- [ ] Phase 8: リリース・配布
+`docs/plan/` 配下のフェーズファイルにチェックボックス付きタスクがある場合、タスクを完了したら該当するチェックボックスを `[ ]` から `[x]` に更新すること。
 
 ## 注意事項
 
