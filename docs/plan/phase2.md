@@ -37,9 +37,9 @@
   - **AC**: `completeAgentMessage(id)` を呼ぶと対象メッセージの `status` が `'completed'` になる
   - **AC**: 存在しない `id` に対しては何も起きない
 - [x] エージェントが実行しているツール呼び出しを追加する `addToolCall` を実装する
-  - **AC**: `addToolCall(id, name, input)` を呼ぶと `type: 'tool_call'`, `status: 'running'` のメッセージが追加される
+  - **AC**: `addToolCall(id, name, input)` を呼ぶと `type: 'tool_call'`, `status: 'in_progress'` のメッセージが追加される
 - [x] ツール呼び出しの結果・状態を更新する `updateToolCall` を実装する
-  - **AC**: `updateToolCall(id, { status: 'completed', result: '...' })` でステータスと結果が更新される
+  - **AC**: `updateToolCall(id, { status: 'completed', result: '...' })` でステータスと結果が更新される（status は SDK の `ToolCallStatus` 値を使用）
   - **AC**: 存在しない `id` に対しては何も起きない
 - [x] `updateToolCall` が `name` / `input` フィールドも更新できるよう拡張する
   - **背景**: kiro-cli は同一 `toolCallId` に対して `tool_call` イベントを複数回送信し、2 回目以降で `rawInput` や `title` が確定する（[ACP 動作確認結果](../research/acp-verification.md) 参照）
