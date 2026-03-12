@@ -162,7 +162,8 @@ describe('SessionUpdateMethod', () => {
         sessionId: 'session-1',
         update: {
           sessionUpdate: 'usage_update',
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          size: 100,
+          used: 50,
         },
       };
 
