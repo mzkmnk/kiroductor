@@ -588,7 +588,7 @@ type Message =
       name: string;
       rawInput?: unknown;
       rawOutput?: unknown;
-      status: 'running' | 'done' | 'error';
+      status: 'pending' | 'in_progress' | 'completed' | 'failed';
       timestamp: number;
     };
 ```
@@ -857,7 +857,7 @@ describe('SessionUpdateMethod', () => {
         sessionUpdate: 'tool_call',
         toolCallId: 'tc-1',
         name: 'edit_file',
-        status: 'running',
+        status: 'in_progress',
       },
     });
 
@@ -865,7 +865,7 @@ describe('SessionUpdateMethod', () => {
     expect(messages[0].type).toBe('tool_call');
     if (messages[0].type === 'tool_call') {
       expect(messages[0].name).toBe('edit_file');
-      expect(messages[0].status).toBe('running');
+      expect(messages[0].status).toBe('in_progress');
     }
   });
 });

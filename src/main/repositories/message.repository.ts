@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import type { ToolCallStatus } from '@agentclientprotocol/sdk';
 
 /** ユーザーが入力したテキストメッセージ */
 export type UserMessage = {
@@ -32,8 +33,8 @@ export type ToolCallMessage = {
   name: string;
   /** ツールへの入力パラメータ */
   input: unknown;
-  /** 実行状態。`'running'`: 実行中、`'completed'`: 完了、`'error'`: エラー */
-  status: 'running' | 'completed' | 'error';
+  /** 実行状態。SDK の {@link ToolCallStatus} をそのまま使用する */
+  status: ToolCallStatus;
   /** ツール実行結果（完了後に設定される） */
   result?: string;
 };
@@ -148,7 +149,7 @@ export class MessageRepository {
       type: 'tool_call',
       name,
       input,
-      status: 'running',
+      status: 'in_progress',
     };
     this.messages.push(message);
     return message;

@@ -87,7 +87,7 @@ describe('MessageRepository', () => {
   });
 
   describe('addToolCall', () => {
-    it('addToolCall(id, name, input) を呼ぶと type: "tool_call", status: "running" のメッセージが追加される', () => {
+    it('addToolCall(id, name, input) を呼ぶと type: "tool_call", status: "in_progress" のメッセージが追加される', () => {
       repo.addToolCall('tool-1', 'read_file', { path: '/tmp/foo.txt' });
       const messages = repo.getAll();
       expect(messages).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('MessageRepository', () => {
         type: 'tool_call',
         name: 'read_file',
         input: { path: '/tmp/foo.txt' },
-        status: 'running',
+        status: 'in_progress',
       });
     });
   });
@@ -114,7 +114,7 @@ describe('MessageRepository', () => {
       repo.updateToolCall('unknown-id', { status: 'completed' });
       const msg = repo.getAll()[0];
       assert(msg.type === 'tool_call');
-      expect(msg.status).toBe('running');
+      expect(msg.status).toBe('in_progress');
     });
 
     it('updateToolCall(id, { name: "new name" }) で name フィールドが更新される', () => {

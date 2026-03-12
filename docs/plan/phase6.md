@@ -25,7 +25,7 @@
 
 - [ ] shadcn/ui の `Collapsible` を追加する（`pnpm dlx shadcn@latest add collapsible`）
 - [ ] `Collapsible` でツール名・入力・出力を折りたたみ表示する
-- [ ] 実行中（running）/ 完了（done）/ エラー（error）のステータスを Tailwind の色クラスで表示する
+- [ ] 実行中（`pending` / `in_progress`）/ 完了（`completed`）/ エラー（`failed`）のステータスを Tailwind の色クラスで表示する
 
 ## ChatView — メッセージ一覧を表示するスクロール可能なコンテナ
 
