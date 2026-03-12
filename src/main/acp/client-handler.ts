@@ -1,4 +1,13 @@
 import type { Client } from '@agentclientprotocol/sdk/dist/acp';
+import type {
+  ReadTextFileRequest,
+  ReadTextFileResponse,
+  WriteTextFileRequest,
+  WriteTextFileResponse,
+  RequestPermissionRequest,
+  RequestPermissionResponse,
+  SessionNotification,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import type { IReadTextFileMethod } from './methods/read-text-file.method';
 import type { IWriteTextFileMethod } from './methods/write-text-file.method';
 import type { IRequestPermissionMethod } from './methods/request-permission.method';

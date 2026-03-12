@@ -41,7 +41,7 @@ describe('KiroductorClientHandler', () => {
       vi.mocked(readTextFileMethod.handle).mockResolvedValue({ content: 'hello' });
       const handler = makeHandler({ readTextFileMethod });
 
-      const params: ReadTextFileRequest = { path: '/foo/bar.txt' };
+      const params: ReadTextFileRequest = { sessionId: 'session-1', path: '/foo/bar.txt' };
       const result = await handler.readTextFile(params);
 
       expect(readTextFileMethod.handle).toHaveBeenCalledWith(params);
@@ -55,7 +55,11 @@ describe('KiroductorClientHandler', () => {
       vi.mocked(writeTextFileMethod.handle).mockResolvedValue({});
       const handler = makeHandler({ writeTextFileMethod });
 
-      const params: WriteTextFileRequest = { path: '/foo/bar.txt', content: 'hello' };
+      const params: WriteTextFileRequest = {
+        sessionId: 'session-1',
+        path: '/foo/bar.txt',
+        content: 'hello',
+      };
       const result = await handler.writeTextFile(params);
 
       expect(writeTextFileMethod.handle).toHaveBeenCalledWith(params);
