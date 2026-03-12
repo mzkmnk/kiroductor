@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { KiroductorClientHandler } from '../client-handler';
-import type { ReadTextFileMethod } from '../methods/read-text-file.method';
-import type { WriteTextFileMethod } from '../methods/write-text-file.method';
-import type { RequestPermissionMethod } from '../methods/request-permission.method';
-import type { SessionUpdateMethod } from '../methods/session-update.method';
+import {
+  KiroductorClientHandler,
+  type IReadTextFileMethod,
+  type IWriteTextFileMethod,
+  type IRequestPermissionMethod,
+  type ISessionUpdateMethod,
+} from '../client-handler';
 import type {
   ReadTextFileRequest,
   WriteTextFileRequest,
@@ -11,23 +13,19 @@ import type {
   SessionNotification,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 
-const makeReadTextFileMethod = (): ReadTextFileMethod =>
-  ({ handle: vi.fn() }) as unknown as ReadTextFileMethod;
+const makeReadTextFileMethod = (): IReadTextFileMethod => ({ handle: vi.fn() });
 
-const makeWriteTextFileMethod = (): WriteTextFileMethod =>
-  ({ handle: vi.fn() }) as unknown as WriteTextFileMethod;
+const makeWriteTextFileMethod = (): IWriteTextFileMethod => ({ handle: vi.fn() });
 
-const makeRequestPermissionMethod = (): RequestPermissionMethod =>
-  ({ handle: vi.fn() }) as unknown as RequestPermissionMethod;
+const makeRequestPermissionMethod = (): IRequestPermissionMethod => ({ handle: vi.fn() });
 
-const makeSessionUpdateMethod = (): SessionUpdateMethod =>
-  ({ handle: vi.fn() }) as unknown as SessionUpdateMethod;
+const makeSessionUpdateMethod = (): ISessionUpdateMethod => ({ handle: vi.fn() });
 
 const makeHandler = (overrides?: {
-  readTextFileMethod?: ReadTextFileMethod;
-  writeTextFileMethod?: WriteTextFileMethod;
-  requestPermissionMethod?: RequestPermissionMethod;
-  sessionUpdateMethod?: SessionUpdateMethod;
+  readTextFileMethod?: IReadTextFileMethod;
+  writeTextFileMethod?: IWriteTextFileMethod;
+  requestPermissionMethod?: IRequestPermissionMethod;
+  sessionUpdateMethod?: ISessionUpdateMethod;
 }) =>
   new KiroductorClientHandler(
     overrides?.readTextFileMethod ?? makeReadTextFileMethod(),

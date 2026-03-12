@@ -8,10 +8,30 @@ import type {
   ReadTextFileRequest,
   ReadTextFileResponse,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { ReadTextFileMethod } from './methods/read-text-file.method';
-import type { WriteTextFileMethod } from './methods/write-text-file.method';
-import type { RequestPermissionMethod } from './methods/request-permission.method';
-import type { SessionUpdateMethod } from './methods/session-update.method';
+
+/** `fs/readTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IReadTextFileMethod {
+  /** リクエストを処理する。 */
+  handle(params: ReadTextFileRequest): Promise<ReadTextFileResponse>;
+}
+
+/** `fs/writeTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IWriteTextFileMethod {
+  /** リクエストを処理する。 */
+  handle(params: WriteTextFileRequest): Promise<WriteTextFileResponse>;
+}
+
+/** `client/requestPermission` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IRequestPermissionMethod {
+  /** リクエストを処理する。 */
+  handle(params: RequestPermissionRequest): Promise<RequestPermissionResponse>;
+}
+
+/** `session/update` 通知を処理できるオブジェクトの最小インターフェース。 */
+export interface ISessionUpdateMethod {
+  /** 通知を処理する。 */
+  handle(params: SessionNotification): Promise<void>;
+}
 
 /**
  * ACP クライアント側ハンドラー。
@@ -27,10 +47,10 @@ export class KiroductorClientHandler implements Client {
    * @param sessionUpdateMethod - `session/update` 通知を処理するメソッド
    */
   constructor(
-    private readonly readTextFileMethod: ReadTextFileMethod,
-    private readonly writeTextFileMethod: WriteTextFileMethod,
-    private readonly requestPermissionMethod: RequestPermissionMethod,
-    private readonly sessionUpdateMethod: SessionUpdateMethod,
+    private readonly readTextFileMethod: IReadTextFileMethod,
+    private readonly writeTextFileMethod: IWriteTextFileMethod,
+    private readonly requestPermissionMethod: IRequestPermissionMethod,
+    private readonly sessionUpdateMethod: ISessionUpdateMethod,
   ) {}
 
   /**
