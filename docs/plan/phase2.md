@@ -41,7 +41,7 @@
 - [x] ツール呼び出しの結果・状態を更新する `updateToolCall` を実装する
   - **AC**: `updateToolCall(id, { status: 'completed', result: '...' })` でステータスと結果が更新される
   - **AC**: 存在しない `id` に対しては何も起きない
-- [ ] `updateToolCall` が `name` / `input` フィールドも更新できるよう拡張する
+- [x] `updateToolCall` が `name` / `input` フィールドも更新できるよう拡張する
   - **背景**: kiro-cli は同一 `toolCallId` に対して `tool_call` イベントを複数回送信し、2 回目以降で `rawInput` や `title` が確定する（[ACP 動作確認結果](../research/acp-verification.md) 参照）
   - **AC**: `updateToolCall(id, { name: 'new name' })` で `name` フィールドが更新される
   - **AC**: `updateToolCall(id, { input: { key: 'val' } })` で `input` フィールドが更新される

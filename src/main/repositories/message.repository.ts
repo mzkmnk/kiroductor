@@ -155,14 +155,17 @@ export class MessageRepository {
   }
 
   /**
-   * ツール呼び出しの結果・状態を更新する。
+   * ツール呼び出しの結果・状態・名前・入力パラメータを更新する。
    *
    * 指定した `id` のメッセージが存在しない場合は何もしない。
    *
    * @param id - 対象ツール呼び出しの ID
-   * @param update - 更新する値（`status`・`result` の部分更新）
+   * @param update - 更新する値（`status`・`result`・`name`・`input` の部分更新）
    */
-  updateToolCall(id: string, update: Partial<Pick<ToolCallMessage, 'status' | 'result'>>): void {
+  updateToolCall(
+    id: string,
+    update: Partial<Pick<ToolCallMessage, 'status' | 'result' | 'name' | 'input'>>,
+  ): void {
     const message = findByType(this.messages, id, 'tool_call');
     if (message) {
       if (update.status !== undefined) {
@@ -170,6 +173,12 @@ export class MessageRepository {
       }
       if (update.result !== undefined) {
         message.result = update.result;
+      }
+      if (update.name !== undefined) {
+        message.name = update.name;
+      }
+      if (update.input !== undefined) {
+        message.input = update.input;
       }
     }
   }
