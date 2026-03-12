@@ -4,7 +4,12 @@ import type { IWriteTextFileMethod } from './methods/write-text-file.method';
 import type { IRequestPermissionMethod } from './methods/request-permission.method';
 import type { ISessionUpdateMethod } from './methods/session-update.method';
 
-export type { IReadTextFileMethod, IWriteTextFileMethod, IRequestPermissionMethod, ISessionUpdateMethod };
+export type {
+  IReadTextFileMethod,
+  IWriteTextFileMethod,
+  IRequestPermissionMethod,
+  ISessionUpdateMethod,
+};
 
 /**
  * ACP クライアント側ハンドラー。
