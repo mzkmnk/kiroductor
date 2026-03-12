@@ -9,13 +9,19 @@ export interface NotificationService {
   sendToRenderer(channel: string, data: unknown): void;
 }
 
+/** `client/requestPermission` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IRequestPermissionMethod {
+  /** リクエストを処理する。 */
+  handle(params: RequestPermissionRequest): Promise<RequestPermissionResponse>;
+}
+
 /**
  * ACP `client/requestPermission` メソッドの実装。
  *
  * エージェントが操作の許可を求めてきたとき、MVP として最初の選択肢を自動承認して返す。
  * 承認内容はレンダラーへも通知する。
  */
-export class RequestPermissionMethod {
+export class RequestPermissionMethod implements IRequestPermissionMethod {
   /**
    * @param notificationService - レンダラーへの通知を担うサービス（依存注入）
    */

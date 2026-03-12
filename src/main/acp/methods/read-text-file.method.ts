@@ -9,13 +9,19 @@ export interface FileSystem {
   readFile(path: string, encoding: string): Promise<string>;
 }
 
+/** `fs/readTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IReadTextFileMethod {
+  /** リクエストを処理する。 */
+  handle(params: ReadTextFileRequest): Promise<ReadTextFileResponse>;
+}
+
 /**
  * ACP `fs/readTextFile` メソッドの実装。
  *
  * エージェントが指定したパスのファイルを UTF-8 で読み込み、内容を返す。
  * `params.limit`（最大行数）/ `params.line`（開始行）は MVP では無視する。
  */
-export class ReadTextFileMethod {
+export class ReadTextFileMethod implements IReadTextFileMethod {
   /**
    * @param fs - ファイルシステム操作を提供するオブジェクト（依存注入）
    */
