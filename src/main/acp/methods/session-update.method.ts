@@ -1,7 +1,9 @@
 import { randomUUID } from 'crypto';
 import type {
+  ContentChunk,
   SessionNotification,
-  ToolCallStatus,
+  ToolCall,
+  ToolCallUpdate,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { MessageRepository } from '../../repositories/message.repository';
 
@@ -62,10 +64,10 @@ export class SessionUpdateMethod {
    *
    * @param update - `agent_message_chunk` イベントデータ
    */
-  private handleAgentMessageChunk(update: { content: { type: string; text?: string } }): void {
+  private handleAgentMessageChunk(update: ContentChunk): void {
     if (update.content.type !== 'text') return;
 
-    const chunk = (update.content as { type: 'text'; text: string }).text;
+    const chunk = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
 
     const streamingMessage = this.messageRepository
       .getAll()
@@ -88,7 +90,7 @@ export class SessionUpdateMethod {
    *
    * @param update - `tool_call` イベントデータ
    */
-  private handleToolCall(update: { toolCallId: string; title: string; rawInput?: unknown }): void {
+  private handleToolCall(update: ToolCall): void {
     const { toolCallId, title, rawInput } = update;
     const existing = this.messageRepository
       .getAll()
@@ -108,11 +110,7 @@ export class SessionUpdateMethod {
    *
    * @param update - `tool_call_update` イベントデータ
    */
-  private handleToolCallUpdate(update: {
-    toolCallId: string;
-    status?: ToolCallStatus | null;
-    rawOutput?: unknown;
-  }): void {
+  private handleToolCallUpdate(update: ToolCallUpdate): void {
     const { toolCallId, status, rawOutput } = update;
     this.messageRepository.updateToolCall(toolCallId, {
       ...(status != null ? { status } : {}),
