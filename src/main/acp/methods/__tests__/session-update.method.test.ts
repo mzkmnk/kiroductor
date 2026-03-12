@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, assert } from 'vitest';
 import { SessionUpdateMethod } from '../session-update.method';
 import { MessageRepository } from '../../../repositories/message.repository';
 import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
@@ -91,12 +91,10 @@ describe('SessionUpdateMethod', () => {
       const messages = repo.getAll();
       expect(messages).toHaveLength(1);
       const msg = messages[0];
-      expect(msg.type).toBe('tool_call');
-      if (msg.type === 'tool_call') {
-        expect(msg.id).toBe('tc-1');
-        expect(msg.name).toBe('Read file');
-        expect(msg.input).toEqual({ path: '/foo' });
-      }
+      assert(msg.type === 'tool_call');
+      expect(msg.id).toBe('tc-1');
+      expect(msg.name).toBe('Read file');
+      expect(msg.input).toEqual({ path: '/foo' });
     });
 
     it('同じ toolCallId が既に存在する場合、updateToolCall が呼ばれること（重複追加しない）', async () => {
@@ -107,10 +105,9 @@ describe('SessionUpdateMethod', () => {
       const messages = repo.getAll();
       expect(messages).toHaveLength(1);
       const msg = messages[0];
-      if (msg.type === 'tool_call') {
-        expect(msg.name).toBe('Read file updated');
-        expect(msg.input).toEqual({ path: '/bar' });
-      }
+      assert(msg.type === 'tool_call');
+      expect(msg.name).toBe('Read file updated');
+      expect(msg.input).toEqual({ path: '/bar' });
     });
 
     it('notificationService.sendToRenderer が呼ばれること', async () => {
@@ -128,10 +125,9 @@ describe('SessionUpdateMethod', () => {
 
       const messages = repo.getAll();
       const msg = messages[0];
-      if (msg.type === 'tool_call') {
-        expect(msg.status).toBe('completed');
-        expect(msg.result).toBe(JSON.stringify({ data: 'result' }));
-      }
+      assert(msg.type === 'tool_call');
+      expect(msg.status).toBe('completed');
+      expect(msg.result).toBe(JSON.stringify({ data: 'result' }));
     });
 
     it('rawOutput が undefined の場合、result は更新されないこと', async () => {
@@ -141,10 +137,9 @@ describe('SessionUpdateMethod', () => {
 
       const messages = repo.getAll();
       const msg = messages[0];
-      if (msg.type === 'tool_call') {
-        expect(msg.status).toBe('completed');
-        expect(msg.result).toBeUndefined();
-      }
+      assert(msg.type === 'tool_call');
+      expect(msg.status).toBe('completed');
+      expect(msg.result).toBeUndefined();
     });
 
     it('notificationService.sendToRenderer が呼ばれること', async () => {
