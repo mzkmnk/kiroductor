@@ -27,18 +27,19 @@
       "electron",
       "esbuild",
       "electron-winstaller",
-      "@electron/fuses"
+      "@electron/fuses",
+      "lefthook"
     ]
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
-    "@electron-forge/shared-types": "^7.11.1",
     "@electron-forge/maker-deb": "^7.11.1",
     "@electron-forge/maker-rpm": "^7.11.1",
     "@electron-forge/maker-squirrel": "^7.11.1",
     "@electron-forge/maker-zip": "^7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
     "@electron-forge/plugin-vite": "^7.11.1",
+    "@electron-forge/shared-types": "^7.11.1",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.2.1",
     "@types/react": "^19.2.14",
@@ -48,6 +49,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "lefthook": "^2.1.4",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
