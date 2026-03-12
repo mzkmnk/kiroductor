@@ -116,6 +116,22 @@ describe('MessageRepository', () => {
       assert(msg.type === 'tool_call');
       expect(msg.status).toBe('running');
     });
+
+    it('updateToolCall(id, { name: "new name" }) で name フィールドが更新される', () => {
+      repo.addToolCall('tool-1', 'old_name', {});
+      repo.updateToolCall('tool-1', { name: 'new name' });
+      const msg = repo.getAll()[0];
+      assert(msg.type === 'tool_call');
+      expect(msg.name).toBe('new name');
+    });
+
+    it('updateToolCall(id, { input: { key: "val" } }) で input フィールドが更新される', () => {
+      repo.addToolCall('tool-1', 'read_file', {});
+      repo.updateToolCall('tool-1', { input: { key: 'val' } });
+      const msg = repo.getAll()[0];
+      assert(msg.type === 'tool_call');
+      expect(msg.input).toEqual({ key: 'val' });
+    });
   });
 
   describe('getAll', () => {
