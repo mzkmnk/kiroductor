@@ -1,37 +1,10 @@
 import type { Client } from '@agentclientprotocol/sdk/dist/acp';
-import type {
-  RequestPermissionRequest,
-  RequestPermissionResponse,
-  SessionNotification,
-  WriteTextFileRequest,
-  WriteTextFileResponse,
-  ReadTextFileRequest,
-  ReadTextFileResponse,
-} from '@agentclientprotocol/sdk/dist/schema/index';
+import type { IReadTextFileMethod } from './methods/read-text-file.method';
+import type { IWriteTextFileMethod } from './methods/write-text-file.method';
+import type { IRequestPermissionMethod } from './methods/request-permission.method';
+import type { ISessionUpdateMethod } from './methods/session-update.method';
 
-/** `fs/readTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
-export interface IReadTextFileMethod {
-  /** リクエストを処理する。 */
-  handle(params: ReadTextFileRequest): Promise<ReadTextFileResponse>;
-}
-
-/** `fs/writeTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
-export interface IWriteTextFileMethod {
-  /** リクエストを処理する。 */
-  handle(params: WriteTextFileRequest): Promise<WriteTextFileResponse>;
-}
-
-/** `client/requestPermission` リクエストを処理できるオブジェクトの最小インターフェース。 */
-export interface IRequestPermissionMethod {
-  /** リクエストを処理する。 */
-  handle(params: RequestPermissionRequest): Promise<RequestPermissionResponse>;
-}
-
-/** `session/update` 通知を処理できるオブジェクトの最小インターフェース。 */
-export interface ISessionUpdateMethod {
-  /** 通知を処理する。 */
-  handle(params: SessionNotification): Promise<void>;
-}
+export type { IReadTextFileMethod, IWriteTextFileMethod, IRequestPermissionMethod, ISessionUpdateMethod };
 
 /**
  * ACP クライアント側ハンドラー。

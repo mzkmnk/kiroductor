@@ -9,12 +9,18 @@ export interface FileSystem {
   writeFile(path: string, content: string, encoding: string): Promise<void>;
 }
 
+/** `fs/writeTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
+export interface IWriteTextFileMethod {
+  /** リクエストを処理する。 */
+  handle(params: WriteTextFileRequest): Promise<WriteTextFileResponse>;
+}
+
 /**
  * ACP `fs/writeTextFile` メソッドの実装。
  *
  * エージェントが指定したパスへ内容を UTF-8 で書き込む。
  */
-export class WriteTextFileMethod {
+export class WriteTextFileMethod implements IWriteTextFileMethod {
   /**
    * @param fs - ファイルシステム操作を提供するオブジェクト（依存注入）
    */

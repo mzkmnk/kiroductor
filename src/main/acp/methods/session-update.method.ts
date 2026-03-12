@@ -13,6 +13,12 @@ export interface NotificationService {
   sendToRenderer(channel: string, data: unknown): void;
 }
 
+/** `session/update` 通知を処理できるオブジェクトの最小インターフェース。 */
+export interface ISessionUpdateMethod {
+  /** 通知を処理する。 */
+  handle(params: SessionNotification): Promise<void>;
+}
+
 /**
  * ACP `session/update` 通知の実装。
  *
@@ -20,7 +26,7 @@ export interface NotificationService {
  * `agent_message_chunk` / `tool_call` / `tool_call_update` を処理し、
  * その他のイベントはそのまま転送するフォールスルー処理を行う。
  */
-export class SessionUpdateMethod {
+export class SessionUpdateMethod implements ISessionUpdateMethod {
   /**
    * @param messageRepository - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param notificationService - レンダラーへの通知を担うサービス（依存注入）
