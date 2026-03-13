@@ -3,3 +3,5 @@ out/
 node_modules/
 dist/
 pnpm-lock.yaml
+.agents/skills/
+skills-lock.json
