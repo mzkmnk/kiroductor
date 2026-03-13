@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 
@@ -36,18 +37,24 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
   }
 
   return (
-    <div className="flex items-end gap-2 border-t border-border p-4">
+    <div className="flex items-end gap-2 border-t border-border bg-card p-4">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="メッセージを入力… (Enter で送信、Shift+Enter で改行)"
-        className="min-h-[80px] flex-1 resize-none"
+        className="min-h-[80px] flex-1 resize-none bg-input text-foreground placeholder:text-muted-foreground"
         rows={3}
       />
-      <Button onClick={handleSubmit} disabled={disabled || !text.trim()} className="self-end">
-        送信
+      <Button
+        onClick={handleSubmit}
+        disabled={disabled || !text.trim()}
+        size="icon"
+        className="size-10 shrink-0 self-end rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30"
+        aria-label="送信"
+      >
+        <ArrowUp className="size-5" />
       </Button>
     </div>
   );
