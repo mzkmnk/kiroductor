@@ -43,7 +43,7 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="メッセージを入力… (Enter で送信、Shift+Enter で改行)"
+        placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
         className="min-h-[72px] flex-1 resize-none rounded-2xl border-border bg-secondary text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
         rows={3}
       />
@@ -52,7 +52,7 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
         disabled={disabled || !text.trim()}
         size="icon"
         className="size-9 shrink-0 self-end rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
-        aria-label="送信"
+        aria-label="Send"
       >
         <ArrowUp className="size-4" />
       </Button>

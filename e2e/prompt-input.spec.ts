@@ -32,21 +32,21 @@ test.describe('PromptInput', () => {
   });
 
   test('通常状態のスクリーンショットと一致する', async ({ page }) => {
-    await expect(page.getByPlaceholder(/メッセージを入力/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-default.png');
   });
 
   test('テキスト入力済み状態のスクリーンショットと一致する', async ({ page }) => {
-    await page.getByPlaceholder(/メッセージを入力/).fill('こんにちは、エージェント！');
+    await page.getByPlaceholder(/Type a message/).fill('こんにちは、エージェント！');
     await expect(page).toHaveScreenshot('prompt-input-filled.png');
   });
 
   test('送信処理中（disabled）状態のスクリーンショットと一致する', async ({ page }) => {
     // テキストを入力して送信ボタンをクリックすることで processing 状態に移行させる
-    await page.getByPlaceholder(/メッセージを入力/).fill('処理中テスト');
-    await page.getByRole('button', { name: '送信' }).click();
+    await page.getByPlaceholder(/Type a message/).fill('処理中テスト');
+    await page.getByRole('button', { name: 'Send' }).click();
     // prompt() は 500ms 後に resolve するため、その間は disabled 状態になる
-    await expect(page.getByPlaceholder(/メッセージを入力/)).toBeDisabled();
+    await expect(page.getByPlaceholder(/Type a message/)).toBeDisabled();
     await expect(page).toHaveScreenshot('prompt-input-disabled.png');
   });
 });
