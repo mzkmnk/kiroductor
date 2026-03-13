@@ -13,7 +13,7 @@ describe('PromptService', () => {
       (params: {
         sessionId: string;
         prompt: Array<{ type: string; text: string }>;
-      }) => Promise<{ stopReason: StopReason }>
+      }) => Promise<{ stopReason: string }>
     >;
   };
   let service: PromptService;
