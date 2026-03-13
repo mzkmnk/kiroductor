@@ -34,9 +34,9 @@
 
 ## preload.ts — レンダラーに安全な API を公開する
 
-- [ ] `contextBridge.exposeInMainWorld` で `window.kiroductor` として API を公開する
-- [ ] `onUpdate` / `onStatusChange` を購読する関数を実装し、クリーンアップ関数を返すようにする
-- [ ] `ipcRenderer` をそのまま公開しない（セキュリティのため）
+- [x] `contextBridge.exposeInMainWorld` で `window.kiroductor` として API を公開する
+- [x] `onUpdate` / `onStatusChange` を購読する関数を実装し、クリーンアップ関数を返すようにする
+- [x] `ipcRenderer` をそのまま公開しない（セキュリティのため）
 
 ## エンドツーエンド動作確認
 
