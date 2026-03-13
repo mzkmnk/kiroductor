@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
@@ -18,12 +18,13 @@ export default defineConfig({
     {
       name: 'chromium',
       use: {
+        ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },
-        launchOptions: {
-          executablePath:
-            process.env.PLAYWRIGHT_CHROMIUM_PATH ??
-            '/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome',
-        },
+        ...(process.env.PLAYWRIGHT_CHROMIUM_PATH && {
+          launchOptions: {
+            executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH,
+          },
+        }),
       },
     },
   ],
