@@ -29,6 +29,7 @@ export class SessionService {
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
    */
   async create(cwd: string): Promise<void> {
+    // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
     this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.clear();
