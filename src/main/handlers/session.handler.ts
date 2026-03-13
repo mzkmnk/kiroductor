@@ -1,0 +1,38 @@
+import { ipcMain } from 'electron';
+import type { SessionService } from '../services/session.service';
+import type { PromptService } from '../services/prompt.service';
+import type { MessageRepository } from '../repositories/message.repository';
+
+/**
+ * セッション操作を IPC 経由で受け付けるハンドラー。
+ *
+ * `register()` を呼ぶことで `ipcMain` に各チャンネルを登録する。
+ */
+export class SessionHandler {
+  /**
+   * @param sessionService - セッションのライフサイクルを管理するサービス（依存注入）
+   * @param promptService - ユーザー入力をエージェントへ送るサービス（依存注入）
+   * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
+   */
+  constructor(
+    private readonly sessionService: Pick<SessionService, 'create' | 'cancel'>,
+    private readonly promptService: Pick<PromptService, 'send'>,
+    private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
+  ) {}
+
+  /**
+   * セッション関連の IPC チャンネルを `ipcMain` に登録する。
+   *
+   * 登録するチャンネル:
+   * - `session:new` — 作業ディレクトリを受け取り新規セッションを開始する
+   * - `session:prompt` — ユーザーテキストをエージェントへ送信する
+   * - `session:cancel` — 実行中のセッションをキャンセルする
+   * - `session:messages` — メッセージ一覧を返す
+   */
+  register(): void {
+    ipcMain.handle('session:new', (_event, cwd: string) => this.sessionService.create(cwd));
+    ipcMain.handle('session:prompt', (_event, text: string) => this.promptService.send(text));
+    ipcMain.handle('session:cancel', () => this.sessionService.cancel());
+    ipcMain.handle('session:messages', () => this.messageRepo.getAll());
+  }
+}
