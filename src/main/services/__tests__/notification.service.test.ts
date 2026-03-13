@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { BrowserWindow } from 'electron';
 import { ElectronNotificationService } from '../notification.service';
 
 /** BrowserWindow の最小モック */
@@ -8,7 +9,7 @@ const makeBrowserWindow = (isDestroyed = false) =>
     webContents: {
       send: vi.fn(),
     },
-  }) as never;
+  }) as unknown as BrowserWindow;
 
 describe('ElectronNotificationService', () => {
   describe('sendToRenderer', () => {
