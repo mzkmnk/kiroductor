@@ -58,7 +58,7 @@ export interface AcpAPI {
  */
 export interface SessionAPI {
   /** 指定した作業ディレクトリで新規セッションを作成する。 */
-  create: (cwd: string) => Promise<{ sessionId: string }>;
+  create: (cwd: string) => Promise<void>;
   /** ユーザーテキストをエージェントへ送信する。 */
   prompt: (text: string) => Promise<{ stopReason: string }>;
   /** 実行中のセッションをキャンセルする。 */

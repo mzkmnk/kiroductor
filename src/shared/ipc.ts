@@ -12,7 +12,7 @@ export interface IpcInvokeChannels {
   'acp:start': { args: []; return: void };
   'acp:stop': { args: []; return: void };
   'acp:status': { args: []; return: AcpStatus };
-  'session:new': { args: [cwd: string]; return: { sessionId: string } };
+  'session:new': { args: [cwd: string]; return: void };
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
   'session:messages': { args: []; return: Message[] };
