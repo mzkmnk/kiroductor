@@ -27,12 +27,14 @@ export class SessionService {
    * 3. `MessageRepository` をクリアしてメッセージ履歴をリセットする
    *
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
+   * @returns 作成されたセッションの ID
    */
-  async create(cwd: string): Promise<void> {
+  async create(cwd: string): Promise<{ sessionId: string }> {
     // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
     this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.clear();
+    return { sessionId };
   }
 
   /**

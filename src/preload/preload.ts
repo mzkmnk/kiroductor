@@ -2,6 +2,35 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
 import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+
+/**
+ * 型付き `ipcRenderer.invoke` ヘルパー。
+ *
+ * チャネル名・引数・戻り値を {@link IpcInvokeChannels} で制約する。
+ */
+function invoke<K extends keyof IpcInvokeChannels>(
+  channel: K,
+  ...args: IpcInvokeChannels[K]['args']
+): Promise<IpcInvokeChannels[K]['return']> {
+  return ipcRenderer.invoke(channel, ...args) as Promise<IpcInvokeChannels[K]['return']>;
+}
+
+/**
+ * 型付き `ipcRenderer.on` ヘルパー。
+ *
+ * チャネル名・ペイロード型を {@link IpcOnChannels} で制約し、
+ * 購読解除関数を返す。
+ */
+function typedOn<K extends keyof IpcOnChannels>(
+  channel: K,
+  listener: (_event: Electron.IpcRendererEvent, data: IpcOnChannels[K]) => void,
+): () => void {
+  ipcRenderer.on(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
+  return () => {
+    ipcRenderer.removeListener(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
+  };
+}
 
 /**
  * レンダラーに公開する ACP 接続操作 API。
@@ -60,36 +89,18 @@ export interface KiroductorAPI {
 
 const kiroductorAPI: KiroductorAPI = {
   acp: {
-    start: () => ipcRenderer.invoke('acp:start') as Promise<void>,
-    stop: () => ipcRenderer.invoke('acp:stop') as Promise<void>,
-    getStatus: () => ipcRenderer.invoke('acp:status') as Promise<AcpStatus>,
-    onStatusChange: (callback) => {
-      const listener = (
-        _event: Electron.IpcRendererEvent,
-        payload: { status: AcpStatus; reason?: string },
-      ) => {
-        callback(payload);
-      };
-      ipcRenderer.on('acp:status-change', listener);
-      return () => {
-        ipcRenderer.removeListener('acp:status-change', listener);
-      };
-    },
+    start: () => invoke('acp:start'),
+    stop: () => invoke('acp:stop'),
+    getStatus: () => invoke('acp:status'),
+    onStatusChange: (callback) =>
+      typedOn('acp:status-change', (_event, payload) => callback(payload)),
   },
   session: {
-    create: (cwd) => ipcRenderer.invoke('session:new', cwd) as Promise<{ sessionId: string }>,
-    prompt: (text) => ipcRenderer.invoke('session:prompt', text) as Promise<{ stopReason: string }>,
-    cancel: () => ipcRenderer.invoke('session:cancel') as Promise<void>,
-    getMessages: () => ipcRenderer.invoke('session:messages') as Promise<Message[]>,
-    onUpdate: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, update: SessionNotification) => {
-        callback(update);
-      };
-      ipcRenderer.on('acp:session-update', listener);
-      return () => {
-        ipcRenderer.removeListener('acp:session-update', listener);
-      };
-    },
+    create: (cwd) => invoke('session:new', cwd),
+    prompt: (text) => invoke('session:prompt', text),
+    cancel: () => invoke('session:cancel'),
+    getMessages: () => invoke('session:messages'),
+    onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
   },
 };
 
