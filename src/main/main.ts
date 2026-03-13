@@ -36,10 +36,10 @@ const messageRepo = new MessageRepository();
 const notificationService = new ElectronNotificationService(() => mainWindow);
 
 const fsAdapter = {
-  readFile: (filePath: string, encoding: string): Promise<string> =>
-    fs.promises.readFile(filePath, encoding as BufferEncoding) as Promise<string>,
-  writeFile: (filePath: string, content: string, encoding: string): Promise<void> =>
-    fs.promises.writeFile(filePath, content, encoding as BufferEncoding),
+  readFile: (filePath: string, encoding: BufferEncoding): Promise<string> =>
+    fs.promises.readFile(filePath, encoding),
+  writeFile: (filePath: string, content: string, encoding: BufferEncoding): Promise<void> =>
+    fs.promises.writeFile(filePath, content, encoding),
 };
 
 const readTextFileMethod = new ReadTextFileMethod(fsAdapter);

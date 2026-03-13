@@ -6,7 +6,7 @@ import type {
 /** `fs.writeFile` の最小インターフェース。依存注入・テスト用。 */
 export interface FileSystem {
   /** ファイルへ書き込む。 */
-  writeFile(path: string, content: string, encoding: string): Promise<void>;
+  writeFile(path: string, content: string, encoding: BufferEncoding): Promise<void>;
 }
 
 /** `fs/writeTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
