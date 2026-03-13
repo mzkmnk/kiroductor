@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
-import type { StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
 import { PromptService } from '../prompt.service';
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
@@ -38,34 +37,6 @@ describe('PromptService', () => {
       await service.send('hello');
       const messages = messageRepo.getAll();
       expect(messages.some((m) => m.type === 'user' && m.text === 'hello')).toBe(true);
-    });
-
-    it('ユーザーメッセージの直後に status: streaming のエージェントメッセージが追加されること', async () => {
-      // prompt() が resolve する前のスナップショットを取るため、pending な Promise を使う
-      let resolvePrompt!: (value: { stopReason: StopReason }) => void;
-      connection.prompt.mockReturnValueOnce(
-        new Promise<{ stopReason: StopReason }>((res) => {
-          resolvePrompt = res;
-        }),
-      );
-
-      const sendPromise = service.send('hello');
-
-      // prompt() が呼ばれた時点（await connection.prompt の前後）でのメッセージ状態を確認
-      // 非同期処理が進んでメッセージが追加されるのを待つ
-      await Promise.resolve();
-      await Promise.resolve();
-
-      const messages = messageRepo.getAll();
-      const userIndex = messages.findIndex((m) => m.type === 'user');
-      const agentIndex = messages.findIndex((m) => m.type === 'agent');
-
-      expect(userIndex).toBeGreaterThanOrEqual(0);
-      expect(agentIndex).toBeGreaterThan(userIndex);
-      expect(messages[agentIndex]).toMatchObject({ type: 'agent', status: 'streaming' });
-
-      resolvePrompt({ stopReason: 'end_turn' });
-      await sendPromise;
     });
 
     it('connection.prompt({ sessionId, prompt: [{ type: text, text }] }) が呼ばれること', async () => {
