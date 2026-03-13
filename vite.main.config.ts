@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { builtinModules } from 'node:module';
 
 // https://www.electronforge.io/config/plugins/vite#configuration
 // Electron Forge の VitePlugin からはエントリーポイントが forge.config.ts 経由で渡される。
@@ -11,7 +12,7 @@ export default defineConfig({
       fileName: () => 'main.js',
     },
     rollupOptions: {
-      external: ['electron', 'path'],
+      external: ['electron', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
     },
     outDir: '.vite/build',
   },
