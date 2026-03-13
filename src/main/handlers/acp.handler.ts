@@ -1,6 +1,6 @@
-import { ipcMain } from 'electron';
 import type { AcpConnectionService } from '../services/acp-connection.service';
 import type { ConnectionRepository } from '../repositories/connection.repository';
+import { handle } from '../ipc';
 
 /**
  * ACP 接続の開始・終了・状態確認を IPC 経由で受け付けるハンドラー。
@@ -26,8 +26,8 @@ export class AcpHandler {
    * - `acp:status` — 現在の接続状態を返す
    */
   register(): void {
-    ipcMain.handle('acp:start', () => this.acpConnectionService.start());
-    ipcMain.handle('acp:stop', () => this.acpConnectionService.stop());
-    ipcMain.handle('acp:status', () => this.connectionRepo.getStatus());
+    handle('acp:start', () => this.acpConnectionService.start());
+    handle('acp:stop', () => this.acpConnectionService.stop());
+    handle('acp:status', () => this.connectionRepo.getStatus());
   }
 }

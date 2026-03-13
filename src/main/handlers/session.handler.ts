@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron';
 import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
 import type { MessageRepository } from '../repositories/message.repository';
+import { handle } from '../ipc';
 
 /**
  * セッション操作を IPC 経由で受け付けるハンドラー。
@@ -30,9 +30,12 @@ export class SessionHandler {
    * - `session:messages` — メッセージ一覧を返す
    */
   register(): void {
-    ipcMain.handle('session:new', (_event, cwd: string) => this.sessionService.create(cwd));
-    ipcMain.handle('session:prompt', (_event, text: string) => this.promptService.send(text));
-    ipcMain.handle('session:cancel', () => this.sessionService.cancel());
-    ipcMain.handle('session:messages', () => this.messageRepo.getAll());
+    handle('session:new', (_event, cwd) => this.sessionService.create(cwd));
+    handle('session:prompt', async (_event, text) => {
+      const stopReason = await this.promptService.send(text);
+      return { stopReason };
+    });
+    handle('session:cancel', () => this.sessionService.cancel());
+    handle('session:messages', () => this.messageRepo.getAll());
   }
 }

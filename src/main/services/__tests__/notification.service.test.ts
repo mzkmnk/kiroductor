@@ -17,22 +17,26 @@ describe('ElectronNotificationService', () => {
       const window = makeBrowserWindow();
       const service = new ElectronNotificationService(() => window);
 
-      service.sendToRenderer('test:channel', { foo: 'bar' });
+      service.sendToRenderer('acp:status-change', { status: 'connected' });
 
-      expect(window.webContents.send).toHaveBeenCalledWith('test:channel', { foo: 'bar' });
+      expect(window.webContents.send).toHaveBeenCalledWith('acp:status-change', {
+        status: 'connected',
+      });
     });
 
     it('ウィンドウが null のとき、何もしないこと（エラーを出さないこと）', () => {
       const service = new ElectronNotificationService(() => null);
 
-      expect(() => service.sendToRenderer('test:channel', { foo: 'bar' })).not.toThrow();
+      expect(() =>
+        service.sendToRenderer('acp:status-change', { status: 'disconnected' }),
+      ).not.toThrow();
     });
 
     it('ウィンドウが破棄済みのとき、何もしないこと（エラーを出さないこと）', () => {
       const window = makeBrowserWindow(true);
       const service = new ElectronNotificationService(() => window);
 
-      service.sendToRenderer('test:channel', { foo: 'bar' });
+      service.sendToRenderer('acp:status-change', { status: 'disconnected' });
 
       expect(window.webContents.send).not.toHaveBeenCalled();
     });
@@ -40,11 +44,13 @@ describe('ElectronNotificationService', () => {
     it('チャネル名とデータが正確に渡されること', () => {
       const window = makeBrowserWindow();
       const service = new ElectronNotificationService(() => window);
-      const data = { sessionId: 'abc', update: { type: 'done' } };
 
-      service.sendToRenderer('acp:session-update', data);
+      service.sendToRenderer('acp:status-change', { status: 'error', reason: 'timeout' });
 
-      expect(window.webContents.send).toHaveBeenCalledWith('acp:session-update', data);
+      expect(window.webContents.send).toHaveBeenCalledWith('acp:status-change', {
+        status: 'error',
+        reason: 'timeout',
+      });
     });
   });
 });
