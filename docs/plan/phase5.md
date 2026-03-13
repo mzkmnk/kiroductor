@@ -28,9 +28,9 @@
 
 ## main.ts — アプリ起動時の依存関係を組み立てる（Composition Root）
 
-- [ ] Repository・Service・Handler の全インスタンスをここで生成する
-- [ ] 依存関係を注入しながらインスタンスを組み立てる
-- [ ] ハンドラーを登録する
+- [x] Repository・Service・Handler の全インスタンスをここで生成する
+- [x] 依存関係を注入しながらインスタンスを組み立てる
+- [x] ハンドラーを登録する
 
 ## preload.ts — レンダラーに安全な API を公開する
 
