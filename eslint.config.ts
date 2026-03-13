@@ -14,7 +14,7 @@ export default tseslint.config(
       'src/renderer/dist/**',
       'docs/**',
       'src/renderer/components/ui/**',
-      'src/renderer/lib/**',
+      'src/renderer/lib/utils.ts',
     ],
   },
 
