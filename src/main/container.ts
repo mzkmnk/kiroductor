@@ -1,0 +1,104 @@
+import fs from 'fs';
+import type { BrowserWindow } from 'electron';
+import type { ClientSideConnection } from '@agentclientprotocol/sdk';
+import { ConnectionRepository } from './repositories/connection.repository';
+import { SessionRepository } from './repositories/session.repository';
+import { MessageRepository } from './repositories/message.repository';
+import { ElectronNotificationService } from './services/notification.service';
+import { AcpConnectionService, type ClientHandlerFactory } from './services/acp-connection.service';
+import { SessionService } from './services/session.service';
+import { PromptService } from './services/prompt.service';
+import { KiroductorClientHandler } from './acp/client-handler';
+import { ReadTextFileMethod } from './acp/methods/read-text-file.method';
+import { WriteTextFileMethod } from './acp/methods/write-text-file.method';
+import { RequestPermissionMethod } from './acp/methods/request-permission.method';
+import { SessionUpdateMethod } from './acp/methods/session-update.method';
+import { AcpHandler } from './handlers/acp.handler';
+import { SessionHandler } from './handlers/session.handler';
+
+/** {@link buildContainer} の戻り値。IPCハンドラ登録に必要なオブジェクト。 */
+export interface AppContainer {
+  /** ACP接続管理ハンドラ。 */
+  acpHandler: AcpHandler;
+  /** セッション管理ハンドラ。 */
+  sessionHandler: SessionHandler;
+}
+
+/**
+ * アプリケーション全体の依存関係を組み立てる Composition Root。
+ *
+ * `getMainWindow` をコールバックで受け取ることで、
+ * ウィンドウ生成前にコンテナを構築しつつ、通知送信時にレイジーに参照できる。
+ *
+ * @param getMainWindow - 現在の `BrowserWindow` インスタンスを返すゲッター
+ * @returns IPCハンドラ登録に必要な {@link AppContainer}
+ */
+export function buildContainer(getMainWindow: () => BrowserWindow | null): AppContainer {
+  // Repositories
+  const connectionRepo = new ConnectionRepository();
+  const sessionRepo = new SessionRepository();
+  const messageRepo = new MessageRepository();
+
+  // Services
+  const notificationService = new ElectronNotificationService(getMainWindow);
+
+  const fsAdapter = {
+    readFile: (filePath: string, encoding: BufferEncoding): Promise<string> =>
+      fs.promises.readFile(filePath, encoding),
+    writeFile: (filePath: string, content: string, encoding: BufferEncoding): Promise<void> =>
+      fs.promises.writeFile(filePath, content, encoding),
+  };
+
+  const readTextFileMethod = new ReadTextFileMethod(fsAdapter);
+  const writeTextFileMethod = new WriteTextFileMethod(fsAdapter);
+  const requestPermissionMethod = new RequestPermissionMethod(notificationService);
+  const sessionUpdateMethod = new SessionUpdateMethod(messageRepo, notificationService);
+
+  const clientHandlerFactory: ClientHandlerFactory = () =>
+    new KiroductorClientHandler(
+      readTextFileMethod,
+      writeTextFileMethod,
+      requestPermissionMethod,
+      sessionUpdateMethod,
+    );
+
+  const acpConnectionService = new AcpConnectionService(
+    connectionRepo,
+    notificationService,
+    clientHandlerFactory,
+  );
+
+  /**
+   * `ConnectionRepository` から現在の `ClientSideConnection` を取得するプロキシ。
+   *
+   * `SessionService` / `PromptService` は構築時に接続オブジェクトを必要とするが、
+   * 接続は `AcpConnectionService.start()` 後に初めて確立される。
+   * このプロキシを通じてレイジーに取得することで、構築時の依存を解決する。
+   */
+  const connectionProxy: Pick<ClientSideConnection, 'newSession' | 'cancel' | 'prompt'> = {
+    newSession: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.newSession(params);
+    },
+    cancel: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.cancel(params);
+    },
+    prompt: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.prompt(params);
+    },
+  };
+
+  const sessionService = new SessionService(sessionRepo, messageRepo, connectionProxy);
+  const promptService = new PromptService(sessionRepo, messageRepo, connectionProxy);
+
+  // Handlers
+  const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);
+  const sessionHandler = new SessionHandler(sessionService, promptService, messageRepo);
+
+  return { acpHandler, sessionHandler };
+}
