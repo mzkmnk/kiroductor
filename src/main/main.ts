@@ -47,8 +47,7 @@ const writeTextFileMethod = new WriteTextFileMethod(fsAdapter);
 const requestPermissionMethod = new RequestPermissionMethod(notificationService);
 const sessionUpdateMethod = new SessionUpdateMethod(messageRepo, notificationService);
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const clientHandlerFactory: ClientHandlerFactory = (_agent) =>
+const clientHandlerFactory: ClientHandlerFactory = () =>
   new KiroductorClientHandler(
     readTextFileMethod,
     writeTextFileMethod,
