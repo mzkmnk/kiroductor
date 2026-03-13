@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
@@ -22,7 +23,11 @@ describe('SessionService', () => {
       newSession: vi.fn().mockResolvedValue({ sessionId: 'test-session-id' }),
       cancel: vi.fn().mockResolvedValue(undefined),
     };
-    service = new SessionService(sessionRepo, messageRepo, connection as never);
+    service = new SessionService(
+      sessionRepo,
+      messageRepo,
+      connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel'>,
+    );
   });
 
   describe('create(cwd)', () => {
