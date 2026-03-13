@@ -37,24 +37,24 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
   }
 
   return (
-    <div className="flex items-end gap-2 border-t border-border bg-card p-4">
+    <div className="flex items-end gap-3 border-t border-border bg-background px-4 py-3">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="メッセージを入力… (Enter で送信、Shift+Enter で改行)"
-        className="min-h-[80px] flex-1 resize-none bg-input text-foreground placeholder:text-muted-foreground"
+        className="min-h-[72px] flex-1 resize-none rounded-2xl border-border bg-secondary text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
         rows={3}
       />
       <Button
         onClick={handleSubmit}
         disabled={disabled || !text.trim()}
         size="icon"
-        className="size-10 shrink-0 self-end rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30"
+        className="size-9 shrink-0 self-end rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
         aria-label="送信"
       >
-        <ArrowUp className="size-5" />
+        <ArrowUp className="size-4" />
       </Button>
     </div>
   );

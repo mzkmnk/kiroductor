@@ -5,13 +5,13 @@
 
 ## デザイン方針
 
-- **テーマ**: ダークモードのみ（zinc-950 ベース）
+- **テーマ**: ライトモードのみ（slate ベース、白背景）
 - **フォント**: monospace（ui-monospace / JetBrains Mono / Fira Code 系）
-- **アクセントカラー**: blue-500 系（`--primary: 217 91% 60%`）
+- **アクセントカラー**: blue-500 系（`--primary: 217 91% 55%`）
 - **カード**: `bg-card` + `border-border` + `rounded-2xl`、半透明・backdrop-blur 効果
 - **メッセージバブル**:
-  - ユーザー: 右寄せ、`bg-primary/20 border-primary/30`、`rounded-2xl`
-  - エージェント: 左寄せ、`bg-card border-border`、`rounded-2xl`
+  - ユーザー: 右寄せ、`bg-primary/10 border-primary/20`、`rounded-2xl`
+  - エージェント: 左寄せ、`bg-secondary border-border`、`rounded-2xl`
 - **アイコン**: lucide-react を使用。ボタンはテキストなしのアイコンのみ（`ArrowUp` で送信、`Square` で停止）
 - **レイアウト**: SessionBar（上） + ChatView（中、スクロール） + PromptInput（下）
 
