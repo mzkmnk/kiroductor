@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { EventEmitter } from 'events';
 import { AcpConnectionService } from '../acp-connection.service';
+import type { ClientHandlerFactory, SpawnFn } from '../acp-connection.service';
 import { ConnectionRepository } from '../../repositories/connection.repository';
 
 // vi.mock はホイストされるため vi.hoisted で先に定義する
@@ -13,8 +14,6 @@ const { mockInitialize } = vi.hoisted(() => ({
 vi.mock('@agentclientprotocol/sdk', () => {
   class MockClientSideConnection {
     initialize = mockInitialize;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    constructor(_toClient: unknown, _stream: unknown) {}
   }
   return {
     ClientSideConnection: MockClientSideConnection,
@@ -36,7 +35,7 @@ vi.mock('stream', () => {
 
 /** テスト用の子プロセスモック */
 function makeSpawnMock() {
-  const proc = new EventEmitter() as NodeJS.EventEmitter & {
+  const proc = new EventEmitter() as EventEmitter & {
     stdout: EventEmitter;
     stderr: EventEmitter;
     stdin: EventEmitter;
@@ -54,8 +53,8 @@ describe('AcpConnectionService', () => {
   let notificationService: {
     sendToRenderer: MockedFunction<(channel: string, data: unknown) => void>;
   };
-  let clientHandlerFactory: MockedFunction<() => object>;
-  let spawnMock: MockedFunction<(...args: unknown[]) => ReturnType<typeof makeSpawnMock>>;
+  let clientHandlerFactory: ReturnType<typeof vi.fn>;
+  let spawnMock: ReturnType<typeof vi.fn>;
   let proc: ReturnType<typeof makeSpawnMock>;
   let service: AcpConnectionService;
 
@@ -69,10 +68,8 @@ describe('AcpConnectionService', () => {
     service = new AcpConnectionService(
       connectionRepo,
       notificationService,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      clientHandlerFactory as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      spawnMock as any,
+      clientHandlerFactory as unknown as ClientHandlerFactory,
+      spawnMock as unknown as SpawnFn,
     );
   });
 
@@ -138,6 +135,12 @@ describe('AcpConnectionService', () => {
       await service.start();
       proc.emit('exit', 1, null);
       expect(connectionRepo.getStatus()).toBe('error');
+    });
+
+    it('プロセスが code 0 で exit したとき、error にならないこと', async () => {
+      await service.start();
+      proc.emit('exit', 0, null);
+      expect(connectionRepo.getStatus()).toBe('connected');
     });
 
     it('プロセスが exit イベントを発行したとき、レンダラーに status: "error" が通知されること', async () => {

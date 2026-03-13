@@ -59,10 +59,10 @@ export class AcpConnectionService {
       }
     });
 
-    // プロセスが予期せず終了した場合のハンドリング
+    // プロセスが予期せず終了した場合のハンドリング（stop() による正常終了は除外）
     proc.on('exit', (code) => {
       const current = this.connectionRepo.getStatus();
-      if (current !== 'disconnected') {
+      if (current !== 'disconnected' && code !== 0) {
         this.connectionRepo.setStatus('error');
         this.notificationService.sendToRenderer('acp:status-change', {
           status: 'error',
@@ -79,8 +79,11 @@ export class AcpConnectionService {
       });
     });
 
-    const readStream = Readable.toWeb(proc.stdout!) as ReadableStream<Uint8Array>;
-    const writeStream = Writable.toWeb(proc.stdin!) as WritableStream<Uint8Array>;
+    if (!proc.stdout || !proc.stdin) {
+      throw new Error('kiro-cli process stdout/stdin is not available');
+    }
+    const readStream = Readable.toWeb(proc.stdout) as ReadableStream<Uint8Array>;
+    const writeStream = Writable.toWeb(proc.stdin) as WritableStream<Uint8Array>;
     const stream = ndJsonStream(writeStream, readStream);
 
     const connection = new ClientSideConnection(
