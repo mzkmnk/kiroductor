@@ -2,18 +2,19 @@ import { describe, it, expect, vi } from 'vitest';
 import { ElectronNotificationService } from '../notification.service';
 
 /** BrowserWindow の最小モック */
-const makeBrowserWindow = (isDestroyed = false) => ({
-  isDestroyed: vi.fn(() => isDestroyed),
-  webContents: {
-    send: vi.fn(),
-  },
-});
+const makeBrowserWindow = (isDestroyed = false) =>
+  ({
+    isDestroyed: vi.fn(() => isDestroyed),
+    webContents: {
+      send: vi.fn(),
+    },
+  }) as never;
 
 describe('ElectronNotificationService', () => {
   describe('sendToRenderer', () => {
     it('ウィンドウが存在するとき、webContents.send が呼ばれること', () => {
       const window = makeBrowserWindow();
-      const service = new ElectronNotificationService(() => window as never);
+      const service = new ElectronNotificationService(() => window);
 
       service.sendToRenderer('test:channel', { foo: 'bar' });
 
@@ -28,7 +29,7 @@ describe('ElectronNotificationService', () => {
 
     it('ウィンドウが破棄済みのとき、何もしないこと（エラーを出さないこと）', () => {
       const window = makeBrowserWindow(true);
-      const service = new ElectronNotificationService(() => window as never);
+      const service = new ElectronNotificationService(() => window);
 
       service.sendToRenderer('test:channel', { foo: 'bar' });
 
@@ -37,7 +38,7 @@ describe('ElectronNotificationService', () => {
 
     it('チャネル名とデータが正確に渡されること', () => {
       const window = makeBrowserWindow();
-      const service = new ElectronNotificationService(() => window as never);
+      const service = new ElectronNotificationService(() => window);
       const data = { sessionId: 'abc', update: { type: 'done' } };
 
       service.sendToRenderer('acp:session-update', data);
