@@ -6,7 +6,7 @@ import type {
 /** `fs.readFile` の最小インターフェース。依存注入・テスト用。 */
 export interface FileSystem {
   /** ファイルを読み込む。 */
-  readFile(path: string, encoding: string): Promise<string>;
+  readFile(path: string, encoding: BufferEncoding): Promise<string>;
 }
 
 /** `fs/readTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */

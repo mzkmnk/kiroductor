@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+import { buildContainer } from './container';
+import { registerHandlers } from './handlers/index';
 
 // Electron Forge が Vite ビルド後に注入するグローバル変数
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -7,6 +9,8 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 
 /** アプリケーションのメインウィンドウインスタンス。未生成または破棄済みの場合は `null`。 */
 let mainWindow: BrowserWindow | null = null;
+
+const { acpHandler, sessionHandler } = buildContainer(() => mainWindow);
 
 /**
  * Electron の `BrowserWindow` を生成してアプリケーションウィンドウを初期化する。
@@ -37,6 +41,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  registerHandlers(acpHandler, sessionHandler);
   createWindow();
 
   app.on('activate', () => {
