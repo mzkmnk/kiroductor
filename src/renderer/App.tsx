@@ -1,10 +1,27 @@
+import { useState } from 'react';
+import { PromptInput } from './components/PromptInput';
+
+/**
+ * アプリケーションのルートコンポーネント。
+ */
 function App() {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  /**
+   * ユーザーのプロンプトを送信する。
+   *
+   * @param text - 送信するテキスト
+   */
+  async function handleSubmit(text: string) {
+    setIsProcessing(true);
+    await window.kiroductor.session.prompt(text);
+    setIsProcessing(false);
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-foreground">Kiroductor</h1>
-        <p className="mt-2 text-muted-foreground">Hello VRT</p>
-      </div>
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex-1" />
+      <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
     </div>
   );
 }

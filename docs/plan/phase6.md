@@ -11,10 +11,10 @@
 
 ## PromptInput — ユーザーがテキストを入力して送信するフォーム
 
-- [ ] shadcn/ui の `Textarea` と `Button` を追加する（`pnpm dlx shadcn@latest add textarea button`）
-- [ ] `Textarea` と送信 `Button` を並べたレイアウトを Tailwind で組む
-- [ ] Enter キーで送信、Shift+Enter で改行する動作を実装する
-- [ ] エージェントが処理中の間は `Textarea` と `Button` を `disabled` にする
+- [x] shadcn/ui の `Textarea` と `Button` を追加する（`pnpm dlx shadcn@latest add textarea button`）
+- [x] `Textarea` と送信 `Button` を並べたレイアウトを Tailwind で組む
+- [x] Enter キーで送信、Shift+Enter で改行する動作を実装する
+- [x] エージェントが処理中の間は `Textarea` と `Button` を `disabled` にする
 
 ## MessageBubble — 一件分のメッセージを表示するコンポーネント
 

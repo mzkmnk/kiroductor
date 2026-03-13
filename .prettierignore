@@ -5,3 +5,5 @@ dist/
 pnpm-lock.yaml
 .agents/skills/
 skills-lock.json
+src/renderer/components/ui/
+src/renderer/lib/

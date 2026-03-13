@@ -24,14 +24,14 @@ function mockKiroductorAPI() {
   };
 }
 
-test.describe('Hello World 画面', () => {
+test.describe('アプリ初期表示', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(mockKiroductorAPI);
   });
 
-  test('ベースラインスクリーンショットと一致する', async ({ page }) => {
+  test('PromptInput が表示される', async ({ page }) => {
     await page.goto('http://localhost:5173');
-    await expect(page.locator('h1')).toHaveText('Kiroductor');
-    await expect(page).toHaveScreenshot('hello-world.png');
+    await expect(page.getByPlaceholder(/メッセージを入力/)).toBeVisible();
+    await expect(page.getByRole('button', { name: '送信' })).toBeVisible();
   });
 });
