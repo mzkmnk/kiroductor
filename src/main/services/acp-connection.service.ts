@@ -1,9 +1,12 @@
 import { spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
+import { createDebugLogger } from '../debug-logger';
 import type { ConnectionRepository } from '../repositories/connection.repository';
 import type { NotificationService } from '../acp/methods/session-update.method';
 import type { KiroductorClientHandler } from '../acp/client-handler';
+
+const log = createDebugLogger('ACP');
 
 /** `KiroductorClientHandler` のファクトリ関数型。 */
 export type ClientHandlerFactory = (
@@ -46,14 +49,17 @@ export class AcpConnectionService {
    * @throws プロセス起動や初期化に失敗した場合にエラーを投げる
    */
   async start(): Promise<void> {
+    log.info('start: kiro-cli acp を起動します');
     this.connectionRepo.setStatus('connecting');
 
     const proc = this.spawnFn('kiro-cli', ['acp'], { stdio: ['pipe', 'pipe', 'pipe'] });
+    log.info(`プロセス起動 pid=${String(proc.pid)}`);
 
     // stderr をバッファに蓄積する
     proc.stderr?.on('data', (chunk: Buffer) => {
       for (const line of chunk.toString().split('\n')) {
         if (line.trim()) {
+          log.info(`stderr: ${line}`);
           this.connectionRepo.appendStderr(line);
         }
       }
@@ -61,6 +67,7 @@ export class AcpConnectionService {
 
     // プロセスが予期せず終了した場合のハンドリング（stop() による正常終了は除外）
     proc.on('exit', (code) => {
+      log.info(`プロセス終了 code=${String(code)}`);
       const current = this.connectionRepo.getStatus();
       if (current !== 'disconnected' && code !== 0) {
         this.connectionRepo.setStatus('error');
@@ -72,6 +79,7 @@ export class AcpConnectionService {
     });
 
     proc.on('error', (err) => {
+      log.error(`プロセスエラー: ${err.message}`);
       this.connectionRepo.setStatus('error');
       this.notificationService.sendToRenderer('acp:status-change', {
         status: 'error',
@@ -91,6 +99,7 @@ export class AcpConnectionService {
       stream,
     );
 
+    log.info('initialize 開始');
     await connection.initialize({
       protocolVersion: PROTOCOL_VERSION,
       clientInfo: { name: 'kiroductor', version: '0.1.0' },
@@ -98,6 +107,7 @@ export class AcpConnectionService {
         fs: { readTextFile: true, writeTextFile: true },
       },
     });
+    log.info('initialize 完了 → 接続確立');
 
     this.connectionRepo.setConnection(connection);
     this.connectionRepo.setProcess(proc);
@@ -112,11 +122,13 @@ export class AcpConnectionService {
    * プロセスが存在しない場合は何もしない。
    */
   async stop(): Promise<void> {
+    log.info('stop: kiro-cli を終了します');
     const proc = this.connectionRepo.getProcess();
     if (proc) {
       proc.kill();
     }
     this.connectionRepo.clear();
     this.notificationService.sendToRenderer('acp:status-change', { status: 'disconnected' });
+    log.info('stop: 完了');
   }
 }

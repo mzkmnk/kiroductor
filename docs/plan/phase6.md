@@ -31,8 +31,8 @@
 
 ## MessageBubble — 一件分のメッセージを表示するコンポーネント
 
-- [ ] ユーザー発言（右寄せ・`bg-primary/20 border-primary/30`）とエージェント返答（左寄せ・`bg-card border-border`）を Tailwind のクラスで切り替える
-- [ ] ストリーミング受信中にカーソル（`▌`）を表示する処理を実装する
+- [x] ユーザー発言（右寄せ・`bg-primary/20 border-primary/30`）とエージェント返答（左寄せ・`bg-card border-border`）を Tailwind のクラスで切り替える
+- [x] ストリーミング受信中にカーソル（`▌`）を表示する処理を実装する
 
 ## ToolCallCard — エージェントが実行中のツール操作を表示するカード
 

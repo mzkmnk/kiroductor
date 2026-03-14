@@ -1,6 +1,9 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
+import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
+
+const log = createDebugLogger('Session');
 
 /**
  * エージェントとの会話セッションのライフサイクルを管理するサービス。
@@ -29,8 +32,10 @@ export class SessionService {
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
    */
   async create(cwd: string): Promise<void> {
+    log.info(`newSession 開始 cwd=${cwd}`);
     // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
+    log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.clear();
   }
@@ -43,8 +48,11 @@ export class SessionService {
   async cancel(): Promise<void> {
     const sessionId = this.sessionRepo.getSessionId();
     if (!sessionId) {
+      log.info('cancel: アクティブなセッションがありません');
       return;
     }
+    log.info(`cancel sessionId=${sessionId}`);
     await this.connection.cancel({ sessionId });
+    log.info('cancel 完了');
   }
 }
