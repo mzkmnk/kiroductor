@@ -85,13 +85,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add "e2e/**/*-snapshots/**"
+          git add e2e/
 
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: update VRT baseline snapshots"
-            git push
+            git push origin HEAD
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
