@@ -44,7 +44,7 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
-        className="min-h-[72px] flex-1 resize-none rounded-2xl border-border bg-secondary text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+        className="min-h-[72px] flex-1 resize-none rounded-2xl border-border bg-secondary shadow-sm focus-visible:ring-1 focus-visible:ring-ring"
         rows={3}
       />
       <Button

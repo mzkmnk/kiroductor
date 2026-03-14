@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Electron の preload スクリプトが注入する window.kiroductor API のモック。
+ * Mock for window.kiroductor API injected by the Electron preload script.
  *
- * Vite 単独起動時は preload が動作しないため、
- * {@link https://playwright.dev/docs/mock-browser-apis addInitScript} で注入する。
+ * Since the preload script does not run in Vite standalone mode,
+ * we inject it via {@link https://playwright.dev/docs/mock-browser-apis addInitScript}.
  */
 function mockKiroductorAPI() {
   (window as Record<string, unknown>).kiroductor = {
@@ -31,21 +31,21 @@ test.describe('PromptInput', () => {
     await page.goto('http://localhost:5173');
   });
 
-  test('通常状態のスクリーンショットと一致する', async ({ page }) => {
+  test('matches screenshot in default state', async ({ page }) => {
     await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-default.png');
   });
 
-  test('テキスト入力済み状態のスクリーンショットと一致する', async ({ page }) => {
-    await page.getByPlaceholder(/Type a message/).fill('こんにちは、エージェント！');
+  test('matches screenshot with text filled', async ({ page }) => {
+    await page.getByPlaceholder(/Type a message/).fill('Hello, agent!');
     await expect(page).toHaveScreenshot('prompt-input-filled.png');
   });
 
-  test('送信処理中（disabled）状態のスクリーンショットと一致する', async ({ page }) => {
-    // テキストを入力して送信ボタンをクリックすることで processing 状態に移行させる
-    await page.getByPlaceholder(/Type a message/).fill('処理中テスト');
+  test('matches screenshot while processing (disabled)', async ({ page }) => {
+    // Fill text and click Send to trigger the processing state
+    await page.getByPlaceholder(/Type a message/).fill('processing test');
     await page.getByRole('button', { name: 'Send' }).click();
-    // prompt() は 500ms 後に resolve するため、その間は disabled 状態になる
+    // prompt() resolves after 500ms, so the textarea is disabled during that time
     await expect(page.getByPlaceholder(/Type a message/)).toBeDisabled();
     await expect(page).toHaveScreenshot('prompt-input-disabled.png');
   });
