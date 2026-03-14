@@ -24,12 +24,12 @@ function mockKiroductorAPI() {
   };
 }
 
-test.describe('App initial display', () => {
+test.describe('アプリ初期表示', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(mockKiroductorAPI);
   });
 
-  test('PromptInput is visible', async ({ page }) => {
+  test('PromptInput が表示される', async ({ page }) => {
     await page.goto('http://localhost:5173');
     await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
