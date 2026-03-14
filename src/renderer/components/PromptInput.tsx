@@ -37,25 +37,27 @@ function PromptInput({ disabled = false, onSubmit }: PromptInputProps) {
   }
 
   return (
-    <div className="flex items-end gap-3 border-t border-border bg-background px-4 py-3">
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
-        className="min-h-[72px] flex-1 resize-none rounded-2xl border-border bg-secondary shadow-sm focus-visible:ring-1 focus-visible:ring-ring"
-        rows={3}
-      />
-      <Button
-        onClick={handleSubmit}
-        disabled={disabled || !text.trim()}
-        size="icon"
-        className="size-9 shrink-0 self-end rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
-        aria-label="Send"
-      >
-        <ArrowUp className="size-4" />
-      </Button>
+    <div className="border-t border-border bg-background px-4 py-3">
+      <div className="relative">
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+          className="min-h-[72px] w-full resize-none rounded-2xl border-border bg-secondary pb-12 shadow-sm focus-visible:ring-1 focus-visible:ring-ring"
+          rows={3}
+        />
+        <Button
+          onClick={handleSubmit}
+          disabled={disabled || !text.trim()}
+          size="icon"
+          className="absolute bottom-2 right-2 size-9 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+          aria-label="Send"
+        >
+          <ArrowUp className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
