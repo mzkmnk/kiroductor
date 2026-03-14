@@ -16,12 +16,16 @@ import { SessionUpdateMethod } from './acp/methods/session-update.method';
 import { AcpHandler } from './handlers/acp.handler';
 import { SessionHandler } from './handlers/session.handler';
 
-/** {@link buildContainer} の戻り値。IPCハンドラ登録に必要なオブジェクト。 */
+/** {@link buildContainer} の戻り値。IPCハンドラ登録と自動初期化に必要なオブジェクト。 */
 export interface AppContainer {
   /** ACP接続管理ハンドラ。 */
   acpHandler: AcpHandler;
   /** セッション管理ハンドラ。 */
   sessionHandler: SessionHandler;
+  /** ACP接続のライフサイクルを管理するサービス。自動初期化に使用する。 */
+  acpConnectionService: Pick<AcpConnectionService, 'start'>;
+  /** セッションのライフサイクルを管理するサービス。自動初期化に使用する。 */
+  sessionService: Pick<SessionService, 'create'>;
 }
 
 /**
@@ -100,5 +104,5 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);
   const sessionHandler = new SessionHandler(sessionService, promptService, messageRepo);
 
-  return { acpHandler, sessionHandler };
+  return { acpHandler, sessionHandler, acpConnectionService, sessionService };
 }

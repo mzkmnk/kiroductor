@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+import { createDebugLogger } from './debug-logger';
 import { buildContainer } from './container';
 import { registerHandlers } from './handlers/index';
 
@@ -7,16 +8,23 @@ import { registerHandlers } from './handlers/index';
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+const log = createDebugLogger('Main');
+
 /** アプリケーションのメインウィンドウインスタンス。未生成または破棄済みの場合は `null`。 */
 let mainWindow: BrowserWindow | null = null;
 
-const { acpHandler, sessionHandler } = buildContainer(() => mainWindow);
+const { acpHandler, sessionHandler, acpConnectionService, sessionService } = buildContainer(
+  () => mainWindow,
+);
 
 /**
  * Electron の `BrowserWindow` を生成してアプリケーションウィンドウを初期化する。
  *
  * 開発時は Vite 開発サーバーの URL を読み込み、
  * プロダクションビルドでは生成済み HTML ファイルを読み込む。
+ *
+ * ウィンドウのロード完了後に ACP 接続を自動で開始し、
+ * `process.cwd()` を作業ディレクトリとしてセッションを作成する。
  */
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -35,12 +43,25 @@ function createWindow(): void {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
+  mainWindow.webContents.once('did-finish-load', () => {
+    const cwd = process.cwd();
+    log.info(`did-finish-load: ACP 接続を開始します cwd=${cwd}`);
+    acpConnectionService
+      .start()
+      .then(() => sessionService.create(cwd))
+      .then(() => log.info('セッション作成完了'))
+      .catch((err: unknown) => {
+        log.error('初期化失敗', err);
+      });
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
 app.whenReady().then(() => {
+  log.info('app ready');
   registerHandlers(acpHandler, sessionHandler);
   createWindow();
 
