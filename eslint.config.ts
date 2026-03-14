@@ -13,6 +13,8 @@ export default tseslint.config(
       'dist/**',
       'src/renderer/dist/**',
       'docs/**',
+      'src/renderer/components/ui/**',
+      'src/renderer/lib/utils.ts',
     ],
   },
 
