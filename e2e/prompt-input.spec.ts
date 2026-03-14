@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Mock for window.kiroductor API injected by the Electron preload script.
+ * Electron の preload スクリプトが注入する window.kiroductor API のモック。
  *
- * Since the preload script does not run in Vite standalone mode,
- * we inject it via {@link https://playwright.dev/docs/mock-browser-apis addInitScript}.
+ * Vite 単独起動時は preload が動作しないため、
+ * {@link https://playwright.dev/docs/mock-browser-apis addInitScript} で注入する。
  */
 function mockKiroductorAPI() {
   (window as Record<string, unknown>).kiroductor = {
