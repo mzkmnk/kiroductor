@@ -1,0 +1,25 @@
+name: VRT Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Clean Up VRT Report Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete report branch
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPORT_BRANCH="vrt-report/pr-${PR_NUMBER}"
+
+          if git ls-remote --heads "https://github.com/${{ github.repository }}.git" "$REPORT_BRANCH" | grep -q "$REPORT_BRANCH"; then
+            git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" --delete "$REPORT_BRANCH"
+            echo "Deleted branch: $REPORT_BRANCH"
+          else
+            echo "Branch $REPORT_BRANCH does not exist, skipping"
+          fi

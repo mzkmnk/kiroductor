@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
   group: vrt-update-${{ github.event.issue.number }}
@@ -111,12 +112,19 @@ jobs:
               body = 'VRT スナップショットに変更はありませんでした。';
             }
 
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body,
-            });
+            await Promise.all([
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              }),
+              github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+              }),
+            ]);
 
       - name: Post failure comment
         if: failure()
