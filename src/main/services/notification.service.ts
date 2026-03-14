@@ -1,6 +1,9 @@
 import type { BrowserWindow } from 'electron';
+import { createDebugLogger } from '../debug-logger';
 import type { NotificationService } from '../acp/methods/session-update.method';
 import type { IpcOnChannels } from '../../shared/ipc';
+
+const log = createDebugLogger('Notify');
 
 /**
  * メインプロセスからレンダラー（画面）へ通知を送るサービス。
@@ -26,8 +29,10 @@ export class ElectronNotificationService implements NotificationService {
   sendToRenderer<K extends keyof IpcOnChannels>(channel: K, data: IpcOnChannels[K]): void {
     const window = this.getWindow();
     if (!window || window.isDestroyed()) {
+      log.warn(`sendToRenderer スキップ: ウィンドウが存在しません channel=${channel}`);
       return;
     }
+    log.info(`sendToRenderer channel=${channel}`);
     window.webContents.send(channel, data);
   }
 }

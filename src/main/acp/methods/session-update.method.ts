@@ -5,8 +5,11 @@ import type {
   ToolCall,
   ToolCallUpdate,
 } from '@agentclientprotocol/sdk/dist/schema/index';
+import { createDebugLogger } from '../../debug-logger';
 import type { MessageRepository } from '../../repositories/message.repository';
 import type { IpcOnChannels } from '../../../shared/ipc';
+
+const log = createDebugLogger('SessionUpdate');
 
 /** レンダラーへ通知を送信するサービスの最小インターフェース。依存注入・テスト用。 */
 export interface NotificationService {
@@ -49,6 +52,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    */
   async handle(params: SessionNotification): Promise<void> {
     const { update } = params;
+    log.info(`sessionUpdate=${update.sessionUpdate}`);
 
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
@@ -62,6 +66,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
         break;
       default:
         // フォールスルー: レンダラーへ転送するだけ
+        log.info(`フォールスルー: ${update.sessionUpdate}`);
         break;
     }
 

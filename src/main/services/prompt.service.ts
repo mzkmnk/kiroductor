@@ -1,7 +1,10 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
+import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
+
+const log = createDebugLogger('Prompt');
 
 /**
  * ユーザーの入力をエージェントへ送り、返答を受け取るサービス。
@@ -36,9 +39,13 @@ export class PromptService {
   async send(text: string): Promise<StopReason> {
     const sessionId = this.sessionRepo.getSessionId();
     if (!sessionId) {
+      log.error('send 失敗: アクティブなセッションがありません');
       throw new Error('No active session');
     }
 
+    log.info(
+      `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
+    );
     this.messageRepo.addUserMessage(text);
     const agentMessage = this.messageRepo.addAgentMessage(crypto.randomUUID());
 
@@ -46,6 +53,7 @@ export class PromptService {
       sessionId,
       prompt: [{ type: 'text', text }],
     });
+    log.info(`send 完了 stopReason=${stopReason}`);
 
     this.messageRepo.completeAgentMessage(agentMessage.id);
 
