@@ -1,0 +1,179 @@
+name: VRT
+
+on:
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  vrt:
+    name: Visual Regression Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run VRT
+        id: vrt
+        continue-on-error: true
+        run: pnpm test:vrt
+
+      - name: Upload test results
+        if: steps.vrt.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+      - name: Push diff images to report branch
+        if: steps.vrt.outcome == 'failure'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPORT_BRANCH="vrt-report/pr-${PR_NUMBER}"
+
+          # Collect diff images
+          DIFF_DIR=$(mktemp -d)
+          find test-results/ -name "*-diff.png" -o -name "*-actual.png" -o -name "*-expected.png" | while read -r file; do
+            cp "$file" "$DIFF_DIR/$(basename "$file")"
+          done
+
+          # Check if any images were found
+          if [ -z "$(ls -A "$DIFF_DIR")" ]; then
+            echo "No diff images found"
+            exit 0
+          fi
+
+          # Push to orphan branch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout --orphan "$REPORT_BRANCH"
+          git rm -rf .
+          cp "$DIFF_DIR"/* .
+          git add *.png
+          git commit -m "VRT diff images for PR #${PR_NUMBER}"
+          git push origin "$REPORT_BRANCH" --force
+
+      - name: Post or update PR comment with diff images
+        if: steps.vrt.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
+            const reportBranch = `vrt-report/pr-${prNumber}`;
+            const baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${reportBranch}`;
+            const marker = '<!-- vrt-report -->';
+
+            // Find diff images to determine which tests failed
+            const testResultsDir = 'test-results';
+            const screenshots = new Map();
+
+            if (fs.existsSync(testResultsDir)) {
+              const findImages = (dir) => {
+                for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                  const fullPath = path.join(dir, entry.name);
+                  if (entry.isDirectory()) {
+                    findImages(fullPath);
+                  } else if (entry.name.endsWith('-diff.png')) {
+                    const baseName = entry.name.replace(/-diff\.png$/, '');
+                    screenshots.set(baseName, {
+                      expected: `${baseName}-expected.png`,
+                      actual: `${baseName}-actual.png`,
+                      diff: `${baseName}-diff.png`,
+                    });
+                  }
+                }
+              };
+              findImages(testResultsDir);
+            }
+
+            let body = `${marker}\n## Visual Regression Test Results\n\n`;
+            body += `VRT detected visual differences in this PR.\n\n`;
+
+            for (const [name, images] of screenshots) {
+              body += `### \`${name}\`\n\n`;
+              body += `| Expected (before) | Actual (after) | Diff |\n`;
+              body += `|---|---|---|\n`;
+              body += `| ![expected](${baseUrl}/${images.expected}) | ![actual](${baseUrl}/${images.actual}) | ![diff](${baseUrl}/${images.diff}) |\n\n`;
+            }
+
+            body += `> スナップショットを更新するには \`/vrt-update\` とコメントしてください。\n`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+      - name: Update comment on success
+        if: steps.vrt.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.pull_request.number;
+            const marker = '<!-- vrt-report -->';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: `${marker}\n## Visual Regression Test Results\n\nAll VRT tests passed. No visual differences detected.`,
+              });
+            }
+
+      - name: Fail if VRT failed
+        if: steps.vrt.outcome == 'failure'
+        run: exit 1
