@@ -11,7 +11,15 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
+    // 初回ロード
     window.kiroductor.session.getMessages().then(setMessages);
+
+    // エージェントからの session/update 通知を受け取るたびにメッセージを再取得する
+    const unsubscribe = window.kiroductor.session.onUpdate(() => {
+      window.kiroductor.session.getMessages().then(setMessages);
+    });
+
+    return unsubscribe;
   }, []);
 
   /**
@@ -22,6 +30,8 @@ function App() {
   async function handleSubmit(text: string) {
     setIsProcessing(true);
     await window.kiroductor.session.prompt(text);
+    // prompt() 完了後に最終状態を反映する（onUpdate が拾えなかった末尾を補完）
+    await window.kiroductor.session.getMessages().then(setMessages);
     setIsProcessing(false);
   }
 
