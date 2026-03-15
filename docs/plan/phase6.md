@@ -19,7 +19,7 @@
 
 - [実装計画](../design/implementation-plan.md) — UI コンポーネント構成の設計
 - 前フェーズ: [Phase 5 — Handler 層](./phase5.md)
-- 次フェーズ: [Phase 7 — ポリッシュ](./phase7.md)
+- 次フェーズ: [Phase 6A — 設定管理 + Bare Repo](./phase6a.md)
 
 ## PromptInput — ユーザーがテキストを入力して送信するフォーム
 
@@ -45,15 +45,10 @@
 - [x] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
 - [x] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
 
-## SessionBar — セッションの状態と操作ボタンを表示するヘッダーバー
+## ~~SessionBar~~ — Phase 6D に移動
 
-- [ ] shadcn/ui の `Badge` を追加して接続状態を表示する（`pnpm dlx shadcn@latest add badge`）
-- [ ] セッション ID・作業ディレクトリ（cwd）を Tailwind でレイアウトする
-- [ ] lucide-react の `Square` アイコンを使ったエージェント停止ボタンを実装する（テキストなし・アイコンのみ）
+マルチセッション対応に伴い UI が変わるため、Phase 6D で実装する。
 
-## useSession — チャット状態を管理するカスタムフック
+## ~~useSession~~ — Phase 6D に移動
 
-- [ ] `useReducer` + Context で `messages` / `status` / `connectionStatus` を管理する
-- [ ] `sendPrompt(text)` — プロンプト送信を呼び出せる関数を公開する
-- [ ] `cancelPrompt()` — 実行中のプロンプトをキャンセルできる関数を公開する
-- [ ] IPC イベントを購読し、コンポーネントアンマウント時にクリーンアップする処理を実装する
+マルチセッション対応に伴い設計が変わるため、Phase 6D で実装する。
