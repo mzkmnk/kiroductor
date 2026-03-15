@@ -20,6 +20,7 @@ describe('PromptService', () => {
 
   beforeEach(() => {
     sessionRepo = new SessionRepository();
+    sessionRepo.addSession('test-session-id');
     sessionRepo.setSessionId('test-session-id');
     messageRepo = new MessageRepository();
     connection = {
