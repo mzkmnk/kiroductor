@@ -55,6 +55,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
     log.info(`sessionUpdate=${update.sessionUpdate}`);
 
     switch (update.sessionUpdate) {
+      case 'user_message_chunk':
+        this.handleUserMessageChunk(update);
+        break;
       case 'agent_message_chunk':
         this.handleAgentMessageChunk(update);
         break;
@@ -71,6 +74,20 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
     }
 
     this.notificationService.sendToRenderer('acp:session-update', params);
+  }
+
+  /**
+   * `user_message_chunk` イベントを処理する。
+   *
+   * `content.type === 'text'` のとき、ユーザーメッセージをリポジトリに追加する。
+   *
+   * @param update - `user_message_chunk` イベントデータ
+   */
+  private handleUserMessageChunk(update: ContentChunk): void {
+    if (update.content.type !== 'text') return;
+
+    const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
+    this.messageRepository.addUserMessage(text);
   }
 
   /**
