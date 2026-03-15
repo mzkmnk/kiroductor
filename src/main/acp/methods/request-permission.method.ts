@@ -2,12 +2,7 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-
-/** レンダラーへ通知を送信するサービスの最小インターフェース。依存注入・テスト用。 */
-export interface NotificationService {
-  /** 指定チャネルでレンダラーへデータを送信する。 */
-  sendToRenderer(channel: string, data: unknown): void;
-}
+import type { NotificationService } from '../../services/notification.service';
 
 /** `client/requestPermission` リクエストを処理できるオブジェクトの最小インターフェース。 */
 export interface IRequestPermissionMethod {

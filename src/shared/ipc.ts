@@ -1,6 +1,11 @@
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
-import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
+import type {
+  SessionNotification,
+  SessionId,
+  ToolCallUpdate,
+  PermissionOptionId,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
 
 /**
@@ -37,4 +42,9 @@ export interface IpcOnChannels {
   'acp:session-update': SessionNotification;
   'acp:session-loading': { loading: boolean };
   'acp:session-switched': { sessionId: string };
+  'acp:request-permission': {
+    sessionId: SessionId;
+    toolCall: ToolCallUpdate;
+    selectedOptionId: PermissionOptionId;
+  };
 }
