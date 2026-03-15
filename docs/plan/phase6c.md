@@ -92,9 +92,9 @@
 
 ## ConfigRepository との連携
 
-- [ ] セッション作成/ロード時に `ConfigRepository.upsertSession()` で永続化する
+- [x] セッション作成/ロード時に `ConfigRepository.upsertSession()` で永続化する
   - **AC**: セッション情報が `~/.kiroductor/sessions.json` に保存される
-- [ ] アプリ起動時に `ConfigRepository.readSessions()` で過去のセッション一覧を復元する
+- [x] アプリ起動時に `ConfigRepository.readSessions()` で過去のセッション一覧を復元する
 
 ## IPC チャネル一覧（追加分）
 

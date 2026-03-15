@@ -31,7 +31,7 @@ export interface AppContainer {
   /** ACP接続のライフサイクルを管理するサービス。自動初期化に使用する。 */
   acpConnectionService: Pick<AcpConnectionService, 'start'>;
   /** セッションのライフサイクルを管理するサービス。自動初期化に使用する。 */
-  sessionService: Pick<SessionService, 'create'>;
+  sessionService: Pick<SessionService, 'create' | 'restoreSessions'>;
 }
 
 /**
@@ -123,6 +123,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     messageRepo,
     connectionProxy,
     notificationService,
+    configRepo,
   );
   const promptService = new PromptService(messageRepo, connectionProxy);
 
