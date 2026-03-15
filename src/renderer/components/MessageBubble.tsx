@@ -9,6 +9,14 @@ import type { AgentMessage, UserMessage } from '../../main/repositories/message.
 interface MessageBubbleProps {
   /** 表示するメッセージ（ユーザーまたはエージェント）。 */
   message: UserMessage | AgentMessage;
+  /**
+   * ストリーミング中にアニメーションを開始するテキストのオフセット（文字数）。
+   *
+   * 0 〜 このオフセットまでは既出テキスト（アニメーションなし）、
+   * それ以降が新規チャンク（フェードインアニメーション対象）。
+   * ストリーミング中のみ有効。
+   */
+  animSplit?: number;
 }
 
 /**
@@ -16,12 +24,15 @@ interface MessageBubbleProps {
  *
  * - ユーザー発言: 右寄せ、`bg-primary/20 border-primary/30`
  * - エージェント返答: 左寄せ、`bg-card border-border`
- * - エージェントのストリーミング中はカーソル（`▌`）を末尾に表示する。
- * - メッセージ本文は Markdown としてレンダリングされる。
+ * - エージェントのストリーミング中は新しいチャンクをフェードインで滑らかに表示する。
+ * - ストリーミング完了後はメッセージ本文を Markdown としてレンダリングする。
  */
-function MessageBubble({ message }: MessageBubbleProps) {
+function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
   const isUser = message.type === 'user';
   const isStreaming = !isUser && (message as AgentMessage).status === 'streaming';
+
+  const alreadyShown = message.text.slice(0, animSplit);
+  const newChunk = message.text.slice(animSplit);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -32,10 +43,19 @@ function MessageBubble({ message }: MessageBubbleProps) {
             : 'bg-card border-border text-foreground'
         }`}
       >
-        <div className="markdown-body">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
-        </div>
-        {isStreaming && <span aria-hidden="true">▌</span>}
+        {isStreaming ? (
+          // ストリーミング中: plain text + チャンク単位フェードイン
+          // 部分的な Markdown をパースすると崩れるため完了後に切り替える
+          <div className="whitespace-pre-wrap">
+            {alreadyShown}
+            {newChunk && <span className="animate-stream-fade-in">{newChunk}</span>}
+          </div>
+        ) : (
+          // ストリーミング完了後: Markdown レンダリング
+          <div className="markdown-body">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );
