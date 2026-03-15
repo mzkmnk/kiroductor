@@ -7,6 +7,7 @@
 
 - 前フェーズ: [Phase 6B — ACP Session Load/List](./phase6b.md)
 - 次フェーズ: [Phase 6D — マルチセッション UI](./phase6d.md)
+- 調査: [ACP マルチセッション調査結果](../research/acp-multisession.md)
 
 ## 設計方針
 
