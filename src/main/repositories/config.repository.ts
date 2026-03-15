@@ -13,7 +13,7 @@ export interface RepoMapping {
   /** 組織またはユーザー名（例: "mzkmnk"） */
   org: string;
   /** リポジトリ名（例: "kiroductor"） */
-  repo: string;
+  name: string;
   /** クローン日時（ISO 8601） */
   clonedAt: string;
 }
@@ -156,7 +156,7 @@ export class ConfigRepository {
    */
   async findRepoByPath(host: string, org: string, repo: string): Promise<RepoMapping | undefined> {
     const repos = await this.readRepos();
-    return repos.find((r) => r.host === host && r.org === org && r.repo === repo);
+    return repos.find((r) => r.host === host && r.org === org && r.name === repo);
   }
 
   /**

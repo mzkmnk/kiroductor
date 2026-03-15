@@ -27,17 +27,17 @@ describe('RepoService', () => {
   describe('parseRepoUrl(url)', () => {
     it('HTTPS URL（.git 付き）をパースして { host, org, repo } を返すこと', () => {
       const result = service.parseRepoUrl('https://github.com/mzkmnk/kiroductor.git');
-      expect(result).toEqual({ host: 'github.com', org: 'mzkmnk', repo: 'kiroductor' });
+      expect(result).toEqual({ host: 'github.com', org: 'mzkmnk', name: 'kiroductor' });
     });
 
     it('SSH URL をパースして { host, org, repo } を返すこと', () => {
       const result = service.parseRepoUrl('git@github.com:mzkmnk/kiroductor.git');
-      expect(result).toEqual({ host: 'github.com', org: 'mzkmnk', repo: 'kiroductor' });
+      expect(result).toEqual({ host: 'github.com', org: 'mzkmnk', name: 'kiroductor' });
     });
 
     it('HTTPS URL（.git なし）をパースして { host, org, repo } を返すこと', () => {
       const result = service.parseRepoUrl('https://gitlab.com/user/project');
-      expect(result).toEqual({ host: 'gitlab.com', org: 'user', repo: 'project' });
+      expect(result).toEqual({ host: 'gitlab.com', org: 'user', name: 'project' });
     });
 
     it('不正な URL の場合エラーを投げること', () => {
@@ -50,7 +50,7 @@ describe('RepoService', () => {
       const result = service.getRepoPath({
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
       });
       expect(result).toBe('/home/test/.kiroductor/repos/github.com/mzkmnk/kiroductor.git');
     });
@@ -82,7 +82,7 @@ describe('RepoService', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       (fs.access as ReturnType<typeof vi.fn>).mockImplementation(async (p: string) => {
@@ -154,7 +154,7 @@ describe('RepoService', () => {
       expect(written.repos[0].repoId).toBe(repoId);
       expect(written.repos[0].host).toBe('github.com');
       expect(written.repos[0].org).toBe('mzkmnk');
-      expect(written.repos[0].repo).toBe('kiroductor');
+      expect(written.repos[0].name).toBe('kiroductor');
     });
   });
 
@@ -164,7 +164,7 @@ describe('RepoService', () => {
       url: 'https://github.com/mzkmnk/kiroductor.git',
       host: 'github.com',
       org: 'mzkmnk',
-      repo: 'kiroductor',
+      name: 'kiroductor',
       clonedAt: '2026-03-15T00:00:00.000Z',
     };
 
@@ -243,7 +243,7 @@ describe('RepoService', () => {
           url: 'https://github.com/mzkmnk/kiroductor.git',
           host: 'github.com',
           org: 'mzkmnk',
-          repo: 'kiroductor',
+          name: 'kiroductor',
           clonedAt: '2026-03-15T00:00:00.000Z',
         },
       ];

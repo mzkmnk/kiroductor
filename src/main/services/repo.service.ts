@@ -15,7 +15,7 @@ export interface ParsedRepoUrl {
   /** 組織またはユーザー名（例: "mzkmnk"） */
   org: string;
   /** リポジトリ名（例: "kiroductor"） */
-  repo: string;
+  name: string;
 }
 
 /** `child_process.spawn` と互換性のある型。テスト用に注入可能。 */
@@ -57,13 +57,13 @@ export class RepoService {
     // SSH 形式: git@github.com:org/repo.git
     const sshMatch = url.match(/^git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/);
     if (sshMatch) {
-      return { host: sshMatch[1], org: sshMatch[2], repo: sshMatch[3] };
+      return { host: sshMatch[1], org: sshMatch[2], name: sshMatch[3] };
     }
 
     // HTTPS 形式: https://github.com/org/repo.git
     const httpsMatch = url.match(/^https?:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/);
     if (httpsMatch) {
-      return { host: httpsMatch[1], org: httpsMatch[2], repo: httpsMatch[3] };
+      return { host: httpsMatch[1], org: httpsMatch[2], name: httpsMatch[3] };
     }
 
     throw new Error(`Unsupported repository URL format: ${url}`);
@@ -76,7 +76,7 @@ export class RepoService {
    * @returns bare clone ディレクトリの絶対パス
    */
   getRepoPath(parsed: ParsedRepoUrl): string {
-    return path.join(this.configRepo.getReposRoot(), parsed.host, parsed.org, `${parsed.repo}.git`);
+    return path.join(this.configRepo.getReposRoot(), parsed.host, parsed.org, `${parsed.name}.git`);
   }
 
   /**
@@ -95,7 +95,7 @@ export class RepoService {
     const repoPath = this.getRepoPath(parsed);
 
     // 既にクローン済みか repos.json で確認
-    const existing = await this.configRepo.findRepoByPath(parsed.host, parsed.org, parsed.repo);
+    const existing = await this.configRepo.findRepoByPath(parsed.host, parsed.org, parsed.name);
 
     if (existing) {
       log.info(`既にクローン済み: ${existing.repoId} → fetch --all`);
@@ -115,7 +115,7 @@ export class RepoService {
       url,
       host: parsed.host,
       org: parsed.org,
-      repo: parsed.repo,
+      name: parsed.name,
       clonedAt: new Date().toISOString(),
     };
     await this.configRepo.upsertRepo(mapping);
@@ -145,7 +145,7 @@ export class RepoService {
     const id = nanoid();
     const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', id);
     await this.fs.mkdir(worktreeDir, { recursive: true });
-    const worktreePath = path.join(worktreeDir, repo.repo);
+    const worktreePath = path.join(worktreeDir, repo.name);
 
     const targetBranch = branch ?? 'HEAD';
 

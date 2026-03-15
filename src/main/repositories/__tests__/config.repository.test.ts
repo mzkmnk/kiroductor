@@ -213,7 +213,7 @@ describe('ConfigRepository', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       await fs.promises.writeFile(
@@ -233,7 +233,7 @@ describe('ConfigRepository', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       await repo.writeRepos([mapping]);
@@ -249,7 +249,7 @@ describe('ConfigRepository', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       await repo.upsertRepo(mapping);
@@ -264,7 +264,7 @@ describe('ConfigRepository', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       await repo.upsertRepo(initial);
@@ -283,7 +283,7 @@ describe('ConfigRepository', () => {
         url: 'https://github.com/mzkmnk/kiroductor.git',
         host: 'github.com',
         org: 'mzkmnk',
-        repo: 'kiroductor',
+        name: 'kiroductor',
         clonedAt: '2026-03-15T00:00:00.000Z',
       };
       await repo.writeRepos([mapping]);
