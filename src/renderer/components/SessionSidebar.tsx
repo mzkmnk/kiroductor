@@ -81,7 +81,7 @@ export function SessionSidebar({
     Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
       ([all, list]) => {
         setConnectedIds(new Set(all));
-        setSessions(list);
+        setSessions([...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
       },
     );
   }, []);
