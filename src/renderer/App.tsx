@@ -3,6 +3,7 @@ import type { Message, UserMessage } from '../main/repositories/message.reposito
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
@@ -88,22 +89,10 @@ function App() {
             <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
           </div>
         ) : (
-          <WelcomeScreen />
+          <WelcomeScreen onSessionCreated={handleSessionCreated} />
         )}
       </SidebarInset>
     </SidebarProvider>
-  );
-}
-
-/** セッションが存在しない場合のウェルカム画面。 */
-function WelcomeScreen() {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-      <p className="text-sm text-muted-foreground">
-        サイドバーの <span className="font-medium text-foreground">+</span>{' '}
-        からセッションを作成してください
-      </p>
-    </div>
   );
 }
 
