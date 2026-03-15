@@ -256,48 +256,26 @@ describe('RepoService', () => {
       );
     });
 
-    it('origin/ プレフィックス付きでリモートブランチ一覧を返すこと', async () => {
+    it('bare clone のブランチ一覧を返すこと', async () => {
       // fetch --all 用
       const fetchProcess = createMockProcess(0);
-      // branch -r 用
-      const branchProcess = createMockProcess(
-        0,
-        undefined,
-        '  origin/main\n  origin/feature/test\n  origin/develop\n',
-      );
+      // git branch 用（bare clone では * main のようにカレントブランチに * が付く）
+      const branchProcess = createMockProcess(0, undefined, '* main\n  feature/test\n  develop\n');
       spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
 
       const result = await service.listBranches('test-repo-id');
 
-      expect(result).toEqual(['origin/develop', 'origin/feature/test', 'origin/main']);
-    });
-
-    it('HEAD -> origin/main のようなポインタ行は除外すること', async () => {
-      const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(
-        0,
-        undefined,
-        '  origin/HEAD -> origin/main\n  origin/main\n  origin/develop\n',
-      );
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
-
-      const result = await service.listBranches('test-repo-id');
-
-      expect(result).toEqual(['origin/develop', 'origin/main']);
+      expect(result).toEqual(['develop', 'feature/test', 'main']);
     });
 
     it('結果がアルファベット順にソートされること', async () => {
       const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(
-        0,
-        undefined,
-        '  origin/zebra\n  origin/alpha\n  origin/middle\n',
-      );
+      const branchProcess = createMockProcess(0, undefined, '  zebra\n* alpha\n  middle\n');
       spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
 
       const result = await service.listBranches('test-repo-id');
 
-      expect(result).toEqual(['origin/alpha', 'origin/middle', 'origin/zebra']);
+      expect(result).toEqual(['alpha', 'middle', 'zebra']);
     });
 
     it('存在しない repoId の場合エラーを投げること', async () => {
@@ -316,9 +294,9 @@ describe('RepoService', () => {
       expect(result).toEqual([]);
     });
 
-    it('git fetch --all と git branch -r が bare repo パスで実行されること', async () => {
+    it('git fetch --all と git branch が bare repo パスで実行されること', async () => {
       const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(0, undefined, '  origin/main\n');
+      const branchProcess = createMockProcess(0, undefined, '* main\n');
       spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
 
       await service.listBranches('test-repo-id');
@@ -330,7 +308,7 @@ describe('RepoService', () => {
       );
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
-        ['branch', '-r'],
+        ['branch'],
         expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
       );
     });

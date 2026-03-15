@@ -167,13 +167,13 @@ export class RepoService {
   }
 
   /**
-   * 指定リポジトリのリモートブランチ一覧を返す。
+   * 指定リポジトリのブランチ一覧を返す。
    *
-   * `git fetch --all` で最新化した後、`git branch -r` の出力をパースする。
-   * `origin/HEAD -> origin/main` のようなポインタ行は除外する。
+   * bare clone では `git branch -r` ではリモートトラッキングブランチが存在しないため、
+   * `git branch` でローカルブランチ（= fetch 済みブランチ）を一覧する。
    *
    * @param repoId - リポジトリの識別子
-   * @returns リモートブランチ名の配列（`origin/` プレフィックス付き、アルファベット順）
+   * @returns ブランチ名の配列（アルファベット順）
    * @throws リポジトリが見つからない場合
    */
   async listBranches(repoId: string): Promise<string[]> {
@@ -187,13 +187,13 @@ export class RepoService {
 
     log.info('listBranches: fetching all for repoId=%s, repoPath=%s', repoId, repoPath);
     await this.execGit(['fetch', '--all'], repoPath);
-    const stdout = await this.execGit(['branch', '-r'], repoPath);
+    const stdout = await this.execGit(['branch'], repoPath);
     log.info('listBranches: raw stdout=%s', JSON.stringify(stdout));
 
     const branches = stdout
       .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0 && !line.includes('->'))
+      .map((line) => line.replace(/^\*?\s+/, '').trim())
+      .filter((line) => line.length > 0)
       .sort();
 
     log.info('listBranches: parsed branches=%o', branches);
