@@ -15,6 +15,12 @@ import { ToolCallCard } from './ToolCallCard';
 interface ChatViewProps {
   /** 表示するメッセージ一覧。 */
   messages: Message[];
+  /**
+   * ストリーミング中メッセージのアニメーション開始オフセット（文字数）の辞書。
+   *
+   * キーはメッセージ ID。{@link MessageBubble} の `animSplit` prop へ渡す。
+   */
+  animSplits: Record<string, number>;
   /** セッション復元中かどうか。true のときローディング表示になる。 */
   isRestoring?: boolean;
 }
@@ -25,7 +31,7 @@ interface ChatViewProps {
  * - `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを提供する。
  * - 新しいメッセージが届いたら自動で最下部へスクロールする。
  */
-function ChatView({ messages, isRestoring = false }: ChatViewProps) {
+function ChatView({ messages, animSplits, isRestoring = false }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +55,13 @@ function ChatView({ messages, isRestoring = false }: ChatViewProps) {
         if (m.type === 'tool_call') {
           return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
         }
-        return <MessageBubble key={m.id} message={m as UserMessage | AgentMessage} />;
+        return (
+          <MessageBubble
+            key={m.id}
+            message={m as UserMessage | AgentMessage}
+            animSplit={animSplits[m.id]}
+          />
+        );
       })}
       <div ref={bottomRef} />
     </div>
