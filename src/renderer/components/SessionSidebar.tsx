@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, SettingsIcon } from 'lucide-react';
+import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/repositories/config.repository';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from './ui/sidebar';
@@ -85,7 +89,6 @@ export function SessionSidebar({
   useEffect(() => {
     refresh();
 
-    // セッション切り替え・更新時にリストを再取得する
     const unsubSwitched = window.kiroductor.session.onSessionSwitched(() => refresh());
     const unsubUpdate = window.kiroductor.session.onUpdate(() => refresh());
 
@@ -99,11 +102,6 @@ export function SessionSidebar({
     };
   }, [refresh]);
 
-  /** 接続状態を返す。 */
-  function getStatus(sessionId: string): SessionStatus {
-    return connectedIds.has(sessionId) ? 'connected' : 'disconnected';
-  }
-
   function handleSessionCreated() {
     onSessionCreated();
     refresh();
@@ -112,81 +110,93 @@ export function SessionSidebar({
   return (
     <>
       <Sidebar>
-        {/* ヘッダー: アプリ名 + New Session ボタン */}
-        <SidebarHeader className="flex flex-row items-center justify-between px-4 py-3">
-          <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-            Kiroductor
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={() => setIsDialogOpen(true)}
-            title="New Session"
-          >
-            <PlusIcon className="h-4 w-4" />
-          </Button>
+        {/* ヘッダー */}
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <div className="flex items-center justify-between px-1 py-0.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+                    <TerminalIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-sm font-semibold tracking-tight">Kiroductor</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  onClick={() => setIsDialogOpen(true)}
+                  title="New Session"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
 
         {/* セッションリスト */}
         <SidebarContent>
-          <SidebarMenu>
-            {sessions.length === 0 ? (
-              <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                セッションがありません
-              </div>
-            ) : (
-              sessions.map((session) => {
-                const isActive = session.acpSessionId === activeSessionId;
-                const status = getStatus(session.acpSessionId);
+          <SidebarGroup>
+            <SidebarGroupLabel>Sessions</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {sessions.length === 0 ? (
+                  <div className="px-2 py-8 text-center text-xs text-sidebar-foreground/40">
+                    No sessions yet
+                  </div>
+                ) : (
+                  sessions.map((session) => {
+                    const isActive = session.acpSessionId === activeSessionId;
+                    const status: SessionStatus = connectedIds.has(session.acpSessionId)
+                      ? 'connected'
+                      : 'disconnected';
 
-                return (
-                  <SidebarMenuItem key={session.acpSessionId}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      onClick={() => onSwitchSession(session.acpSessionId)}
-                    >
-                      <button
-                        className={cn(
-                          'flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left',
-                          isActive && 'border-l-2 border-sidebar-primary',
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="truncate text-sm font-medium">
-                            {session.title ?? 'New Session'}
-                          </span>
+                    return (
+                      <SidebarMenuItem key={session.acpSessionId}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => onSwitchSession(session.acpSessionId)}
+                          className="h-auto items-start py-2"
+                        >
                           {/* ステータスドット */}
-                          <StatusDot status={status} />
-                        </div>
-                        <div className="flex w-full items-center justify-between">
-                          <span className="truncate text-xs text-muted-foreground">
-                            {extractRepoName(session.cwd)}
-                          </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {formatRelativeTime(session.updatedAt, now)}
-                          </span>
-                        </div>
-                      </button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })
-            )}
-          </SidebarMenu>
+                          <span
+                            className={cn(
+                              'mt-1 h-2 w-2 shrink-0 rounded-full',
+                              status === 'connected' ? 'bg-blue-400' : 'bg-sidebar-foreground/20',
+                            )}
+                          />
+                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="truncate text-sm font-medium leading-none">
+                              {session.title ?? 'New Session'}
+                            </span>
+                            <span className="truncate text-xs leading-none text-sidebar-foreground/50">
+                              {extractRepoName(session.cwd)}
+                            </span>
+                          </div>
+                        </SidebarMenuButton>
+                        <SidebarMenuBadge className="text-[10px] text-sidebar-foreground/40">
+                          {formatRelativeTime(session.updatedAt, now)}
+                        </SidebarMenuBadge>
+                      </SidebarMenuItem>
+                    );
+                  })
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
 
-        {/* フッター: 設定ボタン */}
-        <SidebarFooter className="px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            title="Settings"
-          >
-            <SettingsIcon className="h-4 w-4" />
-          </Button>
+        {/* フッター */}
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton title="Settings">
+                <Settings2Icon />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
 
@@ -196,19 +206,5 @@ export function SessionSidebar({
         onSessionCreated={handleSessionCreated}
       />
     </>
-  );
-}
-
-/** ステータスドットコンポーネント。 */
-function StatusDot({ status }: { status: SessionStatus }) {
-  return (
-    <span
-      className={cn(
-        'inline-block h-2 w-2 shrink-0 rounded-full',
-        status === 'connected' && 'bg-blue-400',
-        status === 'disconnected' && 'bg-zinc-500',
-      )}
-      aria-label={status}
-    />
   );
 }
