@@ -26,7 +26,7 @@
 
 ## SessionRepository の拡張
 
-- [x] `activeSessionId: string | null` — 現在 UI に表示中のセッション ID
+- [x] `activeSessionId: string | null` — 現在チャットエリアに表示中のセッション ID
 - [x] `sessionIds: Set<string>` — 管理中の全セッション ID
 - [x] `addSession(sessionId)`: セッションを追加する
   - **AC**: `sessionIds` にセッション ID が追加される
@@ -39,6 +39,7 @@
 - [x] `getActiveSessionId()`: アクティブセッション ID を返す
 - [x] `getAllSessionIds()`: 全セッション ID を返す
 - [x] 既存の `getSessionId()` / `setSessionId()` / `hasActiveSession()` は下位互換のために `activeSessionId` を使うよう変更する
+- [ ] 全呼び出し元の移行が完了したら `getSessionId()` / `setSessionId()` / `hasActiveSession()` を削除する（PromptService・SessionService の修正完了後）
 - [x] テスト: 各メソッドの動作を検証する
 
 ## MessageRepository の拡張

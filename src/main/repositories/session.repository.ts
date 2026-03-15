@@ -5,7 +5,7 @@
  * 副作用を持たず、状態の読み書きのみを担う。
  */
 export class SessionRepository {
-  /** 現在 UI に表示中のセッション ID。 */
+  /** 現在チャットエリアに表示中のセッション ID。 */
   private activeSessionId: string | null = null;
 
   /** 管理中の全セッション ID。 */
