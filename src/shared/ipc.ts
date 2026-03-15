@@ -6,7 +6,11 @@ import type {
   ToolCallUpdate,
   PermissionOptionId,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
+import type {
+  RepoMapping,
+  KiroductorSettings,
+  SessionMapping,
+} from '../main/repositories/config.repository';
 
 /**
  * renderer → main の invoke/handle チャネルマップ。
@@ -26,6 +30,7 @@ export interface IpcInvokeChannels {
   'session:switch': { args: [sessionId: SessionId]; return: void };
   'session:active': { args: []; return: SessionId | null };
   'session:all': { args: []; return: SessionId[] };
+  'session:list': { args: []; return: SessionMapping[] };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };

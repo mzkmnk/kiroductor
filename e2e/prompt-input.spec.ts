@@ -16,11 +16,37 @@ function mockKiroductorAPI() {
     },
     session: {
       create: () => Promise.resolve(),
+      load: () => Promise.resolve(),
+      switch: () => Promise.resolve(),
       prompt: () =>
         new Promise((resolve) => setTimeout(() => resolve({ stopReason: 'end_turn' }), 500)),
       cancel: () => Promise.resolve(),
+      getActive: () => Promise.resolve('mock-session-id'),
+      getAll: () => Promise.resolve(['mock-session-id']),
+      list: () =>
+        Promise.resolve([
+          {
+            acpSessionId: 'mock-session-id',
+            repoId: 'mock-repo',
+            cwd: '/mock/cwd',
+            title: 'Mock Session',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ]),
       getMessages: () => Promise.resolve([]),
       onUpdate: () => () => {},
+      onSessionSwitched: () => () => {},
+      onSessionLoading: () => () => {},
+    },
+    repo: {
+      clone: () => Promise.resolve({ repoId: 'mock-repo' }),
+      list: () => Promise.resolve([]),
+      createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
+    },
+    config: {
+      getSettings: () => Promise.resolve({}),
+      updateSettings: () => Promise.resolve(),
     },
   };
 }

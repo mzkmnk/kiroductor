@@ -26,10 +26,36 @@ function mockKiroductorAPIWithMessages(
     },
     session: {
       create: () => Promise.resolve(),
+      load: () => Promise.resolve(),
+      switch: () => Promise.resolve(),
       prompt: () => Promise.resolve({ stopReason: 'end_turn' }),
       cancel: () => Promise.resolve(),
+      getActive: () => Promise.resolve('mock-session-id'),
+      getAll: () => Promise.resolve(['mock-session-id']),
+      list: () =>
+        Promise.resolve([
+          {
+            acpSessionId: 'mock-session-id',
+            repoId: 'mock-repo',
+            cwd: '/mock/cwd',
+            title: 'Mock Session',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ]),
       getMessages: () => Promise.resolve(messages),
       onUpdate: () => () => {},
+      onSessionSwitched: () => () => {},
+      onSessionLoading: () => () => {},
+    },
+    repo: {
+      clone: () => Promise.resolve({ repoId: 'mock-repo' }),
+      list: () => Promise.resolve([]),
+      createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
+    },
+    config: {
+      getSettings: () => Promise.resolve({}),
+      updateSettings: () => Promise.resolve(),
     },
   };
 }
@@ -38,6 +64,8 @@ test.describe('ChatView', () => {
   test('メッセージが空の場合は空のコンテナが表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, []);
     await page.goto('http://localhost:5173');
+    // getActive() が resolve してチャット画面に切り替わるまで待機する
+    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
     await expect(page).toHaveScreenshot('chat-view-empty.png');
   });
 

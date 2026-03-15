@@ -2,6 +2,7 @@ import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
 import type { MessageRepository } from '../repositories/message.repository';
 import type { SessionRepository } from '../repositories/session.repository';
+import type { ConfigRepository } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 import { handle } from '../ipc';
 
@@ -17,6 +18,7 @@ export class SessionHandler {
    * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param sessionRepo - セッション状態を管理するリポジトリ（依存注入）
    * @param notificationService - レンダラーへ通知を送るサービス（依存注入）
+   * @param configRepo - 設定・セッションマッピングを永続化するリポジトリ（依存注入）
    */
   constructor(
     private readonly sessionService: Pick<SessionService, 'create' | 'cancel' | 'load'>,
@@ -27,6 +29,7 @@ export class SessionHandler {
       'getActiveSessionId' | 'setActiveSession' | 'getAllSessionIds'
     >,
     private readonly notificationService: NotificationService,
+    private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
   ) {}
 
   /**
@@ -41,6 +44,7 @@ export class SessionHandler {
    * - `session:switch` — アクティブセッションを切り替える
    * - `session:active` — 現在のアクティブセッション ID を返す
    * - `session:all` — 管理中の全セッション ID を返す
+   * - `session:list` — 永続化済みの全セッションマッピングを返す
    */
   register(): void {
     handle('session:new', (_event, cwd) => this.sessionService.create(cwd));
@@ -65,6 +69,9 @@ export class SessionHandler {
     });
     handle('session:all', () => {
       return this.sessionRepo.getAllSessionIds();
+    });
+    handle('session:list', () => {
+      return this.configRepo.readSessions();
     });
   }
 }

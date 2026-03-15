@@ -2,28 +2,42 @@ import { useState, useEffect } from 'react';
 import type { Message, UserMessage } from '../main/repositories/message.repository';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
+import { SessionSidebar } from './components/SessionSidebar';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
  * アプリケーションのルートコンポーネント。
  *
  * Sidebar + Main の2カラムレイアウトを提供する。
- * サイドバー実装は SessionSidebar コンポーネントで行う（Phase 6D）。
+ * セッション管理は {@link SessionSidebar} が担い、
+ * チャットエリアはアクティブセッションのメッセージを表示する。
  */
 function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // 初回ロード
+    // 初回: アクティブセッション ID とメッセージを取得
+    window.kiroductor.session.getActive().then(setActiveSessionId);
     window.kiroductor.session.getMessages().then(setMessages);
 
     // エージェントからの session/update 通知を受け取るたびにメッセージを再取得する
-    const unsubscribe = window.kiroductor.session.onUpdate(() => {
+    const unsubUpdate = window.kiroductor.session.onUpdate(() => {
       window.kiroductor.session.getMessages().then(setMessages);
     });
 
-    return unsubscribe;
+    // セッション切り替え通知を受け取ったらアクティブセッションとメッセージを更新する
+    const unsubSwitched = window.kiroductor.session.onSessionSwitched(({ sessionId }) => {
+      setActiveSessionId(sessionId);
+      window.kiroductor.session.getMessages().then(setMessages);
+    });
+
+    return () => {
+      unsubUpdate();
+      unsubSwitched();
+    };
   }, []);
 
   /**
@@ -45,14 +59,38 @@ function App() {
     setIsProcessing(false);
   }
 
+  /** セッション切り替えハンドラ。先に遷移してからバックグラウンドで session:load を実行する。 */
+  function handleSwitchSession(sessionId: string, cwd: string) {
+    setActiveSessionId(sessionId);
+    setMessages([]);
+    window.kiroductor.session.load(sessionId, cwd).then(() => {
+      window.kiroductor.session.getMessages().then(setMessages);
+    });
+  }
+
+  /** 新規セッション作成後にアクティブセッションを更新する。 */
+  async function handleSessionCreated() {
+    const id = await window.kiroductor.session.getActive();
+    setActiveSessionId(id);
+    window.kiroductor.session.getMessages().then(setMessages);
+  }
+
   return (
     <SidebarProvider>
-      {/* SessionSidebar は Phase 6D で実装 */}
+      <SessionSidebar
+        activeSessionId={activeSessionId}
+        onSwitchSession={handleSwitchSession}
+        onSessionCreated={handleSessionCreated}
+      />
       <SidebarInset>
-        <div className="flex h-full flex-col">
-          <ChatView messages={messages} />
-          <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
-        </div>
+        {activeSessionId ? (
+          <div className="flex h-full flex-col">
+            <ChatView messages={messages} />
+            <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
+          </div>
+        ) : (
+          <WelcomeScreen onSessionCreated={handleSessionCreated} />
+        )}
       </SidebarInset>
     </SidebarProvider>
   );

@@ -24,15 +24,15 @@
 
 ## SessionSidebar — セッション管理サイドバー
 
-- [ ] shadcn/ui の `Sidebar` 関連コンポーネントを追加する（`pnpm dlx shadcn@latest add sidebar`）
-- [ ] `SessionSidebar` コンポーネントを作成する
+- [x] shadcn/ui の `Sidebar` 関連コンポーネントを追加する（`pnpm dlx shadcn@latest add sidebar`）
+- [x] `SessionSidebar` コンポーネントを作成する
   - ヘッダー: アプリ名 "Kiroductor" + "New Session" ボタン
   - セッションリスト: `SidebarMenu` + `SidebarMenuItem` で構成
   - フッター: 設定アイコンボタン
 
 ### セッションリストアイテム
 
-- [ ] 各セッションの表示内容:
+- [x] 各セッションの表示内容:
   - セッションタイトル（kiro-cli から取得、または "New Session"）
   - リポジトリ名（muted テキスト）
   - 相対タイムスタンプ（"2m ago" など）
@@ -42,7 +42,7 @@
 
 ### New Session ボタン
 
-- [ ] クリックで新規セッションダイアログを表示する
+- [x] クリックで新規セッションダイアログを表示する
   - リポジトリ選択（クローン済みリポジトリのドロップダウン）
   - 新規クローン用の URL 入力フィールド
   - "Start Session" ボタン
@@ -50,9 +50,9 @@
 
 ## ChatView の完成（Phase 6 の残タスクを統合）
 
-- [ ] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
-- [ ] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
-- [ ] セッション切り替え時にメッセージリストを再取得する
+- [x] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
+- [x] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
+- [x] セッション切り替え時にメッセージリストを再取得する
   - **AC**: `onSessionSwitched` イベントで `session:messages` を呼び直す
 
 ## SessionBar（Phase 6 の残タスクを統合 + マルチセッション対応）
@@ -84,7 +84,7 @@
 
 ## 空状態の UI
 
-- [ ] セッションが存在しない場合のウェルカム表示
+- [x] セッションが存在しない場合のウェルカム表示
   - "Create a new session to start coding with AI" のメッセージ
   - "New Session" ボタン
   - **AC**: 最初のセッション作成後にチャット画面に遷移する

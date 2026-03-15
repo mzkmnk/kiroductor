@@ -1,7 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
-import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
+import type {
+  RepoMapping,
+  KiroductorSettings,
+  SessionMapping,
+} from '../main/repositories/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
@@ -74,6 +78,8 @@ export interface SessionAPI {
   getActive: () => Promise<SessionId | null>;
   /** 管理中の全セッション ID を取得する。 */
   getAll: () => Promise<SessionId[]>;
+  /** 永続化済みの全セッションマッピングを取得する。 */
+  list: () => Promise<SessionMapping[]>;
   /**
    * セッション更新通知を購読する。
    *
@@ -153,6 +159,7 @@ const kiroductorAPI: KiroductorAPI = {
     switch: (sessionId) => invoke('session:switch', sessionId),
     getActive: () => invoke('session:active'),
     getAll: () => invoke('session:all'),
+    list: () => invoke('session:list'),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
     onSessionLoading: (callback) =>
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),

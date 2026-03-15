@@ -48,8 +48,7 @@ function createWindow(): void {
     sessionService
       .restoreSessions()
       .then(() => acpConnectionService.start())
-      .then(() => sessionService.create(cwd))
-      .then(() => log.info('セッション作成完了'))
+      .then(() => log.info('初期化完了'))
       .catch((err: unknown) => {
         log.error('初期化失敗', err);
       });
