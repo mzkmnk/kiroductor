@@ -42,6 +42,7 @@ export class SessionService {
     // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
     log.info(`newSession 完了 sessionId=${sessionId}`);
+    this.sessionRepo.addSession(sessionId);
     this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.clear();
   }
@@ -63,6 +64,7 @@ export class SessionService {
     this.messageRepo.clear();
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
+    this.sessionRepo.addSession(sessionId);
     this.sessionRepo.setSessionId(sessionId);
     this.sessionRepo.setIsLoading(false);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: false });

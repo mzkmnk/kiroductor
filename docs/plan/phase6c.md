@@ -26,20 +26,20 @@
 
 ## SessionRepository の拡張
 
-- [ ] `activeSessionId: string | null` — 現在 UI に表示中のセッション ID
-- [ ] `sessionIds: Set<string>` — 管理中の全セッション ID
-- [ ] `addSession(sessionId)`: セッションを追加する
+- [x] `activeSessionId: string | null` — 現在 UI に表示中のセッション ID
+- [x] `sessionIds: Set<string>` — 管理中の全セッション ID
+- [x] `addSession(sessionId)`: セッションを追加する
   - **AC**: `sessionIds` にセッション ID が追加される
-- [ ] `removeSession(sessionId)`: セッションを削除する
+- [x] `removeSession(sessionId)`: セッションを削除する
   - **AC**: `sessionIds` からセッション ID が削除される
   - **AC**: アクティブセッションが削除された場合、`activeSessionId` が `null` になる
-- [ ] `setActiveSession(sessionId)`: アクティブセッションを切り替える
+- [x] `setActiveSession(sessionId)`: アクティブセッションを切り替える
   - **AC**: `sessionIds` に含まれるセッション ID のみ設定可能
   - **AC**: 存在しないセッション ID を指定した場合、エラーが投げられる
-- [ ] `getActiveSessionId()`: アクティブセッション ID を返す
-- [ ] `getAllSessionIds()`: 全セッション ID を返す
-- [ ] 既存の `getSessionId()` / `setSessionId()` / `hasActiveSession()` は下位互換のために `activeSessionId` を使うよう変更する
-- [ ] テスト: 各メソッドの動作を検証する
+- [x] `getActiveSessionId()`: アクティブセッション ID を返す
+- [x] `getAllSessionIds()`: 全セッション ID を返す
+- [x] 既存の `getSessionId()` / `setSessionId()` / `hasActiveSession()` は下位互換のために `activeSessionId` を使うよう変更する
+- [x] テスト: 各メソッドの動作を検証する
 
 ## MessageRepository の拡張
 
