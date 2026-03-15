@@ -31,6 +31,9 @@ describe('SessionHandler', () => {
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
   };
+  let configRepo: {
+    readSessions: MockedFunction<() => Promise<[]>>;
+  };
   let handler: SessionHandler;
 
   beforeEach(() => {
@@ -50,12 +53,16 @@ describe('SessionHandler', () => {
     notificationService = {
       sendToRenderer: vi.fn(),
     };
+    configRepo = {
+      readSessions: vi.fn().mockResolvedValue([]),
+    };
     handler = new SessionHandler(
       sessionService as unknown as SessionService,
       promptService as unknown as PromptService,
       messageRepo,
       sessionRepo,
       notificationService,
+      configRepo,
     );
   });
 
@@ -219,6 +226,19 @@ describe('SessionHandler', () => {
         const result = allHandler();
 
         expect(result).toEqual([SESSION_ID, OTHER_SESSION_ID]);
+      });
+    });
+
+    describe('session:list', () => {
+      it('configRepo.readSessions() の結果を返す', async () => {
+        handler.register();
+        const listHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:list',
+        )?.[1] as () => Promise<unknown>;
+
+        await listHandler();
+
+        expect(configRepo.readSessions).toHaveBeenCalledOnce();
       });
     });
   });

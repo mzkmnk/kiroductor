@@ -135,6 +135,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     messageRepo,
     sessionRepo,
     notificationService,
+    configRepo,
   );
   const repoHandler = new RepoHandler(repoService, configRepo);
 

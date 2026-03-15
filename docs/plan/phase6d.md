@@ -24,15 +24,15 @@
 
 ## SessionSidebar — セッション管理サイドバー
 
-- [ ] shadcn/ui の `Sidebar` 関連コンポーネントを追加する（`pnpm dlx shadcn@latest add sidebar`）
-- [ ] `SessionSidebar` コンポーネントを作成する
+- [x] shadcn/ui の `Sidebar` 関連コンポーネントを追加する（`pnpm dlx shadcn@latest add sidebar`）
+- [x] `SessionSidebar` コンポーネントを作成する
   - ヘッダー: アプリ名 "Kiroductor" + "New Session" ボタン
   - セッションリスト: `SidebarMenu` + `SidebarMenuItem` で構成
   - フッター: 設定アイコンボタン
 
 ### セッションリストアイテム
 
-- [ ] 各セッションの表示内容:
+- [x] 各セッションの表示内容:
   - セッションタイトル（kiro-cli から取得、または "New Session"）
   - リポジトリ名（muted テキスト）
   - 相対タイムスタンプ（"2m ago" など）
@@ -42,7 +42,7 @@
 
 ### New Session ボタン
 
-- [ ] クリックで新規セッションダイアログを表示する
+- [x] クリックで新規セッションダイアログを表示する
   - リポジトリ選択（クローン済みリポジトリのドロップダウン）
   - 新規クローン用の URL 入力フィールド
   - "Start Session" ボタン
