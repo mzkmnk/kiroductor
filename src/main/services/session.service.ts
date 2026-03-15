@@ -1,4 +1,5 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
+import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
@@ -57,7 +58,7 @@ export class SessionService {
    * @param sessionId - 復元するセッションの ID
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
    */
-  async load(sessionId: string, cwd: string): Promise<void> {
+  async load(sessionId: SessionId, cwd: string): Promise<void> {
     log.info(`loadSession 開始 sessionId=${sessionId} cwd=${cwd}`);
     this.sessionRepo.setIsLoading(true);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: true });

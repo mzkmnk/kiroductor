@@ -1,5 +1,5 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
-import type { StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionId, StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { MessageRepository } from '../repositories/message.repository';
 
@@ -34,7 +34,7 @@ export class PromptService {
    * @param text - ユーザーが入力したテキスト
    * @returns エージェントが返した `stopReason`
    */
-  async send(sessionId: string, text: string): Promise<StopReason> {
+  async send(sessionId: SessionId, text: string): Promise<StopReason> {
     log.info(
       `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
     );

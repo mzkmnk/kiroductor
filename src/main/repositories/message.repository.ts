@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { ToolCallStatus } from '@agentclientprotocol/sdk';
+import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 
 /** ユーザーが入力したテキストメッセージ */
 export type UserMessage = {
@@ -69,7 +70,7 @@ function findByType<T extends Message['type']>(
  */
 export class MessageRepository {
   /** セッション ID をキー、メッセージ配列を値とする Map */
-  private sessions: Map<string, Message[]> = new Map();
+  private sessions: Map<SessionId, Message[]> = new Map();
 
   /**
    * 指定セッション用の空メッセージ配列を初期化する。
@@ -78,7 +79,7 @@ export class MessageRepository {
    *
    * @param sessionId - セッション ID
    */
-  initSession(sessionId: string): void {
+  initSession(sessionId: SessionId): void {
     if (!this.sessions.has(sessionId)) {
       this.sessions.set(sessionId, []);
     }
@@ -89,7 +90,7 @@ export class MessageRepository {
    *
    * @param sessionId - セッション ID
    */
-  clearSession(sessionId: string): void {
+  clearSession(sessionId: SessionId): void {
     this.sessions.delete(sessionId);
   }
 
@@ -99,7 +100,7 @@ export class MessageRepository {
    * @param sessionId - セッション ID
    * @returns メッセージ配列への参照
    */
-  private getMessages(sessionId: string): Message[] {
+  private getMessages(sessionId: SessionId): Message[] {
     let messages = this.sessions.get(sessionId);
     if (!messages) {
       messages = [];
@@ -115,7 +116,7 @@ export class MessageRepository {
    * @param text - ユーザーが入力したテキスト
    * @returns 追加された {@link UserMessage}
    */
-  addUserMessage(sessionId: string, text: string): UserMessage {
+  addUserMessage(sessionId: SessionId, text: string): UserMessage {
     const message: UserMessage = {
       id: randomUUID(),
       type: 'user',
@@ -134,7 +135,7 @@ export class MessageRepository {
    * @param id - メッセージの一意識別子（ACP プロトコルから受け取った ID）
    * @returns 追加された {@link AgentMessage}
    */
-  addAgentMessage(sessionId: string, id: string): AgentMessage {
+  addAgentMessage(sessionId: SessionId, id: string): AgentMessage {
     const message: AgentMessage = {
       id,
       type: 'agent',
@@ -154,7 +155,7 @@ export class MessageRepository {
    * @param id - 対象メッセージの ID
    * @param chunk - 追記するテキストチャンク
    */
-  appendAgentChunk(sessionId: string, id: string, chunk: string): void {
+  appendAgentChunk(sessionId: SessionId, id: string, chunk: string): void {
     const message = findByType(this.getMessages(sessionId), id, 'agent');
     if (message) {
       message.text += chunk;
@@ -169,7 +170,7 @@ export class MessageRepository {
    * @param sessionId - セッション ID
    * @param id - 対象メッセージの ID
    */
-  completeAgentMessage(sessionId: string, id: string): void {
+  completeAgentMessage(sessionId: SessionId, id: string): void {
     const message = findByType(this.getMessages(sessionId), id, 'agent');
     if (message) {
       message.status = 'completed';
@@ -187,7 +188,7 @@ export class MessageRepository {
    * @param input - ツールへの入力パラメータ
    * @returns 追加された {@link ToolCallMessage}
    */
-  addToolCall(sessionId: string, id: string, name: string, input: unknown): ToolCallMessage {
+  addToolCall(sessionId: SessionId, id: string, name: string, input: unknown): ToolCallMessage {
     const message: ToolCallMessage = {
       id,
       type: 'tool_call',
@@ -209,7 +210,7 @@ export class MessageRepository {
    * @param update - 更新する値（`status`・`result`・`name`・`input` の部分更新）
    */
   updateToolCall(
-    sessionId: string,
+    sessionId: SessionId,
     id: string,
     update: Partial<Pick<ToolCallMessage, 'status' | 'result' | 'name' | 'input'>>,
   ): void {
@@ -236,7 +237,7 @@ export class MessageRepository {
    * @param sessionId - セッション ID
    * @returns 追加順のメッセージ配列（内部配列のコピー）
    */
-  getAll(sessionId: string): Message[] {
+  getAll(sessionId: SessionId): Message[] {
     return [...(this.sessions.get(sessionId) ?? [])];
   }
 
