@@ -144,24 +144,25 @@ describe('RepoService', () => {
       );
     });
 
-    it('返されたパスが ~/.kiroductor/worktrees/ 配下であること', async () => {
+    it('返されたパスが ~/.kiroductor/worktrees/{random}/{repoName} 形式であること', async () => {
       const mockProcess = createMockProcess(0);
       spawnFn.mockReturnValue(mockProcess);
 
       const result = await service.createWorktree('github.com/mzkmnk/kiroductor');
 
-      expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/kiroductor-/);
+      expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/[a-z0-9]+\/kiroductor$/);
     });
 
-    it('worktrees ディレクトリが存在しなければ作成すること', async () => {
+    it('worktrees/{random} ディレクトリが存在しなければ作成すること', async () => {
       const mockProcess = createMockProcess(0);
       spawnFn.mockReturnValue(mockProcess);
 
       await service.createWorktree('github.com/mzkmnk/kiroductor');
 
-      expect(fs.mkdir).toHaveBeenCalledWith('/home/test/.kiroductor/worktrees', {
-        recursive: true,
-      });
+      expect(fs.mkdir).toHaveBeenCalledWith(
+        expect.stringMatching(/\.kiroductor\/worktrees\/[a-z0-9]+$/),
+        { recursive: true },
+      );
     });
   });
 

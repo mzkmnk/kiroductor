@@ -130,9 +130,9 @@ export class RepoService {
     const parts = repoId.split('/');
     const repoName = parts[parts.length - 1];
     const suffix = Math.random().toString(36).substring(2, 8);
-    const worktreesRoot = path.join(this.configRepo.getBaseDir(), 'worktrees');
-    await this.fs.mkdir(worktreesRoot, { recursive: true });
-    const worktreePath = path.join(worktreesRoot, `${repoName}-${suffix}`);
+    const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', suffix);
+    await this.fs.mkdir(worktreeDir, { recursive: true });
+    const worktreePath = path.join(worktreeDir, repoName);
 
     const targetBranch = branch ?? 'HEAD';
 
