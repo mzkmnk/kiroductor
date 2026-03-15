@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
+import type {
+  AgentMessage,
+  Message,
+  ToolCallMessage,
+  UserMessage,
+} from '../main/repositories/message.repository';
 import { MessageBubble } from './components/MessageBubble';
+import { ToolCallCard } from './components/ToolCallCard';
 import { PromptInput } from './components/PromptInput';
 
 /**
@@ -41,16 +47,15 @@ function App() {
     setIsProcessing(false);
   }
 
-  const chatMessages = messages.filter(
-    (m): m is UserMessage | AgentMessage => m.type === 'user' || m.type === 'agent',
-  );
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {chatMessages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
-        ))}
+        {messages.map((m) => {
+          if (m.type === 'tool_call') {
+            return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
+          }
+          return <MessageBubble key={m.id} message={m as UserMessage | AgentMessage} />;
+        })}
       </div>
       <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
     </div>

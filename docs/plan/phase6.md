@@ -36,9 +36,9 @@
 
 ## ToolCallCard — エージェントが実行中のツール操作を表示するカード
 
-- [ ] shadcn/ui の `Collapsible` を追加する（`pnpm dlx shadcn@latest add collapsible`）
-- [ ] `Collapsible` でツール名・入力・出力を折りたたみ表示する
-- [ ] 実行中（`pending` / `in_progress`）/ 完了（`completed`）/ エラー（`failed`）のステータスを Tailwind の色クラスで表示する（例: `text-blue-400` / `text-emerald-400` / `text-red-400`）
+- [x] shadcn/ui の `Collapsible` を追加する（`pnpm dlx shadcn@latest add collapsible`）
+- [x] `Collapsible` でツール名・入力・出力を折りたたみ表示する
+- [x] 実行中（`pending` / `in_progress`）/ 完了（`completed`）/ エラー（`failed`）のステータスを Tailwind の色クラスで表示する（例: `text-blue-400` / `text-emerald-400` / `text-red-400`）
 
 ## ChatView — メッセージ一覧を表示するスクロール可能なコンテナ
 

@@ -77,7 +77,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * `agent_message_chunk` イベントを処理する。
    *
    * `content.type === 'text'` のとき、`status: 'streaming'` の最新エージェントメッセージへ
-   * チャンクを追記する。streaming 中のメッセージが存在しない場合はフォールバックとして新規追加する。
+   * チャンクを追記する。ただし直前のメッセージが `tool_call` の場合は新しいエージェント
+   * メッセージを作成する（ツール呼び出し後の返答を分離するため）。
+   * streaming 中のメッセージが存在しない場合もフォールバックとして新規追加する。
    *
    * @param update - `agent_message_chunk` イベントデータ
    */
@@ -86,10 +88,12 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
 
     const chunk = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
 
-    const streamingMessage = this.messageRepository
-      .getAll()
-      .filter((m) => m.type === 'agent' && m.status === 'streaming')
-      .at(-1);
+    const messages = this.messageRepository.getAll();
+    const shouldCreateNew = messages.at(-1)?.type === 'tool_call';
+
+    const streamingMessage = shouldCreateNew
+      ? undefined
+      : messages.filter((m) => m.type === 'agent' && m.status === 'streaming').at(-1);
 
     if (streamingMessage) {
       this.messageRepository.appendAgentChunk(streamingMessage.id, chunk);
@@ -102,12 +106,16 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
   /**
    * `tool_call` イベントを処理する。
    *
+   * ツール呼び出しが来た時点で、streaming 中のエージェントメッセージを `completed` にする。
    * 同じ `toolCallId` のメッセージが未登録なら `addToolCall` を呼び、
    * 既存なら `updateToolCall` で `name` / `input` を更新する。
    *
    * @param update - `tool_call` イベントデータ
    */
   private handleToolCall(update: ToolCall): void {
+    // ツール呼び出し前の streaming メッセージを確定する
+    this.completeStreamingMessages();
+
     const { toolCallId, title, rawInput } = update;
     const existing = this.messageRepository
       .getAll()
@@ -117,6 +125,19 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
       this.messageRepository.updateToolCall(toolCallId, { name: title, input: rawInput });
     } else {
       this.messageRepository.addToolCall(toolCallId, title, rawInput);
+    }
+  }
+
+  /**
+   * streaming 中のすべてのエージェントメッセージを `completed` に変更する。
+   */
+  private completeStreamingMessages(): void {
+    const streamingMessages = this.messageRepository
+      .getAll()
+      .filter((m) => m.type === 'agent' && m.status === 'streaming');
+
+    for (const msg of streamingMessages) {
+      this.messageRepository.completeAgentMessage(msg.id);
     }
   }
 

@@ -82,6 +82,24 @@ describe('SessionUpdateMethod', () => {
       expect(messages[0].type).toBe('agent');
       expect(messages[0].type === 'agent' && messages[0].text).toBe('Fallback');
     });
+
+    it('直前のメッセージが tool_call の場合、新しいエージェントメッセージが作成されること', async () => {
+      // agent → tool_call → agent_message_chunk の流れ
+      repo.addAgentMessage('msg-1');
+      repo.appendAgentChunk('msg-1', 'First answer');
+      repo.completeAgentMessage('msg-1');
+      repo.addToolCall('tc-1', 'readFile', { path: '/src/main.ts' });
+
+      await method.handle(makeAgentMessageChunkParams('Second answer'));
+
+      const messages = repo.getAll();
+      const agentMessages = messages.filter((m) => m.type === 'agent');
+      expect(agentMessages).toHaveLength(2);
+      assert(agentMessages[0].type === 'agent');
+      expect(agentMessages[0].text).toBe('First answer');
+      assert(agentMessages[1].type === 'agent');
+      expect(agentMessages[1].text).toBe('Second answer');
+    });
   });
 
   describe('tool_call', () => {
@@ -114,6 +132,18 @@ describe('SessionUpdateMethod', () => {
       await method.handle(makeToolCallParams('tc-1', 'Read file'));
 
       expect(notificationService.sendToRenderer).toHaveBeenCalled();
+    });
+
+    it('tool_call が来たとき、streaming 中のエージェントメッセージが completed になること', async () => {
+      repo.addAgentMessage('msg-1');
+      repo.appendAgentChunk('msg-1', 'Hello');
+
+      await method.handle(makeToolCallParams('tc-1', 'Read file'));
+
+      const messages = repo.getAll();
+      const agentMsg = messages.find((m) => m.id === 'msg-1');
+      assert(agentMsg?.type === 'agent');
+      expect(agentMsg.status).toBe('completed');
     });
   });
 
