@@ -64,6 +64,8 @@ test.describe('ChatView', () => {
   test('メッセージが空の場合は空のコンテナが表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, []);
     await page.goto('http://localhost:5173');
+    // getActive() が resolve してチャット画面に切り替わるまで待機する
+    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
     await expect(page).toHaveScreenshot('chat-view-empty.png');
   });
 
