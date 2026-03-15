@@ -17,7 +17,7 @@
 
 ## レイアウト変更 — App.tsx の2カラム化
 
-- [ ] `App.tsx` を Sidebar + Main の2カラムレイアウトに変更する
+- [x] `App.tsx` を Sidebar + Main の2カラムレイアウトに変更する
   - shadcn/ui の `SidebarProvider` + `Sidebar` + `SidebarInset` を使用
   - **AC**: 左にサイドバー（280px）、右にメインチャットエリアが表示される
   - **AC**: サイドバーの開閉状態が保持される

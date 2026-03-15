@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import type { Message, UserMessage } from '../main/repositories/message.repository';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
+import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
  * アプリケーションのルートコンポーネント。
+ *
+ * Sidebar + Main の2カラムレイアウトを提供する。
+ * サイドバー実装は SessionSidebar コンポーネントで行う（Phase 6D）。
  */
 function App() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,10 +46,15 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <ChatView messages={messages} />
-      <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
-    </div>
+    <SidebarProvider>
+      {/* SessionSidebar は Phase 6D で実装 */}
+      <SidebarInset>
+        <div className="flex h-full flex-col">
+          <ChatView messages={messages} />
+          <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
