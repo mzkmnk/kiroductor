@@ -56,8 +56,14 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
     setSelectedBranch('');
     window.kiroductor.repo
       .listBranches(selectedRepoId)
-      .then(setBranches)
-      .catch(() => setBranches([]))
+      .then((result) => {
+        console.log('[listBranches] repoId:', selectedRepoId, 'branches:', result);
+        setBranches(result);
+      })
+      .catch((err) => {
+        console.error('[listBranches] error:', err);
+        setBranches([]);
+      })
       .finally(() => setIsFetchingBranches(false));
   }, [selectedRepoId]);
 

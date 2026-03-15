@@ -185,14 +185,19 @@ export class RepoService {
 
     const repoPath = this.getRepoPath(repo);
 
+    log.info('listBranches: fetching all for repoId=%s, repoPath=%s', repoId, repoPath);
     await this.execGit(['fetch', '--all'], repoPath);
     const stdout = await this.execGit(['branch', '-r'], repoPath);
+    log.info('listBranches: raw stdout=%s', JSON.stringify(stdout));
 
-    return stdout
+    const branches = stdout
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0 && !line.includes('->'))
       .sort();
+
+    log.info('listBranches: parsed branches=%o', branches);
+    return branches;
   }
 
   /** パスが存在するか確認する。 */
