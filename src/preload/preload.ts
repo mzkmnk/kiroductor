@@ -68,6 +68,12 @@ export interface SessionAPI {
   cancel: () => Promise<void>;
   /** メッセージ一覧を取得する。 */
   getMessages: () => Promise<Message[]>;
+  /** アクティブセッションを切り替える。 */
+  switch: (sessionId: SessionId) => Promise<void>;
+  /** 現在のアクティブセッション ID を取得する。 */
+  getActive: () => Promise<SessionId | null>;
+  /** 管理中の全セッション ID を取得する。 */
+  getAll: () => Promise<SessionId[]>;
   /**
    * セッション更新通知を購読する。
    *
@@ -82,6 +88,13 @@ export interface SessionAPI {
    * @returns 購読を解除するクリーンアップ関数
    */
   onSessionLoading: (callback: (payload: { loading: boolean }) => void) => () => void;
+  /**
+   * セッション切り替え通知を購読する。
+   *
+   * @param callback - 切り替え先のセッション ID を含むペイロードを受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onSessionSwitched: (callback: (payload: { sessionId: SessionId }) => void) => () => void;
 }
 
 /**
@@ -137,9 +150,14 @@ const kiroductorAPI: KiroductorAPI = {
     prompt: (text) => invoke('session:prompt', text),
     cancel: () => invoke('session:cancel'),
     getMessages: () => invoke('session:messages'),
+    switch: (sessionId) => invoke('session:switch', sessionId),
+    getActive: () => invoke('session:active'),
+    getAll: () => invoke('session:all'),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
     onSessionLoading: (callback) =>
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),
+    onSessionSwitched: (callback) =>
+      typedOn('acp:session-switched', (_event, payload) => callback(payload)),
   },
   repo: {
     clone: (url) => invoke('repo:clone', url),

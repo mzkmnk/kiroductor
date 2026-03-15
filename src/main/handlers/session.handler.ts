@@ -24,7 +24,7 @@ export class SessionHandler {
     private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
     private readonly sessionRepo: Pick<
       SessionRepository,
-      'getActiveSessionId' | 'setActiveSession'
+      'getActiveSessionId' | 'setActiveSession' | 'getAllSessionIds'
     >,
     private readonly notificationService: NotificationService,
   ) {}
@@ -40,6 +40,7 @@ export class SessionHandler {
    * - `session:messages` — メッセージ一覧を返す（セッション ID 指定可）
    * - `session:switch` — アクティブセッションを切り替える
    * - `session:active` — 現在のアクティブセッション ID を返す
+   * - `session:all` — 管理中の全セッション ID を返す
    */
   register(): void {
     handle('session:new', (_event, cwd) => this.sessionService.create(cwd));
@@ -61,6 +62,9 @@ export class SessionHandler {
     });
     handle('session:active', () => {
       return this.sessionRepo.getActiveSessionId();
+    });
+    handle('session:all', () => {
+      return this.sessionRepo.getAllSessionIds();
     });
   }
 }

@@ -39,7 +39,7 @@
 - [x] `getActiveSessionId()`: アクティブセッション ID を返す
 - [x] `getAllSessionIds()`: 全セッション ID を返す
 - [x] 既存の `getSessionId()` / `setSessionId()` / `hasActiveSession()` は下位互換のために `activeSessionId` を使うよう変更する
-- [ ] 全呼び出し元の移行が完了したら `getSessionId()` / `setSessionId()` / `hasActiveSession()` を削除する（PromptService・SessionService の修正完了後）
+- [x] 全呼び出し元の移行が完了したら `getSessionId()` / `setSessionId()` / `hasActiveSession()` を削除する（PromptService・SessionService の修正完了後）
 - [x] テスト: 各メソッドの動作を検証する
 
 ## MessageRepository の拡張
@@ -106,7 +106,7 @@
 
 ## Preload API の追加
 
-- [ ] `window.kiroductor.session.switch(sessionId)` を追加する
-- [ ] `window.kiroductor.session.getActive()` を追加する
-- [ ] `window.kiroductor.session.getAll()` を追加する
-- [ ] `window.kiroductor.session.onSessionSwitched(callback)` を追加する
+- [x] `window.kiroductor.session.switch(sessionId)` を追加する
+- [x] `window.kiroductor.session.getActive()` を追加する
+- [x] `window.kiroductor.session.getAll()` を追加する
+- [x] `window.kiroductor.session.onSessionSwitched(callback)` を追加する

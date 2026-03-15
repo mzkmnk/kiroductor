@@ -64,7 +64,7 @@ describe('SessionService', () => {
 
     it('newSession() が返した sessionId が SessionRepository に保存されること', async () => {
       await service.create('/path/to/project');
-      expect(sessionRepo.getSessionId()).toBe('test-session-id');
+      expect(sessionRepo.getActiveSessionId()).toBe('test-session-id');
     });
 
     it('create() 後に sessionRepo.addSession() でセッションが追加されること', async () => {
@@ -143,7 +143,7 @@ describe('SessionService', () => {
 
     it('load() 完了後に sessionRepo のセッション ID が更新されること', async () => {
       await service.load('session-abc', '/path/to/project');
-      expect(sessionRepo.getSessionId()).toBe('session-abc');
+      expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
 
     it('load() 後に sessionRepo.addSession() でセッションが追加されること', async () => {

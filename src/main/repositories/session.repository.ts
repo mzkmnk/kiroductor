@@ -70,42 +70,6 @@ export class SessionRepository {
   }
 
   /**
-   * 現在保持しているセッション ID を返す。
-   *
-   * 下位互換のため {@link activeSessionId} を返す。
-   *
-   * @returns セッション ID。未設定の場合は `null`。
-   */
-  getSessionId(): SessionId | null {
-    return this.activeSessionId;
-  }
-
-  /**
-   * セッション ID を設定する。
-   *
-   * 下位互換のため {@link activeSessionId} を更新する。
-   * `null` を渡すとアクティブセッションをクリアする。
-   *
-   * @param id - 保持するセッション ID。クリアする場合は `null`。
-   */
-  setSessionId(id: SessionId | null): void {
-    if (id === null) {
-      this.activeSessionId = null;
-    } else {
-      this.setActiveSession(id);
-    }
-  }
-
-  /**
-   * アクティブなセッションが存在するかどうかを返す。
-   *
-   * @returns セッション ID が設定されている場合は `true`、それ以外は `false`。
-   */
-  hasActiveSession(): boolean {
-    return this.activeSessionId !== null;
-  }
-
-  /**
    * セッション復元中かどうかを返す。
    *
    * @returns 復元処理中の場合は `true`、それ以外は `false`。

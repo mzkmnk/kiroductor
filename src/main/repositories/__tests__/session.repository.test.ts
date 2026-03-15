@@ -9,67 +9,12 @@ describe('SessionRepository', () => {
   });
 
   describe('初期状態', () => {
-    it('getSessionId は null を返す', () => {
-      expect(repo.getSessionId()).toBeNull();
-    });
-
-    it('hasActiveSession は false を返す', () => {
-      expect(repo.hasActiveSession()).toBe(false);
-    });
-
     it('getActiveSessionId は null を返す', () => {
       expect(repo.getActiveSessionId()).toBeNull();
     });
 
     it('getAllSessionIds は空配列を返す', () => {
       expect(repo.getAllSessionIds()).toEqual([]);
-    });
-  });
-
-  describe('getSessionId / setSessionId', () => {
-    it('setSessionId で保存した値を getSessionId で取得できる', () => {
-      repo.addSession('session-abc-123');
-      repo.setSessionId('session-abc-123');
-      expect(repo.getSessionId()).toBe('session-abc-123');
-    });
-
-    it('setSessionId(null) で null を設定できる', () => {
-      repo.addSession('session-abc-123');
-      repo.setSessionId('session-abc-123');
-      repo.setSessionId(null);
-      expect(repo.getSessionId()).toBeNull();
-    });
-  });
-
-  describe('hasActiveSession', () => {
-    it('セッション ID を設定すると true を返す', () => {
-      repo.addSession('session-abc-123');
-      repo.setSessionId('session-abc-123');
-      expect(repo.hasActiveSession()).toBe(true);
-    });
-
-    it('セッション ID を null にすると false を返す', () => {
-      repo.addSession('session-abc-123');
-      repo.setSessionId('session-abc-123');
-      repo.setSessionId(null);
-      expect(repo.hasActiveSession()).toBe(false);
-    });
-  });
-
-  describe('isLoading', () => {
-    it('初期状態で getIsLoading() は false を返す', () => {
-      expect(repo.getIsLoading()).toBe(false);
-    });
-
-    it('setIsLoading(true) で getIsLoading() が true を返す', () => {
-      repo.setIsLoading(true);
-      expect(repo.getIsLoading()).toBe(true);
-    });
-
-    it('setIsLoading(false) で getIsLoading() が false を返す', () => {
-      repo.setIsLoading(true);
-      repo.setIsLoading(false);
-      expect(repo.getIsLoading()).toBe(false);
     });
   });
 
@@ -149,30 +94,20 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('下位互換性', () => {
-    it('getSessionId は activeSessionId を返す', () => {
-      repo.addSession('session-1');
-      repo.setActiveSession('session-1');
-      expect(repo.getSessionId()).toBe('session-1');
+  describe('isLoading', () => {
+    it('初期状態で getIsLoading() は false を返す', () => {
+      expect(repo.getIsLoading()).toBe(false);
     });
 
-    it('setSessionId は activeSessionId を更新する', () => {
-      repo.addSession('session-1');
-      repo.setSessionId('session-1');
-      expect(repo.getActiveSessionId()).toBe('session-1');
+    it('setIsLoading(true) で getIsLoading() が true を返す', () => {
+      repo.setIsLoading(true);
+      expect(repo.getIsLoading()).toBe(true);
     });
 
-    it('setSessionId(null) で activeSessionId が null になる', () => {
-      repo.addSession('session-1');
-      repo.setActiveSession('session-1');
-      repo.setSessionId(null);
-      expect(repo.getActiveSessionId()).toBeNull();
-    });
-
-    it('hasActiveSession は activeSessionId の有無を返す', () => {
-      repo.addSession('session-1');
-      repo.setActiveSession('session-1');
-      expect(repo.hasActiveSession()).toBe(true);
+    it('setIsLoading(false) で getIsLoading() が false を返す', () => {
+      repo.setIsLoading(true);
+      repo.setIsLoading(false);
+      expect(repo.getIsLoading()).toBe(false);
     });
   });
 });
