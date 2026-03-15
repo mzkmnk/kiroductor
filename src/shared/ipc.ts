@@ -17,7 +17,9 @@ export interface IpcInvokeChannels {
   'session:load': { args: [sessionId: string, cwd: string]; return: void };
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
-  'session:messages': { args: []; return: Message[] };
+  'session:messages': { args: [sessionId?: string]; return: Message[] };
+  'session:switch': { args: [sessionId: string]; return: void };
+  'session:active': { args: []; return: string | null };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };
@@ -34,4 +36,5 @@ export interface IpcOnChannels {
   'acp:status-change': { status: AcpStatus; reason?: string };
   'acp:session-update': SessionNotification;
   'acp:session-loading': { loading: boolean };
+  'acp:session-switched': { sessionId: string };
 }

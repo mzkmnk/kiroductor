@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { SessionHandler } from '../session.handler';
+import { SessionHandler, type NotificationService } from '../session.handler';
 import { SessionService } from '../../services/session.service';
 import { PromptService } from '../../services/prompt.service';
 import { MessageRepository } from '../../repositories/message.repository';
@@ -27,6 +27,9 @@ describe('SessionHandler', () => {
   let promptService: {
     send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
   };
+  let notificationService: {
+    sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
+  };
   let handler: SessionHandler;
 
   beforeEach(() => {
@@ -43,16 +46,20 @@ describe('SessionHandler', () => {
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
     };
+    notificationService = {
+      sendToRenderer: vi.fn(),
+    };
     handler = new SessionHandler(
       sessionService as unknown as SessionService,
       promptService as unknown as PromptService,
       messageRepo,
       sessionRepo,
+      notificationService,
     );
   });
 
   describe('register()', () => {
-    it('session:new / session:load / session:prompt / session:cancel / session:messages の5チャンネルを登録する', () => {
+    it('全チャンネルを登録する', () => {
       handler.register();
 
       const channels = ipcHandle.mock.calls.map((call) => call[0] as string);
@@ -61,6 +68,8 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:prompt');
       expect(channels).toContain('session:cancel');
       expect(channels).toContain('session:messages');
+      expect(channels).toContain('session:switch');
+      expect(channels).toContain('session:active');
     });
 
     describe('session:new', () => {
@@ -122,11 +131,77 @@ describe('SessionHandler', () => {
         handler.register();
         const messagesHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:messages',
-        )?.[1] as () => Promise<unknown>;
+        )?.[1] as (_event: unknown, sessionId?: string) => Promise<unknown>;
 
-        const result = await messagesHandler();
+        const result = await messagesHandler(null);
 
         expect(result).toEqual([expect.objectContaining({ type: 'user', text: 'test message' })]);
+      });
+
+      it('セッション ID を指定した場合、そのセッションのメッセージを返す', async () => {
+        const OTHER_SESSION_ID = 'other-session-id';
+        sessionRepo.addSession(OTHER_SESSION_ID);
+        messageRepo.addUserMessage(OTHER_SESSION_ID, 'other message');
+        handler.register();
+        const messagesHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:messages',
+        )?.[1] as (_event: unknown, sessionId?: string) => Promise<unknown>;
+
+        const result = await messagesHandler(null, OTHER_SESSION_ID);
+
+        expect(result).toEqual([expect.objectContaining({ type: 'user', text: 'other message' })]);
+      });
+    });
+
+    describe('session:switch', () => {
+      it('sessionRepo.setActiveSession() を呼び、レンダラーに通知を送る', () => {
+        const OTHER_SESSION_ID = 'other-session-id';
+        sessionRepo.addSession(OTHER_SESSION_ID);
+        handler.register();
+        const switchHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:switch',
+        )?.[1] as (_event: unknown, sessionId: string) => void;
+
+        switchHandler(null, OTHER_SESSION_ID);
+
+        expect(sessionRepo.getActiveSessionId()).toBe(OTHER_SESSION_ID);
+        expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-switched', {
+          sessionId: OTHER_SESSION_ID,
+        });
+      });
+
+      it('存在しないセッション ID を指定した場合、エラーが投げられる', () => {
+        handler.register();
+        const switchHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:switch',
+        )?.[1] as (_event: unknown, sessionId: string) => void;
+
+        expect(() => switchHandler(null, 'nonexistent')).toThrow();
+      });
+    });
+
+    describe('session:active', () => {
+      it('現在のアクティブセッション ID を返す', () => {
+        handler.register();
+        const activeHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:active',
+        )?.[1] as () => string | null;
+
+        const result = activeHandler();
+
+        expect(result).toBe(SESSION_ID);
+      });
+
+      it('アクティブセッションがない場合、null を返す', () => {
+        sessionRepo.removeSession(SESSION_ID);
+        handler.register();
+        const activeHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:active',
+        )?.[1] as () => string | null;
+
+        const result = activeHandler();
+
+        expect(result).toBeNull();
       });
     });
   });
