@@ -45,8 +45,9 @@ function createWindow(): void {
   mainWindow.webContents.once('did-finish-load', () => {
     const cwd = process.cwd();
     log.info(`did-finish-load: ACP 接続を開始します cwd=${cwd}`);
-    acpConnectionService
-      .start()
+    sessionService
+      .restoreSessions()
+      .then(() => acpConnectionService.start())
       .then(() => sessionService.create(cwd))
       .then(() => log.info('セッション作成完了'))
       .catch((err: unknown) => {

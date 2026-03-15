@@ -3,6 +3,7 @@ import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
+import type { ConfigRepository } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 
 const log = createDebugLogger('Session');
@@ -11,6 +12,7 @@ const log = createDebugLogger('Session');
  * エージェントとの会話セッションのライフサイクルを管理するサービス。
  *
  * `create()` で新規セッションを開始し、`cancel()` で実行中のセッションをキャンセルする。
+ * セッション情報は {@link ConfigRepository} を通じて `sessions.json` に永続化される。
  */
 export class SessionService {
   /**
@@ -18,6 +20,7 @@ export class SessionService {
    * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param connection - ACP クライアント接続（依存注入）
    * @param notificationService - レンダラーへの通知を担うサービス（依存注入）
+   * @param configRepo - セッション情報の永続化を担うリポジトリ（依存注入）
    */
   constructor(
     private readonly sessionRepo: SessionRepository,
@@ -27,6 +30,7 @@ export class SessionService {
       'newSession' | 'cancel' | 'loadSession'
     >,
     private readonly notificationService: NotificationService,
+    private readonly configRepo: Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
   ) {}
 
   /**
@@ -35,10 +39,12 @@ export class SessionService {
    * 1. ACP 接続の `newSession()` を呼んでセッションを作成する
    * 2. 返却された `sessionId` を `SessionRepository` に保存する
    * 3. `MessageRepository` をクリアしてメッセージ履歴をリセットする
+   * 4. `ConfigRepository` にセッション情報を永続化する
    *
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
+   * @param repoId - リポジトリの識別子（{@link RepoMapping.repoId} への参照）
    */
-  async create(cwd: string): Promise<void> {
+  async create(cwd: string, repoId: string = ''): Promise<void> {
     log.info(`newSession 開始 cwd=${cwd}`);
     // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
@@ -46,6 +52,15 @@ export class SessionService {
     this.sessionRepo.addSession(sessionId);
     this.messageRepo.initSession(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
+    const now = new Date().toISOString();
+    await this.configRepo.upsertSession({
+      acpSessionId: sessionId,
+      repoId,
+      cwd,
+      title: null,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 
   /**
@@ -54,6 +69,7 @@ export class SessionService {
    * 1. `MessageRepository` をクリアしてメッセージ履歴をリセットする
    * 2. ACP 接続の `loadSession()` を呼んでセッションを復元する
    * 3. 指定した `sessionId` を `SessionRepository` に保存する
+   * 4. `ConfigRepository` のセッション情報を更新する
    *
    * @param sessionId - 復元するセッションの ID
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
@@ -69,6 +85,28 @@ export class SessionService {
     this.sessionRepo.setActiveSession(sessionId);
     this.sessionRepo.setIsLoading(false);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
+    const now = new Date().toISOString();
+    await this.configRepo.upsertSession({
+      acpSessionId: sessionId,
+      repoId: '',
+      cwd,
+      title: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  /**
+   * `sessions.json` から過去のセッション一覧を読み込み、{@link SessionRepository} に復元する。
+   *
+   * アプリ起動時に呼び出し、前回のセッション情報をインメモリ状態に反映する。
+   */
+  async restoreSessions(): Promise<void> {
+    const sessions = await this.configRepo.readSessions();
+    for (const session of sessions) {
+      this.sessionRepo.addSession(session.acpSessionId);
+    }
+    log.info(`restoreSessions: ${String(sessions.length)} セッションを復元`);
   }
 
   /**

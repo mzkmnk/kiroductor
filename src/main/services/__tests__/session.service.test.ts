@@ -4,6 +4,8 @@ import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
+import type { ConfigRepository } from '../../repositories/config.repository';
+import type { SessionMapping } from '../../repositories/config.repository';
 import type { NotificationService } from '../../interfaces/notification.service';
 
 describe('SessionService', () => {
@@ -21,6 +23,10 @@ describe('SessionService', () => {
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
   };
+  let configRepo: {
+    upsertSession: MockedFunction<(mapping: SessionMapping) => Promise<void>>;
+    readSessions: MockedFunction<() => Promise<SessionMapping[]>>;
+  };
   let service: SessionService;
 
   beforeEach(() => {
@@ -34,11 +40,16 @@ describe('SessionService', () => {
     notificationService = {
       sendToRenderer: vi.fn(),
     };
+    configRepo = {
+      upsertSession: vi.fn().mockResolvedValue(undefined),
+      readSessions: vi.fn().mockResolvedValue([]),
+    };
     service = new SessionService(
       sessionRepo,
       messageRepo,
       connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel' | 'loadSession'>,
       notificationService as unknown as NotificationService,
+      configRepo as unknown as Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
     );
   });
 
@@ -69,6 +80,28 @@ describe('SessionService', () => {
     it('create() 後に sessionRepo.setActiveSession() でアクティブセッションが設定されること', async () => {
       await service.create('/path/to/project');
       expect(sessionRepo.getActiveSessionId()).toBe('test-session-id');
+    });
+
+    it('create() 後に configRepo.upsertSession() でセッション情報が永続化されること', async () => {
+      await service.create('/path/to/project');
+      expect(configRepo.upsertSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          acpSessionId: 'test-session-id',
+          cwd: '/path/to/project',
+          repoId: '',
+          title: null,
+        }),
+      );
+    });
+
+    it('create(cwd, repoId) で指定した repoId が永続化されること', async () => {
+      await service.create('/path/to/project', 'repo-123');
+      expect(configRepo.upsertSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          acpSessionId: 'test-session-id',
+          repoId: 'repo-123',
+        }),
+      );
     });
   });
 
@@ -152,6 +185,53 @@ describe('SessionService', () => {
       expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-loading', {
         loading: false,
       });
+    });
+
+    it('load() 後に configRepo.upsertSession() でセッション情報が永続化されること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(configRepo.upsertSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          acpSessionId: 'session-abc',
+          cwd: '/path/to/project',
+          title: null,
+        }),
+      );
+    });
+  });
+
+  describe('restoreSessions()', () => {
+    it('configRepo.readSessions() で取得したセッションが sessionRepo に復元されること', async () => {
+      const sessions: SessionMapping[] = [
+        {
+          acpSessionId: 'session-1',
+          repoId: 'repo-1',
+          cwd: '/path/1',
+          title: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          acpSessionId: 'session-2',
+          repoId: 'repo-2',
+          cwd: '/path/2',
+          title: 'My Session',
+          createdAt: '2026-01-02T00:00:00.000Z',
+          updatedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ];
+      configRepo.readSessions.mockResolvedValue(sessions);
+
+      await service.restoreSessions();
+
+      expect(sessionRepo.getAllSessionIds()).toEqual(['session-1', 'session-2']);
+    });
+
+    it('sessions.json が空の場合、sessionRepo に何も追加されないこと', async () => {
+      configRepo.readSessions.mockResolvedValue([]);
+
+      await service.restoreSessions();
+
+      expect(sessionRepo.getAllSessionIds()).toEqual([]);
     });
   });
 });
