@@ -1,5 +1,5 @@
 import path from 'path';
-import type { ChildProcess } from 'child_process';
+import type { spawn } from 'child_process';
 import { nanoid } from 'nanoid';
 import { createDebugLogger } from '../debug-logger';
 import type { ConfigRepository } from '../repositories/config.repository';
@@ -17,12 +17,8 @@ export interface ParsedRepoUrl {
   repo: string;
 }
 
-/** `child_process.spawn` と互換性のある最小インターフェース。テスト用に注入可能。 */
-export type SpawnForRepo = (
-  command: string,
-  args: string[],
-  options: { cwd?: string; stdio?: string },
-) => ChildProcess;
+/** `child_process.spawn` と互換性のある型。テスト用に注入可能。 */
+export type SpawnFn = typeof spawn;
 
 /**
  * Bare リポジトリのクローンと worktree の管理を行うサービス。
@@ -39,7 +35,7 @@ export class RepoService {
   constructor(
     private readonly configRepo: Pick<ConfigRepository, 'getBaseDir' | 'getReposRoot'>,
     private readonly fs: FileSystem,
-    private readonly spawnFn: SpawnForRepo,
+    private readonly spawnFn: SpawnFn,
   ) {}
 
   /**

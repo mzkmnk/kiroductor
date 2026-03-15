@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { RepoService, type SpawnForRepo } from '../repo.service';
+import type { ChildProcess } from 'child_process';
+import { RepoService, type SpawnFn } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
 
 describe('RepoService', () => {
   let configRepo: ConfigRepository;
-  let spawnFn: MockedFunction<SpawnForRepo>;
+  let spawnMock: ReturnType<typeof vi.fn>;
   let service: RepoService;
   let fs: FileSystem;
 
@@ -19,8 +20,8 @@ describe('RepoService', () => {
       readdir: vi.fn().mockResolvedValue([]),
     };
     configRepo = new ConfigRepository(fs, '/home/test/.kiroductor');
-    spawnFn = vi.fn();
-    service = new RepoService(configRepo, fs, spawnFn);
+    spawnMock = vi.fn();
+    service = new RepoService(configRepo, fs, spawnMock as unknown as SpawnFn);
   });
 
   describe('parseRepoUrl(url)', () => {
@@ -54,11 +55,11 @@ describe('RepoService', () => {
   describe('clone(url)', () => {
     it('未クローンの場合 git clone --bare が実行されること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
-      expect(spawnFn).toHaveBeenCalledWith(
+      expect(spawnMock).toHaveBeenCalledWith(
         'git',
         [
           'clone',
@@ -73,11 +74,11 @@ describe('RepoService', () => {
     it('既にクローン済みの場合 git fetch --all が実行されること', async () => {
       (fs.access as MockedFunction<FileSystem['access']>).mockResolvedValue(undefined);
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
-      expect(spawnFn).toHaveBeenCalledWith(
+      expect(spawnMock).toHaveBeenCalledWith(
         'git',
         ['fetch', '--all'],
         expect.objectContaining({
@@ -88,7 +89,7 @@ describe('RepoService', () => {
 
     it('クローン先ディレクトリの親が存在しなければ作成すること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
@@ -99,7 +100,7 @@ describe('RepoService', () => {
 
     it('git コマンドが失敗した場合エラーを投げること', async () => {
       const mockProcess = createMockProcess(1, 'clone failed');
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await expect(service.clone('https://github.com/mzkmnk/kiroductor.git')).rejects.toThrow(
         'clone failed',
@@ -108,7 +109,7 @@ describe('RepoService', () => {
 
     it('clone が成功した場合 repoId を返すこと', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       const result = await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
@@ -119,11 +120,11 @@ describe('RepoService', () => {
   describe('createWorktree(repoId, branch?)', () => {
     it('git worktree add が実行されること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.createWorktree('github.com/mzkmnk/kiroductor');
 
-      expect(spawnFn).toHaveBeenCalledWith(
+      expect(spawnMock).toHaveBeenCalledWith(
         'git',
         ['worktree', 'add', expect.any(String), expect.any(String)],
         expect.objectContaining({
@@ -134,11 +135,11 @@ describe('RepoService', () => {
 
     it('branch を指定した場合その branch が使用されること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.createWorktree('github.com/mzkmnk/kiroductor', 'feature/test');
 
-      expect(spawnFn).toHaveBeenCalledWith(
+      expect(spawnMock).toHaveBeenCalledWith(
         'git',
         ['worktree', 'add', expect.any(String), 'feature/test'],
         expect.any(Object),
@@ -147,7 +148,7 @@ describe('RepoService', () => {
 
     it('返されたパスが ~/.kiroductor/worktrees/{random}/{repoName} 形式であること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       const result = await service.createWorktree('github.com/mzkmnk/kiroductor');
 
@@ -156,7 +157,7 @@ describe('RepoService', () => {
 
     it('worktrees/{random} ディレクトリが存在しなければ作成すること', async () => {
       const mockProcess = createMockProcess(0);
-      spawnFn.mockReturnValue(mockProcess);
+      spawnMock.mockReturnValue(mockProcess);
 
       await service.createWorktree('github.com/mzkmnk/kiroductor');
 
@@ -182,7 +183,7 @@ describe('RepoService', () => {
 });
 
 /** テスト用のモックプロセスを作成する。 */
-function createMockProcess(exitCode: number, stderrOutput?: string): ReturnType<SpawnForRepo> {
+function createMockProcess(exitCode: number, stderrOutput?: string): ChildProcess {
   const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
 
   const proc = {
@@ -208,5 +209,5 @@ function createMockProcess(exitCode: number, stderrOutput?: string): ReturnType<
     },
   };
 
-  return proc as unknown as ReturnType<SpawnForRepo>;
+  return proc as unknown as ReturnType<SpawnFn>;
 }
