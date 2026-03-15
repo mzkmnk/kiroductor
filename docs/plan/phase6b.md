@@ -46,7 +46,7 @@ kiro-cli の `session/load` API をサービス層に統合する。
 
 ## SessionHandler への IPC チャネル追加
 
-- [ ] `session:load` チャネル: `sessionService.load(sessionId, cwd)` を呼ぶハンドラーを実装する
+- [x] `session:load` チャネル: `sessionService.load(sessionId, cwd)` を呼ぶハンドラーを実装する
 
 ## IpcInvokeChannels 型の更新
 
@@ -57,11 +57,11 @@ kiro-cli の `session/load` API をサービス層に統合する。
 
 ## Preload API の追加
 
-- [ ] `window.kiroductor.session.load(sessionId, cwd)` を追加する
+- [x] `window.kiroductor.session.load(sessionId, cwd)` を追加する
 
 ## セッション復元中の状態管理
 
-- [ ] `SessionRepository` に `isLoading: boolean` フィールドを追加する
+- [x] `SessionRepository` に `isLoading: boolean` フィールドを追加する
   - **AC**: `load()` 開始時に `true`、完了時に `false` になる
-- [ ] レンダラーへ復元開始/完了の通知を送る
+- [x] レンダラーへ復元開始/完了の通知を送る
   - **AC**: `acp:session-loading` チャネルで `{ loading: boolean }` を通知する

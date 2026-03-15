@@ -43,4 +43,21 @@ describe('SessionRepository', () => {
       expect(repo.hasActiveSession()).toBe(false);
     });
   });
+
+  describe('isLoading', () => {
+    it('初期状態で getIsLoading() は false を返す', () => {
+      expect(repo.getIsLoading()).toBe(false);
+    });
+
+    it('setIsLoading(true) で getIsLoading() が true を返す', () => {
+      repo.setIsLoading(true);
+      expect(repo.getIsLoading()).toBe(true);
+    });
+
+    it('setIsLoading(false) で getIsLoading() が false を返す', () => {
+      repo.setIsLoading(true);
+      repo.setIsLoading(false);
+      expect(repo.getIsLoading()).toBe(false);
+    });
+  });
 });

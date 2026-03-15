@@ -60,6 +60,8 @@ export interface AcpAPI {
 export interface SessionAPI {
   /** 指定した作業ディレクトリで新規セッションを作成する。 */
   create: (cwd: string) => Promise<void>;
+  /** 既存セッションを指定した作業ディレクトリで復元する。 */
+  load: (sessionId: string, cwd: string) => Promise<void>;
   /** ユーザーテキストをエージェントへ送信する。 */
   prompt: (text: string) => Promise<{ stopReason: string }>;
   /** 実行中のセッションをキャンセルする。 */
@@ -73,6 +75,13 @@ export interface SessionAPI {
    * @returns 購読を解除するクリーンアップ関数
    */
   onUpdate: (callback: (update: SessionNotification) => void) => () => void;
+  /**
+   * セッション復元中状態の変化を購読する。
+   *
+   * @param callback - `{ loading: boolean }` を受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onSessionLoading: (callback: (payload: { loading: boolean }) => void) => () => void;
 }
 
 /**
@@ -124,10 +133,13 @@ const kiroductorAPI: KiroductorAPI = {
   },
   session: {
     create: (cwd) => invoke('session:new', cwd),
+    load: (sessionId, cwd) => invoke('session:load', sessionId, cwd),
     prompt: (text) => invoke('session:prompt', text),
     cancel: () => invoke('session:cancel'),
     getMessages: () => invoke('session:messages'),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
+    onSessionLoading: (callback) =>
+      typedOn('acp:session-loading', (_event, payload) => callback(payload)),
   },
   repo: {
     clone: (url) => invoke('repo:clone', url),

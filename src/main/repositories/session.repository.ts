@@ -6,6 +6,7 @@
  */
 export class SessionRepository {
   private sessionId: string | null = null;
+  private loading: boolean = false;
 
   /**
    * 現在保持しているセッション ID を返す。
@@ -32,5 +33,23 @@ export class SessionRepository {
    */
   hasActiveSession(): boolean {
     return this.sessionId !== null;
+  }
+
+  /**
+   * セッション復元中かどうかを返す。
+   *
+   * @returns 復元処理中の場合は `true`、それ以外は `false`。
+   */
+  getIsLoading(): boolean {
+    return this.loading;
+  }
+
+  /**
+   * セッション復元中フラグを設定する。
+   *
+   * @param loading - 復元処理中の場合は `true`、完了時は `false`。
+   */
+  setIsLoading(loading: boolean): void {
+    this.loading = loading;
   }
 }

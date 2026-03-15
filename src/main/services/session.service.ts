@@ -2,6 +2,7 @@ import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
+import type { NotificationService } from '../acp/methods/session-update.method';
 
 const log = createDebugLogger('Session');
 
@@ -15,6 +16,7 @@ export class SessionService {
    * @param sessionRepo - セッション ID を管理するリポジトリ（依存注入）
    * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param connection - ACP クライアント接続（依存注入）
+   * @param notificationService - レンダラーへの通知を担うサービス（依存注入）
    */
   constructor(
     private readonly sessionRepo: SessionRepository,
@@ -23,6 +25,7 @@ export class SessionService {
       ClientSideConnection,
       'newSession' | 'cancel' | 'loadSession'
     >,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -55,10 +58,14 @@ export class SessionService {
    */
   async load(sessionId: string, cwd: string): Promise<void> {
     log.info(`loadSession 開始 sessionId=${sessionId} cwd=${cwd}`);
+    this.sessionRepo.setIsLoading(true);
+    this.notificationService.sendToRenderer('acp:session-loading', { loading: true });
     this.messageRepo.clear();
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.setSessionId(sessionId);
+    this.sessionRepo.setIsLoading(false);
+    this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
   }
 
   /**
