@@ -50,9 +50,9 @@
 
 ## ChatView の完成（Phase 6 の残タスクを統合）
 
-- [ ] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
-- [ ] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
-- [ ] セッション切り替え時にメッセージリストを再取得する
+- [x] `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを Tailwind で実装する
+- [x] 新しいメッセージが届いたら自動で最下部へスクロールする処理を実装する
+- [x] セッション切り替え時にメッセージリストを再取得する
   - **AC**: `onSessionSwitched` イベントで `session:messages` を呼び直す
 
 ## SessionBar（Phase 6 の残タスクを統合 + マルチセッション対応）
@@ -84,7 +84,7 @@
 
 ## 空状態の UI
 
-- [ ] セッションが存在しない場合のウェルカム表示
+- [x] セッションが存在しない場合のウェルカム表示
   - "Create a new session to start coding with AI" のメッセージ
   - "New Session" ボタン
   - **AC**: 最初のセッション作成後にチャット画面に遷移する
