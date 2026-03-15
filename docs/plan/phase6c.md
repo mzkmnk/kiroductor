@@ -83,12 +83,12 @@
 
 ## SessionHandler の修正
 
-- [ ] `session:switch` チャネル: アクティブセッションを切り替える
+- [x] `session:switch` チャネル: アクティブセッションを切り替える
   - `sessionRepo.setActiveSession(sessionId)` を呼ぶ
   - レンダラーに `acp:session-switched` 通知を送る
   - **AC**: 切り替え後にレンダラーが新しいセッションのメッセージを取得できる
-- [ ] `session:messages` チャネル: アクティブセッション（または指定セッション）のメッセージを返すよう変更する
-- [ ] `session:active` チャネル: 現在のアクティブセッション ID を返す
+- [x] `session:messages` チャネル: アクティブセッション（または指定セッション）のメッセージを返すよう変更する
+- [x] `session:active` チャネル: 現在のアクティブセッション ID を返す
 
 ## ConfigRepository との連携
 

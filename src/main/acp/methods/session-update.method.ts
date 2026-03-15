@@ -1,26 +1,16 @@
 import { randomUUID } from 'crypto';
 import type {
   ContentChunk,
+  SessionId,
   SessionNotification,
   ToolCall,
   ToolCallUpdate,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../../debug-logger';
 import type { MessageRepository } from '../../repositories/message.repository';
-import type { IpcOnChannels } from '../../../shared/ipc';
+import type { NotificationService } from '../../interfaces/notification.service';
 
 const log = createDebugLogger('SessionUpdate');
-
-/** レンダラーへ通知を送信するサービスの最小インターフェース。依存注入・テスト用。 */
-export interface NotificationService {
-  /**
-   * 指定チャネルでレンダラーへデータを送信する。
-   *
-   * @param channel - IPC チャネル名（{@link IpcOnChannels} のキー）
-   * @param data - 送信するペイロード（チャネルに対応した型）
-   */
-  sendToRenderer<K extends keyof IpcOnChannels>(channel: K, data: IpcOnChannels[K]): void;
-}
 
 /** `session/update` 通知を処理できるオブジェクトの最小インターフェース。 */
 export interface ISessionUpdateMethod {
@@ -84,7 +74,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param sessionId - セッション ID
    * @param update - `user_message_chunk` イベントデータ
    */
-  private handleUserMessageChunk(sessionId: string, update: ContentChunk): void {
+  private handleUserMessageChunk(sessionId: SessionId, update: ContentChunk): void {
     if (update.content.type !== 'text') return;
 
     const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
@@ -102,7 +92,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param sessionId - セッション ID
    * @param update - `agent_message_chunk` イベントデータ
    */
-  private handleAgentMessageChunk(sessionId: string, update: ContentChunk): void {
+  private handleAgentMessageChunk(sessionId: SessionId, update: ContentChunk): void {
     if (update.content.type !== 'text') return;
 
     const chunk = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
@@ -132,7 +122,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param sessionId - セッション ID
    * @param update - `tool_call` イベントデータ
    */
-  private handleToolCall(sessionId: string, update: ToolCall): void {
+  private handleToolCall(sessionId: SessionId, update: ToolCall): void {
     // ツール呼び出し前の streaming メッセージを確定する
     this.completeStreamingMessages(sessionId);
 
@@ -156,7 +146,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    *
    * @param sessionId - セッション ID
    */
-  private completeStreamingMessages(sessionId: string): void {
+  private completeStreamingMessages(sessionId: SessionId): void {
     const streamingMessages = this.messageRepository
       .getAll(sessionId)
       .filter((m) => m.type === 'agent' && m.status === 'streaming');
@@ -174,7 +164,7 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param sessionId - セッション ID
    * @param update - `tool_call_update` イベントデータ
    */
-  private handleToolCallUpdate(sessionId: string, update: ToolCallUpdate): void {
+  private handleToolCallUpdate(sessionId: SessionId, update: ToolCallUpdate): void {
     const { toolCallId, status, rawOutput } = update;
     this.messageRepository.updateToolCall(sessionId, toolCallId, {
       ...(status != null ? { status } : {}),

@@ -1,6 +1,11 @@
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
-import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
+import type {
+  SessionNotification,
+  SessionId,
+  ToolCallUpdate,
+  PermissionOptionId,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
 
 /**
@@ -14,10 +19,12 @@ export interface IpcInvokeChannels {
   'acp:stop': { args: []; return: void };
   'acp:status': { args: []; return: AcpStatus };
   'session:new': { args: [cwd: string]; return: void };
-  'session:load': { args: [sessionId: string, cwd: string]; return: void };
+  'session:load': { args: [sessionId: SessionId, cwd: string]; return: void };
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
-  'session:messages': { args: []; return: Message[] };
+  'session:messages': { args: [sessionId?: SessionId]; return: Message[] };
+  'session:switch': { args: [sessionId: SessionId]; return: void };
+  'session:active': { args: []; return: SessionId | null };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };
@@ -34,4 +41,10 @@ export interface IpcOnChannels {
   'acp:status-change': { status: AcpStatus; reason?: string };
   'acp:session-update': SessionNotification;
   'acp:session-loading': { loading: boolean };
+  'acp:session-switched': { sessionId: SessionId };
+  'acp:request-permission': {
+    sessionId: SessionId;
+    toolCall: ToolCallUpdate;
+    selectedOptionId: PermissionOptionId;
+  };
 }

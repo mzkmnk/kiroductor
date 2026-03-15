@@ -1,3 +1,5 @@
+import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
+
 /**
  * セッションに関するインメモリ状態を管理するリポジトリ。
  *
@@ -6,10 +8,10 @@
  */
 export class SessionRepository {
   /** 現在チャットエリアに表示中のセッション ID。 */
-  private activeSessionId: string | null = null;
+  private activeSessionId: SessionId | null = null;
 
   /** 管理中の全セッション ID。 */
-  private sessionIds: Set<string> = new Set();
+  private sessionIds: Set<SessionId> = new Set();
 
   private loading: boolean = false;
 
@@ -18,7 +20,7 @@ export class SessionRepository {
    *
    * @param sessionId - 追加するセッション ID。
    */
-  addSession(sessionId: string): void {
+  addSession(sessionId: SessionId): void {
     this.sessionIds.add(sessionId);
   }
 
@@ -29,7 +31,7 @@ export class SessionRepository {
    *
    * @param sessionId - 削除するセッション ID。
    */
-  removeSession(sessionId: string): void {
+  removeSession(sessionId: SessionId): void {
     this.sessionIds.delete(sessionId);
     if (this.activeSessionId === sessionId) {
       this.activeSessionId = null;
@@ -42,7 +44,7 @@ export class SessionRepository {
    * @param sessionId - 切り替え先のセッション ID。{@link sessionIds} に含まれている必要がある。
    * @throws セッション ID が管理外の場合。
    */
-  setActiveSession(sessionId: string): void {
+  setActiveSession(sessionId: SessionId): void {
     if (!this.sessionIds.has(sessionId)) {
       throw new Error(`Session "${sessionId}" is not managed. Add it first with addSession().`);
     }
@@ -54,7 +56,7 @@ export class SessionRepository {
    *
    * @returns アクティブセッション ID。未設定の場合は `null`。
    */
-  getActiveSessionId(): string | null {
+  getActiveSessionId(): SessionId | null {
     return this.activeSessionId;
   }
 
@@ -63,7 +65,7 @@ export class SessionRepository {
    *
    * @returns セッション ID の配列。
    */
-  getAllSessionIds(): string[] {
+  getAllSessionIds(): SessionId[] {
     return [...this.sessionIds];
   }
 
@@ -74,7 +76,7 @@ export class SessionRepository {
    *
    * @returns セッション ID。未設定の場合は `null`。
    */
-  getSessionId(): string | null {
+  getSessionId(): SessionId | null {
     return this.activeSessionId;
   }
 
@@ -86,7 +88,7 @@ export class SessionRepository {
    *
    * @param id - 保持するセッション ID。クリアする場合は `null`。
    */
-  setSessionId(id: string | null): void {
+  setSessionId(id: SessionId | null): void {
     if (id === null) {
       this.activeSessionId = null;
     } else {

@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron';
 import { createDebugLogger } from '../debug-logger';
-import type { NotificationService } from '../acp/methods/session-update.method';
 import type { IpcOnChannels } from '../../shared/ipc';
+import type { NotificationService } from '../interfaces/notification.service';
 
 const log = createDebugLogger('Notify');
 

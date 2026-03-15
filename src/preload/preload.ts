@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
 import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
-import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
@@ -61,7 +61,7 @@ export interface SessionAPI {
   /** 指定した作業ディレクトリで新規セッションを作成する。 */
   create: (cwd: string) => Promise<void>;
   /** 既存セッションを指定した作業ディレクトリで復元する。 */
-  load: (sessionId: string, cwd: string) => Promise<void>;
+  load: (sessionId: SessionId, cwd: string) => Promise<void>;
   /** ユーザーテキストをエージェントへ送信する。 */
   prompt: (text: string) => Promise<{ stopReason: string }>;
   /** 実行中のセッションをキャンセルする。 */
