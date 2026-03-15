@@ -2,7 +2,7 @@ import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
-import type { NotificationService } from '../acp/methods/session-update.method';
+import type { NotificationService } from './notification.service';
 
 const log = createDebugLogger('Session');
 

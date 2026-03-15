@@ -2,7 +2,7 @@ import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
 import type { MessageRepository } from '../repositories/message.repository';
 import type { SessionRepository } from '../repositories/session.repository';
-import type { NotificationService } from '../acp/methods/session-update.method';
+import type { NotificationService } from '../services/notification.service';
 import { handle } from '../ipc';
 
 /**

@@ -4,7 +4,7 @@ import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
-import type { NotificationService } from '../../acp/methods/session-update.method';
+import type { NotificationService } from '../notification.service';
 
 describe('SessionService', () => {
   let sessionRepo: SessionRepository;

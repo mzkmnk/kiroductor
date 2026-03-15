@@ -3,7 +3,7 @@ import { Readable, Writable } from 'stream';
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 import { createDebugLogger } from '../debug-logger';
 import type { ConnectionRepository } from '../repositories/connection.repository';
-import type { NotificationService } from '../acp/methods/session-update.method';
+import type { NotificationService } from './notification.service';
 import type { KiroductorClientHandler } from '../acp/client-handler';
 
 const log = createDebugLogger('ACP');
