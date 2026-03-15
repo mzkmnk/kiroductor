@@ -144,14 +144,24 @@ describe('RepoService', () => {
       );
     });
 
-    it('返されたパスが一時ディレクトリ配下であること', async () => {
+    it('返されたパスが ~/.kiroductor/worktrees/ 配下であること', async () => {
       const mockProcess = createMockProcess(0);
       spawnFn.mockReturnValue(mockProcess);
 
       const result = await service.createWorktree('github.com/mzkmnk/kiroductor');
 
-      expect(result.cwd).toMatch(/kiroductor/);
-      expect(typeof result.cwd).toBe('string');
+      expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/kiroductor-/);
+    });
+
+    it('worktrees ディレクトリが存在しなければ作成すること', async () => {
+      const mockProcess = createMockProcess(0);
+      spawnFn.mockReturnValue(mockProcess);
+
+      await service.createWorktree('github.com/mzkmnk/kiroductor');
+
+      expect(fs.mkdir).toHaveBeenCalledWith('/home/test/.kiroductor/worktrees', {
+        recursive: true,
+      });
     });
   });
 

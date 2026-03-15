@@ -1,4 +1,3 @@
-import os from 'os';
 import path from 'path';
 import type { ChildProcess } from 'child_process';
 import { createDebugLogger } from '../debug-logger';
@@ -43,7 +42,7 @@ export class RepoService {
    * @param spawnFn - 子プロセスを起動する関数（テスト時にモック差し替え可能）
    */
   constructor(
-    private readonly configRepo: Pick<ConfigRepository, 'getReposRoot'>,
+    private readonly configRepo: Pick<ConfigRepository, 'getBaseDir' | 'getReposRoot'>,
     private readonly fs: FileSystem | RepoFileSystem,
     private readonly spawnFn: SpawnForRepo,
   ) {}
@@ -118,7 +117,7 @@ export class RepoService {
   /**
    * bare repo から worktree を作成し、パスを返す。
    *
-   * worktree はシステムの一時ディレクトリ配下（`os.tmpdir()`）に作成する。
+   * worktree は `~/.kiroductor/worktrees/` 配下に作成する。
    * branch を省略した場合はデフォルトブランチ（HEAD）を使用する。
    *
    * @param repoId - リポジトリの識別子
@@ -131,7 +130,9 @@ export class RepoService {
     const parts = repoId.split('/');
     const repoName = parts[parts.length - 1];
     const suffix = Math.random().toString(36).substring(2, 8);
-    const worktreePath = path.join(os.tmpdir(), `kiroductor-wt-${repoName}-${suffix}`);
+    const worktreesRoot = path.join(this.configRepo.getBaseDir(), 'worktrees');
+    await this.fs.mkdir(worktreesRoot, { recursive: true });
+    const worktreePath = path.join(worktreesRoot, `${repoName}-${suffix}`);
 
     const targetBranch = branch ?? 'HEAD';
 

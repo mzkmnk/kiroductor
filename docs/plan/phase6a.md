@@ -15,6 +15,7 @@
 ~/.kiroductor/
 ├── settings.json          # アプリ全体の設定
 ├── sessions.json          # セッションとリポジトリの紐付け
+├── worktrees/             # worktree（開発作業スペース）
 └── repos/                 # bare clone 格納場所
     ├── github.com/
     │   ├── mzkmnk/
@@ -94,7 +95,7 @@ interface SessionsFile {
   - **AC**: クローン先ディレクトリの親が存在しなければ作成する
 - [x] `createWorktree(repoId, branch?)`: bare repo から worktree を作成し、パスを返す
   - **AC**: `git worktree add <path> <branch>` が実行される
-  - **AC**: worktree のパスはシステムの一時ディレクトリ配下に作成する
+  - **AC**: worktree のパスは `~/.kiroductor/worktrees/` 配下に作成する
   - **AC**: 返されたパスが ACP セッションの `cwd` として使用可能
 - [x] `listClonedRepos()`: クローン済みリポジトリの一覧を返す
   - **AC**: `~/.kiroductor/repos/` 配下のディレクトリ構造から `repoId` の一覧を生成する
