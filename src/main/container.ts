@@ -92,7 +92,10 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
    * 接続は `AcpConnectionService.start()` 後に初めて確立される。
    * このプロキシを通じてレイジーに取得することで、構築時の依存を解決する。
    */
-  const connectionProxy: Pick<ClientSideConnection, 'newSession' | 'cancel' | 'prompt'> = {
+  const connectionProxy: Pick<
+    ClientSideConnection,
+    'newSession' | 'cancel' | 'prompt' | 'loadSession'
+  > = {
     newSession: (params) => {
       const conn = connectionRepo.getConnection();
       if (!conn) throw new Error('ACP not connected');
@@ -107,6 +110,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       const conn = connectionRepo.getConnection();
       if (!conn) throw new Error('ACP not connected');
       return conn.prompt(params);
+    },
+    loadSession: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.loadSession(params);
     },
   };
 
