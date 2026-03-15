@@ -18,6 +18,7 @@ describe('ConfigRepository', () => {
       writeFile: (filePath, content, encoding) =>
         fs.promises.writeFile(filePath, content, encoding),
       access: (filePath) => fs.promises.access(filePath),
+      readdir: (dirPath) => fs.promises.readdir(dirPath),
     };
     repo = new ConfigRepository(fsAdapter, tmpDir);
   });

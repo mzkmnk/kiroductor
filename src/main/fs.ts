@@ -39,4 +39,12 @@ export interface FileSystem {
    * @throws パスが存在しない場合にエラーをスロー
    */
   access(path: string): Promise<void>;
+
+  /**
+   * ディレクトリ内のエントリ一覧を返す。
+   *
+   * @param path - 読み取るディレクトリのパス
+   * @returns エントリ名の配列
+   */
+  readdir(path: string): Promise<string[]>;
 }

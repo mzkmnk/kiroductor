@@ -1,5 +1,6 @@
 import path from 'path';
 import type { ChildProcess } from 'child_process';
+import { nanoid } from 'nanoid';
 import { createDebugLogger } from '../debug-logger';
 import type { ConfigRepository } from '../repositories/config.repository';
 import type { FileSystem } from '../fs';
@@ -23,17 +24,11 @@ export type SpawnForRepo = (
   options: { cwd?: string; stdio?: string },
 ) => ChildProcess;
 
-/** `listClonedRepos` に必要な `readdir` を含む拡張ファイルシステムインターフェース。 */
-export type RepoFileSystem = FileSystem & {
-  /** ディレクトリのエントリ一覧を返す。 */
-  readdir(path: string): Promise<string[]>;
-};
-
 /**
  * Bare リポジトリのクローンと worktree の管理を行うサービス。
  *
  * `~/.kiroductor/repos/` 配下にホスト/組織/リポジトリ名でディレクトリを構造化し、
- * bare clone を格納する。worktree はシステムの一時ディレクトリに作成する。
+ * bare clone を格納する。worktree は `~/.kiroductor/worktrees/` 配下に作成する。
  */
 export class RepoService {
   /**
@@ -43,7 +38,7 @@ export class RepoService {
    */
   constructor(
     private readonly configRepo: Pick<ConfigRepository, 'getBaseDir' | 'getReposRoot'>,
-    private readonly fs: FileSystem | RepoFileSystem,
+    private readonly fs: FileSystem,
     private readonly spawnFn: SpawnForRepo,
   ) {}
 
@@ -117,7 +112,7 @@ export class RepoService {
   /**
    * bare repo から worktree を作成し、パスを返す。
    *
-   * worktree は `~/.kiroductor/worktrees/` 配下に作成する。
+   * worktree は `~/.kiroductor/worktrees/{nanoid}/{repoName}` に作成する。
    * branch を省略した場合はデフォルトブランチ（HEAD）を使用する。
    *
    * @param repoId - リポジトリの識別子
@@ -129,8 +124,8 @@ export class RepoService {
     const repoPath = this.getRepoPath(repoId);
     const parts = repoId.split('/');
     const repoName = parts[parts.length - 1];
-    const suffix = Math.random().toString(36).substring(2, 8);
-    const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', suffix);
+    const id = nanoid();
+    const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', id);
     await this.fs.mkdir(worktreeDir, { recursive: true });
     const worktreePath = path.join(worktreeDir, repoName);
 
@@ -152,20 +147,14 @@ export class RepoService {
    */
   async listClonedRepos(): Promise<string[]> {
     const reposRoot = this.configRepo.getReposRoot();
-    const fsWithReaddir = this.fs as RepoFileSystem;
-
-    if (!fsWithReaddir.readdir) {
-      return [];
-    }
-
     const repoIds: string[] = [];
 
     try {
-      const hosts = await fsWithReaddir.readdir(reposRoot);
+      const hosts = await this.fs.readdir(reposRoot);
       for (const host of hosts) {
-        const orgs = await fsWithReaddir.readdir(path.join(reposRoot, host));
+        const orgs = await this.fs.readdir(path.join(reposRoot, host));
         for (const org of orgs) {
-          const repos = await fsWithReaddir.readdir(path.join(reposRoot, host, org));
+          const repos = await this.fs.readdir(path.join(reposRoot, host, org));
           for (const repo of repos) {
             if (repo.endsWith('.git')) {
               repoIds.push(`${host}/${org}/${repo.replace(/\.git$/, '')}`);

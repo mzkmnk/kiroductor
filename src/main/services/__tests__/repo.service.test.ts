@@ -16,6 +16,7 @@ describe('RepoService', () => {
       writeFile: vi.fn().mockResolvedValue(undefined),
       mkdir: vi.fn().mockResolvedValue(undefined),
       access: vi.fn().mockRejectedValue(new Error('ENOENT')),
+      readdir: vi.fn().mockResolvedValue([]),
     };
     configRepo = new ConfigRepository(fs, '/home/test/.kiroductor');
     spawnFn = vi.fn();
@@ -150,7 +151,7 @@ describe('RepoService', () => {
 
       const result = await service.createWorktree('github.com/mzkmnk/kiroductor');
 
-      expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/[a-z0-9]+\/kiroductor$/);
+      expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/[A-Za-z0-9_-]+\/kiroductor$/);
     });
 
     it('worktrees/{random} ディレクトリが存在しなければ作成すること', async () => {
@@ -160,7 +161,7 @@ describe('RepoService', () => {
       await service.createWorktree('github.com/mzkmnk/kiroductor');
 
       expect(fs.mkdir).toHaveBeenCalledWith(
-        expect.stringMatching(/\.kiroductor\/worktrees\/[a-z0-9]+$/),
+        expect.stringMatching(/\.kiroductor\/worktrees\/[A-Za-z0-9_-]+$/),
         { recursive: true },
       );
     });
@@ -168,16 +169,10 @@ describe('RepoService', () => {
 
   describe('listClonedRepos()', () => {
     it('repos/ 配下のディレクトリ構造から repoId の一覧を生成すること', async () => {
-      // host ディレクトリ一覧
-      (fs.readFile as MockedFunction<FileSystem['readFile']>).mockImplementation(async () => '');
-
-      const readdir = vi.fn() as MockedFunction<(path: string) => Promise<string[]>>;
-      readdir
+      (fs.readdir as MockedFunction<FileSystem['readdir']>)
         .mockResolvedValueOnce(['github.com']) // hosts
         .mockResolvedValueOnce(['mzkmnk']) // orgs
         .mockResolvedValueOnce(['kiroductor.git']); // repos
-
-      service = new RepoService(configRepo, { ...fs, readdir } as unknown as FileSystem, spawnFn);
 
       const result = await service.listClonedRepos();
 
