@@ -37,12 +37,12 @@ kiro-cli の `session/load` API をサービス層に統合する。
 > **検証で判明**: `loadSession` 時に kiro-cli は `user_message_chunk` も再送する。
 > 現在の `SessionUpdateMethod` では未ハンドリング。
 
-- [ ] `user_message_chunk` イベントの処理を追加する
+- [x] `user_message_chunk` イベントの処理を追加する
   - `content.type === 'text'` のとき、`messageRepo.addUserMessage(content.text)` を呼ぶ
   - `notificationService.sendToRenderer` で通知する
   - **AC**: `user_message_chunk` 受信時にユーザーメッセージがリポジトリに追加される
   - **AC**: `notificationService.sendToRenderer` が呼ばれる
-- [ ] テスト: `user_message_chunk` でユーザーメッセージが追加されること
+- [x] テスト: `user_message_chunk` でユーザーメッセージが追加されること
 
 ## SessionHandler への IPC チャネル追加
 

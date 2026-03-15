@@ -181,6 +181,46 @@ describe('SessionUpdateMethod', () => {
     });
   });
 
+  describe('user_message_chunk', () => {
+    const makeUserMessageChunkParams = (text: string): SessionNotification => ({
+      sessionId: 'session-1',
+      update: {
+        sessionUpdate: 'user_message_chunk',
+        content: { type: 'text', text },
+      },
+    });
+
+    it('user_message_chunk 受信時にユーザーメッセージがリポジトリに追加される', async () => {
+      await method.handle(makeUserMessageChunkParams('Hello from user'));
+
+      const messages = repo.getAll();
+      expect(messages).toHaveLength(1);
+      expect(messages[0].type).toBe('user');
+      assert(messages[0].type === 'user');
+      expect(messages[0].text).toBe('Hello from user');
+    });
+
+    it('notificationService.sendToRenderer が呼ばれる', async () => {
+      await method.handle(makeUserMessageChunkParams('Hello from user'));
+
+      expect(notificationService.sendToRenderer).toHaveBeenCalled();
+    });
+
+    it('content.type が text 以外の場合、ユーザーメッセージは追加されない', async () => {
+      const params: SessionNotification = {
+        sessionId: 'session-1',
+        update: {
+          sessionUpdate: 'user_message_chunk',
+          content: { type: 'image', data: 'base64data', mimeType: 'image/png' },
+        },
+      };
+
+      await method.handle(params);
+
+      expect(repo.getAll()).toHaveLength(0);
+    });
+  });
+
   describe('その他のイベント（フォールスルー）', () => {
     it('tool_call / tool_call_update / agent_message_chunk 以外では sendToRenderer のみ呼ばれ、repo への操作が行われないこと', async () => {
       const params: SessionNotification = {
