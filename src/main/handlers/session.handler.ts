@@ -2,14 +2,8 @@ import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
 import type { MessageRepository } from '../repositories/message.repository';
 import type { SessionRepository } from '../repositories/session.repository';
-import type { IpcOnChannels } from '../../shared/ipc';
+import type { NotificationService } from '../acp/methods/session-update.method';
 import { handle } from '../ipc';
-
-/** レンダラーへ通知を送信するサービスの最小インターフェース。依存注入・テスト用。 */
-export interface NotificationService {
-  /** 指定チャネルでレンダラーへデータを送信する。 */
-  sendToRenderer<K extends keyof IpcOnChannels>(channel: K, data: IpcOnChannels[K]): void;
-}
 
 /**
  * セッション操作を IPC 経由で受け付けるハンドラー。

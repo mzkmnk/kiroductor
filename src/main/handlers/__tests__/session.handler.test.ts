@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import { SessionHandler, type NotificationService } from '../session.handler';
+import { SessionHandler } from '../session.handler';
+import type { NotificationService } from '../../acp/methods/session-update.method';
 import { SessionService } from '../../services/session.service';
 import { PromptService } from '../../services/prompt.service';
 import { MessageRepository } from '../../repositories/message.repository';
