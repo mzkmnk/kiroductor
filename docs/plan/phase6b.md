@@ -22,7 +22,7 @@ kiro-cli の `session/load` API をサービス層に統合する。
 
 ## SessionService への `load` メソッド追加
 
-- [ ] `load(sessionId, cwd)`: 既存セッションを復元する
+- [x] `load(sessionId, cwd)`: 既存セッションを復元する
   - `messageRepo.clear()` でメッセージをリセット
   - `connection.loadSession({ sessionId, cwd, mcpServers: [] })` を呼ぶ
   - `sessionRepo.setSessionId(sessionId)` で現在のセッション ID を更新
@@ -30,7 +30,7 @@ kiro-cli の `session/load` API をサービス層に統合する。
   - **AC**: `connection.loadSession()` に正しいパラメータが渡されること
   - **AC**: `load()` 完了後に `sessionRepo` のセッション ID が更新されること
   - **AC**: `load()` 完了後に `messageRepo` に kiro-cli から再送された履歴が入っていること（`loadSession` の Promise 解決 = 履歴再送完了）
-- [ ] テスト: `load()` がリポジトリのクリア → `loadSession` → ID 保存の順で動作すること
+- [x] テスト: `load()` がリポジトリのクリア → `loadSession` → ID 保存の順で動作すること
 
 ## SessionUpdateMethod への `user_message_chunk` ハンドリング追加
 

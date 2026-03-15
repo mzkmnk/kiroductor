@@ -19,7 +19,10 @@ export class SessionService {
   constructor(
     private readonly sessionRepo: SessionRepository,
     private readonly messageRepo: MessageRepository,
-    private readonly connection: Pick<ClientSideConnection, 'newSession' | 'cancel'>,
+    private readonly connection: Pick<
+      ClientSideConnection,
+      'newSession' | 'cancel' | 'loadSession'
+    >,
   ) {}
 
   /**
@@ -38,6 +41,24 @@ export class SessionService {
     log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.clear();
+  }
+
+  /**
+   * 既存セッションを復元する。
+   *
+   * 1. `MessageRepository` をクリアしてメッセージ履歴をリセットする
+   * 2. ACP 接続の `loadSession()` を呼んでセッションを復元する
+   * 3. 指定した `sessionId` を `SessionRepository` に保存する
+   *
+   * @param sessionId - 復元するセッションの ID
+   * @param cwd - セッションの作業ディレクトリ（絶対パス）
+   */
+  async load(sessionId: string, cwd: string): Promise<void> {
+    log.info(`loadSession 開始 sessionId=${sessionId} cwd=${cwd}`);
+    this.messageRepo.clear();
+    await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
+    log.info(`loadSession 完了 sessionId=${sessionId}`);
+    this.sessionRepo.setSessionId(sessionId);
   }
 
   /**

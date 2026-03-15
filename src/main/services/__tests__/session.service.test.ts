@@ -13,6 +13,9 @@ describe('SessionService', () => {
       (params: { cwd: string; mcpServers: [] }) => Promise<{ sessionId: string }>
     >;
     cancel: MockedFunction<(params: { sessionId: string }) => Promise<void>>;
+    loadSession: MockedFunction<
+      (params: { sessionId: string; cwd: string; mcpServers: [] }) => Promise<{ sessionId: string }>
+    >;
   };
   let service: SessionService;
 
@@ -22,11 +25,12 @@ describe('SessionService', () => {
     connection = {
       newSession: vi.fn().mockResolvedValue({ sessionId: 'test-session-id' }),
       cancel: vi.fn().mockResolvedValue(undefined),
+      loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
     };
     service = new SessionService(
       sessionRepo,
       messageRepo,
-      connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel'>,
+      connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel' | 'loadSession'>,
     );
   });
 
@@ -61,6 +65,35 @@ describe('SessionService', () => {
     it('アクティブなセッションがない場合、cancel() は何もしない（エラーを投げない）こと', async () => {
       await expect(service.cancel()).resolves.not.toThrow();
       expect(connection.cancel).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('load(sessionId, cwd)', () => {
+    it('load() 前に messageRepo がクリアされること', async () => {
+      messageRepo.addUserMessage('existing message');
+      let clearedBeforeLoad = false;
+      connection.loadSession.mockImplementation(async () => {
+        clearedBeforeLoad = messageRepo.getAll().length === 0;
+        return { sessionId: 'loaded-session-id' };
+      });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(clearedBeforeLoad).toBe(true);
+    });
+
+    it('connection.loadSession() に正しいパラメータが渡されること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(connection.loadSession).toHaveBeenCalledWith({
+        sessionId: 'session-abc',
+        cwd: '/path/to/project',
+        mcpServers: [],
+      });
+    });
+
+    it('load() 完了後に sessionRepo のセッション ID が更新されること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.getSessionId()).toBe('session-abc');
     });
   });
 });
