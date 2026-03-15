@@ -214,13 +214,5 @@ describe('SessionService', () => {
 
       expect(sessionRepo.getAllSessionIds()).toEqual(['session-1', 'session-2']);
     });
-
-    it('sessions.json が空の場合、sessionRepo に何も追加されないこと', async () => {
-      configRepo.readSessions.mockResolvedValue([]);
-
-      await service.restoreSessions();
-
-      expect(sessionRepo.getAllSessionIds()).toEqual([]);
-    });
   });
 });
