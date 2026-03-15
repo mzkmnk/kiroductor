@@ -2,7 +2,7 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { NotificationService } from '../../services/notification.service';
+import type { NotificationService } from '../../interfaces/notification.service';
 
 /** `client/requestPermission` リクエストを処理できるオブジェクトの最小インターフェース。 */
 export interface IRequestPermissionMethod {

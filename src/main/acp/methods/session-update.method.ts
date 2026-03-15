@@ -7,7 +7,7 @@ import type {
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../../debug-logger';
 import type { MessageRepository } from '../../repositories/message.repository';
-import type { NotificationService } from '../../services/notification.service';
+import type { NotificationService } from '../../interfaces/notification.service';
 
 const log = createDebugLogger('SessionUpdate');
 
