@@ -15,6 +15,7 @@
 ~/.kiroductor/
 ├── settings.json          # アプリ全体の設定
 ├── sessions.json          # セッションとリポジトリの紐付け
+├── worktrees/             # worktree（開発作業スペース）
 └── repos/                 # bare clone 格納場所
     ├── github.com/
     │   ├── mzkmnk/
@@ -81,24 +82,24 @@ interface SessionsFile {
 
 ## RepoService — Bare Repo のクローンと管理
 
-- [ ] `RepoService` クラスを作成し、`ConfigRepository` と `spawn` を依存注入で受け取るようにする
-- [ ] `parseRepoUrl(url)`: リポジトリ URL をパースして `{ host, org, repo }` を返す
+- [x] `RepoService` クラスを作成し、`ConfigRepository` と `spawn` を依存注入で受け取るようにする
+- [x] `parseRepoUrl(url)`: リポジトリ URL をパースして `{ host, org, repo }` を返す
   - **AC**: `https://github.com/mzkmnk/kiroductor.git` → `{ host: "github.com", org: "mzkmnk", repo: "kiroductor" }`
   - **AC**: `git@github.com:mzkmnk/kiroductor.git` → 同上
   - **AC**: `https://gitlab.com/user/project` → `{ host: "gitlab.com", org: "user", repo: "project" }`
-- [ ] `getRepoPath(repoId)`: リポジトリの bare clone パスを返す
+- [x] `getRepoPath(repoId)`: リポジトリの bare clone パスを返す
   - **AC**: `"github.com/mzkmnk/kiroductor"` → `~/.kiroductor/repos/github.com/mzkmnk/kiroductor.git`
-- [ ] `clone(url)`: bare clone を実行する
+- [x] `clone(url)`: bare clone を実行する
   - **AC**: `git clone --bare <url> <path>` が実行される
   - **AC**: 既にクローン済みの場合、エラーにならない（`git fetch --all` を実行）
   - **AC**: クローン先ディレクトリの親が存在しなければ作成する
-- [ ] `createWorktree(repoId, branch?)`: bare repo から worktree を作成し、パスを返す
+- [x] `createWorktree(repoId, branch?)`: bare repo から worktree を作成し、パスを返す
   - **AC**: `git worktree add <path> <branch>` が実行される
-  - **AC**: worktree のパスはシステムの一時ディレクトリ配下に作成する
+  - **AC**: worktree のパスは `~/.kiroductor/worktrees/` 配下に作成する
   - **AC**: 返されたパスが ACP セッションの `cwd` として使用可能
-- [ ] `listClonedRepos()`: クローン済みリポジトリの一覧を返す
+- [x] `listClonedRepos()`: クローン済みリポジトリの一覧を返す
   - **AC**: `~/.kiroductor/repos/` 配下のディレクトリ構造から `repoId` の一覧を生成する
-- [ ] テスト: URL パース、パス生成のロジックを検証する（clone/worktree はモックで検証）
+- [x] テスト: URL パース、パス生成のロジックを検証する（clone/worktree はモックで検証）
 
 ## IPC チャネルの追加
 

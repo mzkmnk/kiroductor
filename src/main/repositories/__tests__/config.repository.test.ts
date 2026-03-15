@@ -18,6 +18,7 @@ describe('ConfigRepository', () => {
       writeFile: (filePath, content, encoding) =>
         fs.promises.writeFile(filePath, content, encoding),
       access: (filePath) => fs.promises.access(filePath),
+      readdir: (dirPath) => fs.promises.readdir(dirPath),
     };
     repo = new ConfigRepository(fsAdapter, tmpDir);
   });
@@ -197,6 +198,102 @@ describe('ConfigRepository', () => {
 
     it('存在しない acpSessionId を指定してもエラーにならない', async () => {
       await expect(repo.removeSession('non-existent')).resolves.not.toThrow();
+    });
+  });
+
+  describe('readRepos()', () => {
+    it('ファイルが存在しない場合、空配列を返す', async () => {
+      const repos = await repo.readRepos();
+      expect(repos).toEqual([]);
+    });
+
+    it('ファイルが存在する場合、リポジトリ一覧を返す', async () => {
+      const mapping = {
+        repoId: 'abc123',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        name: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      await fs.promises.writeFile(
+        path.join(tmpDir, 'repos.json'),
+        JSON.stringify({ repos: [mapping] }, null, 2),
+        'utf-8',
+      );
+      const repos = await repo.readRepos();
+      expect(repos).toEqual([mapping]);
+    });
+  });
+
+  describe('writeRepos()', () => {
+    it('repos.json に JSON を整形して書き込む', async () => {
+      const mapping = {
+        repoId: 'abc123',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        name: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      await repo.writeRepos([mapping]);
+      const raw = await fs.promises.readFile(path.join(tmpDir, 'repos.json'), 'utf-8');
+      expect(JSON.parse(raw)).toEqual({ repos: [mapping] });
+    });
+  });
+
+  describe('upsertRepo()', () => {
+    it('存在しない repoId の場合、新規追加される', async () => {
+      const mapping = {
+        repoId: 'abc123',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        name: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      await repo.upsertRepo(mapping);
+      const repos = await repo.readRepos();
+      expect(repos).toHaveLength(1);
+      expect(repos[0].repoId).toBe('abc123');
+    });
+
+    it('同じ repoId が存在する場合、更新される', async () => {
+      const initial = {
+        repoId: 'abc123',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        name: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      await repo.upsertRepo(initial);
+      const updated = { ...initial, url: 'https://github.com/mzkmnk/kiroductor-v2.git' };
+      await repo.upsertRepo(updated);
+      const repos = await repo.readRepos();
+      expect(repos).toHaveLength(1);
+      expect(repos[0].url).toBe('https://github.com/mzkmnk/kiroductor-v2.git');
+    });
+  });
+
+  describe('findRepoByPath()', () => {
+    it('host/org/repo に一致するリポジトリを返す', async () => {
+      const mapping = {
+        repoId: 'abc123',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        name: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      await repo.writeRepos([mapping]);
+      const found = await repo.findRepoByPath('github.com', 'mzkmnk', 'kiroductor');
+      expect(found).toEqual(mapping);
+    });
+
+    it('一致するリポジトリがない場合、undefined を返す', async () => {
+      const found = await repo.findRepoByPath('github.com', 'mzkmnk', 'nonexistent');
+      expect(found).toBeUndefined();
     });
   });
 });
