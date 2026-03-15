@@ -1,5 +1,6 @@
 import os from 'os';
 import path from 'path';
+import type { FileSystem } from '../fs';
 
 /** アプリ全体の設定。`settings.json` に永続化される。 */
 export interface KiroductorSettings {
@@ -34,49 +35,12 @@ interface SessionsFile {
   sessions: SessionMapping[];
 }
 
-/** ファイルシステム操作の抽象。依存注入によりテスト可能にする。 */
-export interface FsAdapter {
-  /**
-   * ディレクトリを再帰的に作成する。
-   *
-   * @param dirPath - 作成するディレクトリのパス
-   * @param opts - オプション（`recursive` など）
-   */
-  mkdir(dirPath: string, opts?: { recursive?: boolean }): Promise<string | undefined>;
-
-  /**
-   * ファイルを読み込む。
-   *
-   * @param filePath - 読み込むファイルのパス
-   * @param encoding - 文字エンコーディング
-   * @returns ファイルの内容
-   */
-  readFile(filePath: string, encoding: BufferEncoding): Promise<string>;
-
-  /**
-   * ファイルに内容を書き込む。
-   *
-   * @param filePath - 書き込むファイルのパス
-   * @param content - 書き込む内容
-   * @param encoding - 文字エンコーディング
-   */
-  writeFile(filePath: string, content: string, encoding: BufferEncoding): Promise<void>;
-
-  /**
-   * ファイルまたはディレクトリの存在を確認する。
-   *
-   * @param filePath - 確認するパス
-   * @throws ファイルが存在しない場合にエラーをスロー
-   */
-  access(filePath: string): Promise<void>;
-}
-
 /**
  * `.kiroductor/` ディレクトリの読み書きを管理するリポジトリ。
  *
  * `settings.json` および `sessions.json` の永続化と、
  * ベースディレクトリ・`repos/` サブディレクトリの作成を担う。
- * ファイルシステム操作は {@link FsAdapter} を介して行い、テスト可能にしている。
+ * ファイルシステム操作は {@link FileSystem} を介して行い、テスト可能にしている。
  */
 export class ConfigRepository {
   private readonly baseDir: string;
@@ -86,7 +50,7 @@ export class ConfigRepository {
    * @param baseDir - ベースディレクトリのパス（省略時は `~/.kiroductor/`）
    */
   constructor(
-    private readonly fs: FsAdapter,
+    private readonly fs: FileSystem,
     baseDir?: string,
   ) {
     this.baseDir = baseDir ?? path.join(os.homedir(), '.kiroductor');

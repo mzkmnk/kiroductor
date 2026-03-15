@@ -2,12 +2,7 @@ import type {
   WriteTextFileRequest,
   WriteTextFileResponse,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-
-/** `fs.writeFile` の最小インターフェース。依存注入・テスト用。 */
-export interface FileSystem {
-  /** ファイルへ書き込む。 */
-  writeFile(path: string, content: string, encoding: BufferEncoding): Promise<void>;
-}
+import type { FileSystem } from '../../fs';
 
 /** `fs/writeTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
 export interface IWriteTextFileMethod {
@@ -24,7 +19,7 @@ export class WriteTextFileMethod implements IWriteTextFileMethod {
   /**
    * @param fs - ファイルシステム操作を提供するオブジェクト（依存注入）
    */
-  constructor(private readonly fs: FileSystem) {}
+  constructor(private readonly fs: Pick<FileSystem, 'writeFile'>) {}
 
   /**
    * 指定されたパスへ内容を UTF-8 で書き込む。

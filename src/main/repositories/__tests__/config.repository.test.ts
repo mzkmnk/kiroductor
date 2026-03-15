@@ -3,11 +3,11 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import { ConfigRepository } from '../config.repository';
-import type { FsAdapter } from '../config.repository';
+import type { FileSystem } from '../../fs';
 
 describe('ConfigRepository', () => {
   let tmpDir: string;
-  let fsAdapter: FsAdapter;
+  let fsAdapter: FileSystem;
   let repo: ConfigRepository;
 
   beforeEach(async () => {
