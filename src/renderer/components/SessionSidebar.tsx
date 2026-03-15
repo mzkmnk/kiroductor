@@ -26,7 +26,7 @@ interface SessionSidebarProps {
   /** 現在のアクティブセッション ID。 */
   activeSessionId: string | null;
   /** セッションを切り替える際に呼ばれるコールバック。 */
-  onSwitchSession: (sessionId: string) => void;
+  onSwitchSession: (sessionId: string, cwd: string) => void;
   /** 新規セッション作成後に呼ばれるコールバック。 */
   onSessionCreated: () => void;
 }
@@ -156,7 +156,7 @@ export function SessionSidebar({
                       <SidebarMenuItem key={session.acpSessionId}>
                         <SidebarMenuButton
                           isActive={isActive}
-                          onClick={() => onSwitchSession(session.acpSessionId)}
+                          onClick={() => onSwitchSession(session.acpSessionId, session.cwd)}
                           className="h-auto items-start py-2"
                         >
                           {/* ステータスドット */}

@@ -58,9 +58,9 @@ function App() {
     setIsProcessing(false);
   }
 
-  /** セッション切り替えハンドラ。 */
-  async function handleSwitchSession(sessionId: string) {
-    await window.kiroductor.session.switch(sessionId);
+  /** セッション切り替えハンドラ。session:load でチャット履歴を復元する。 */
+  async function handleSwitchSession(sessionId: string, cwd: string) {
+    await window.kiroductor.session.load(sessionId, cwd);
     setActiveSessionId(sessionId);
     window.kiroductor.session.getMessages().then(setMessages);
   }
