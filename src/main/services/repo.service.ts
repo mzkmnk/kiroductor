@@ -166,6 +166,40 @@ export class RepoService {
     return this.configRepo.readRepos();
   }
 
+  /**
+   * 指定リポジトリのブランチ一覧を返す。
+   *
+   * bare clone では `git branch -r` ではリモートトラッキングブランチが存在しないため、
+   * `git branch` でローカルブランチ（= fetch 済みブランチ）を一覧する。
+   *
+   * @param repoId - リポジトリの識別子
+   * @returns ブランチ名の配列（アルファベット順）
+   * @throws リポジトリが見つからない場合
+   */
+  async listBranches(repoId: string): Promise<string[]> {
+    const repos = await this.configRepo.readRepos();
+    const repo = repos.find((r) => r.repoId === repoId);
+    if (!repo) {
+      throw new Error(`Repository not found: ${repoId}`);
+    }
+
+    const repoPath = this.getRepoPath(repo);
+
+    log.info('listBranches: fetching all for repoId=%s, repoPath=%s', repoId, repoPath);
+    await this.execGit(['fetch', '--all'], repoPath);
+    const stdout = await this.execGit(['branch'], repoPath);
+    log.info('listBranches: raw stdout=%s', JSON.stringify(stdout));
+
+    const branches = stdout
+      .split('\n')
+      .map((line) => line.replace(/^\*?\s+/, '').trim())
+      .filter((line) => line.length > 0)
+      .sort();
+
+    log.info('listBranches: parsed branches=%o', branches);
+    return branches;
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -176,11 +210,16 @@ export class RepoService {
     }
   }
 
-  /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。 */
-  private execGit(args: string[], cwd?: string): Promise<void> {
+  /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。stdout を返す。 */
+  private execGit(args: string[], cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const proc = this.spawnFn('git', args, { cwd, stdio: 'pipe' });
+      let stdout = '';
       let stderr = '';
+
+      proc.stdout?.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString();
+      });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
         stderr += chunk.toString();
@@ -188,7 +227,7 @@ export class RepoService {
 
       proc.on('close', (code: number | null) => {
         if (code === 0) {
-          resolve();
+          resolve(stdout);
         } else {
           reject(new Error(stderr.trim() || `git ${args[0]} failed with code ${String(code)}`));
         }

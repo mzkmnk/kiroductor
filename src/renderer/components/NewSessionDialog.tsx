@@ -25,6 +25,9 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
   const [repos, setRepos] = useState<RepoMapping[]>([]);
   const [selectedRepoId, setSelectedRepoId] = useState<string>('');
   const [cloneUrl, setCloneUrl] = useState('');
+  const [branches, setBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [isFetchingBranches, setIsFetchingBranches] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,9 +39,33 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         .catch(() => setRepos([]));
       setSelectedRepoId('');
       setCloneUrl('');
+      setBranches([]);
+      setSelectedBranch('');
       setError(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!selectedRepoId) {
+      setBranches([]);
+      setSelectedBranch('');
+      return;
+    }
+    setIsFetchingBranches(true);
+    setBranches([]);
+    setSelectedBranch('');
+    window.kiroductor.repo
+      .listBranches(selectedRepoId)
+      .then((result) => {
+        console.log('[listBranches] repoId:', selectedRepoId, 'branches:', result);
+        setBranches(result);
+      })
+      .catch((err) => {
+        console.error('[listBranches] error:', err);
+        setBranches([]);
+      })
+      .finally(() => setIsFetchingBranches(false));
+  }, [selectedRepoId]);
 
   /**
    * "Start Session" ボタンのクリックハンドラ。
@@ -62,7 +89,10 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         return;
       }
 
-      const { cwd } = await window.kiroductor.repo.createWorktree(repoId);
+      const { cwd } = await window.kiroductor.repo.createWorktree(
+        repoId,
+        selectedBranch || undefined,
+      );
       await window.kiroductor.session.create(cwd);
       onSessionCreated();
       onClose();
@@ -92,6 +122,29 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
                 {repos.map((repo) => (
                   <SelectItem key={repo.repoId} value={repo.repoId}>
                     {repo.org}/{repo.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ブランチ選択 */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Branch</label>
+            <Select
+              value={selectedBranch}
+              onValueChange={setSelectedBranch}
+              disabled={!selectedRepoId || isFetchingBranches}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={isFetchingBranches ? 'Loading branches...' : 'HEAD (default)'}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map((branch) => (
+                  <SelectItem key={branch} value={branch}>
+                    {branch}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -13,7 +13,10 @@ export class RepoHandler {
    * @param configRepo - 設定ファイルの読み書きを行うリポジトリ（依存注入）
    */
   constructor(
-    private readonly repoService: Pick<RepoService, 'clone' | 'createWorktree' | 'listClonedRepos'>,
+    private readonly repoService: Pick<
+      RepoService,
+      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches'
+    >,
     private readonly configRepo: Pick<ConfigRepository, 'readSettings' | 'writeSettings'>,
   ) {}
 
@@ -24,6 +27,7 @@ export class RepoHandler {
    * - `repo:clone` — リポジトリを bare clone し `repoId` を返す
    * - `repo:list` — クローン済みリポジトリ一覧を返す
    * - `repo:create-worktree` — bare repo から worktree を作成し `cwd` を返す
+   * - `repo:list-branches` — 指定リポジトリのリモートブランチ一覧を返す
    * - `config:get-settings` — アプリ設定を返す
    * - `config:update-settings` — アプリ設定を部分更新する
    */
@@ -38,6 +42,8 @@ export class RepoHandler {
     handle('repo:create-worktree', (_event, repoId, branch) =>
       this.repoService.createWorktree(repoId, branch),
     );
+
+    handle('repo:list-branches', (_event, repoId) => this.repoService.listBranches(repoId));
 
     handle('config:get-settings', () => this.configRepo.readSettings());
 
