@@ -16,7 +16,7 @@ kiro-cli の `session/load` API をサービス層に統合する。
 
 ## ConnectionProxy の拡張
 
-- [ ] `container.ts` の `connectionProxy` に `loadSession` メソッドを追加する
+- [x] `container.ts` の `connectionProxy` に `loadSession` メソッドを追加する
   - **AC**: `connectionProxy.loadSession()` が `connection.loadSession()` に委譲される
   - 注: `listSessions` は kiro-cli 未サポートのため追加不要
 
