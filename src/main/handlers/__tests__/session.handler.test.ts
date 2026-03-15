@@ -25,7 +25,7 @@ describe('SessionHandler', () => {
     load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
   };
   let promptService: {
-    send: MockedFunction<(text: string) => Promise<string>>;
+    send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
   };
   let handler: SessionHandler;
 
@@ -99,7 +99,7 @@ describe('SessionHandler', () => {
 
         await promptHandler(null, 'hello');
 
-        expect(promptService.send).toHaveBeenCalledWith('hello');
+        expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello');
       });
     });
 

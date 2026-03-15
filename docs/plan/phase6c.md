@@ -69,7 +69,7 @@
 
 ## PromptService の修正
 
-- [ ] `send(sessionId, text)` にセッション ID を明示的に受け取るよう変更する
+- [x] `send(sessionId, text)` にセッション ID を明示的に受け取るよう変更する
   - **AC**: 指定されたセッションのメッセージにユーザーメッセージが追加される
   - **AC**: `connection.prompt()` に正しい `sessionId` が渡される
 

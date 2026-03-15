@@ -124,7 +124,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     connectionProxy,
     notificationService,
   );
-  const promptService = new PromptService(sessionRepo, messageRepo, connectionProxy);
+  const promptService = new PromptService(messageRepo, connectionProxy);
 
   // Handlers
   const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);

@@ -37,7 +37,9 @@ export class SessionHandler {
     handle('session:new', (_event, cwd) => this.sessionService.create(cwd));
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
     handle('session:prompt', async (_event, text) => {
-      const stopReason = await this.promptService.send(text);
+      const sessionId = this.sessionRepo.getActiveSessionId();
+      if (!sessionId) throw new Error('No active session');
+      const stopReason = await this.promptService.send(sessionId, text);
       return { stopReason };
     });
     handle('session:cancel', () => this.sessionService.cancel());

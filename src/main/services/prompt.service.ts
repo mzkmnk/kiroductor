@@ -1,7 +1,6 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
-import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
 
 const log = createDebugLogger('Prompt');
@@ -14,12 +13,10 @@ const log = createDebugLogger('Prompt');
  */
 export class PromptService {
   /**
-   * @param sessionRepo - セッション ID を管理するリポジトリ（依存注入）
    * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param connection - ACP クライアント接続（依存注入）
    */
   constructor(
-    private readonly sessionRepo: SessionRepository,
     private readonly messageRepo: MessageRepository,
     private readonly connection: Pick<ClientSideConnection, 'prompt'>,
   ) {}
@@ -33,16 +30,11 @@ export class PromptService {
    * 4. 返答が完了したらエージェントメッセージを確定状態（`status: 'completed'`）にする
    * 5. 完了理由（`stopReason`）を返す
    *
+   * @param sessionId - 送信先のセッション ID
    * @param text - ユーザーが入力したテキスト
    * @returns エージェントが返した `stopReason`
    */
-  async send(text: string): Promise<StopReason> {
-    const sessionId = this.sessionRepo.getSessionId();
-    if (!sessionId) {
-      log.error('send 失敗: アクティブなセッションがありません');
-      throw new Error('No active session');
-    }
-
+  async send(sessionId: string, text: string): Promise<StopReason> {
     log.info(
       `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
     );
