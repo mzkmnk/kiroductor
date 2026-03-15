@@ -82,12 +82,28 @@ function App() {
         onSessionCreated={handleSessionCreated}
       />
       <SidebarInset>
-        <div className="flex h-full flex-col">
-          <ChatView messages={messages} />
-          <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
-        </div>
+        {activeSessionId ? (
+          <div className="flex h-full flex-col">
+            <ChatView messages={messages} />
+            <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
+          </div>
+        ) : (
+          <WelcomeScreen />
+        )}
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+/** セッションが存在しない場合のウェルカム画面。 */
+function WelcomeScreen() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+      <p className="text-sm text-muted-foreground">
+        サイドバーの <span className="font-medium text-foreground">+</span>{' '}
+        からセッションを作成してください
+      </p>
+    </div>
   );
 }
 
