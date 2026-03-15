@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { SessionService } from '../session.service';
+
+vi.mock('../session-title.generator', () => ({
+  generateSessionTitle: vi.fn().mockReturnValue('Kyoto'),
+}));
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
 import type { ConfigRepository } from '../../repositories/config.repository';
@@ -89,7 +93,7 @@ describe('SessionService', () => {
           acpSessionId: 'test-session-id',
           cwd: '/path/to/project',
           repoId: '',
-          title: null,
+          title: 'Kyoto',
         }),
       );
     });

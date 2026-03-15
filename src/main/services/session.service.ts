@@ -5,6 +5,7 @@ import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
 import type { ConfigRepository } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
+import { generateSessionTitle } from './session-title.generator';
 
 const log = createDebugLogger('Session');
 
@@ -57,7 +58,7 @@ export class SessionService {
       acpSessionId: sessionId,
       repoId,
       cwd,
-      title: null,
+      title: generateSessionTitle(),
       createdAt: now,
       updatedAt: now,
     });
