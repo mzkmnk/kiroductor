@@ -58,11 +58,13 @@ function App() {
     setIsProcessing(false);
   }
 
-  /** セッション切り替えハンドラ。session:load でチャット履歴を復元する。 */
-  async function handleSwitchSession(sessionId: string, cwd: string) {
-    await window.kiroductor.session.load(sessionId, cwd);
+  /** セッション切り替えハンドラ。先に遷移してからバックグラウンドで session:load を実行する。 */
+  function handleSwitchSession(sessionId: string, cwd: string) {
     setActiveSessionId(sessionId);
-    window.kiroductor.session.getMessages().then(setMessages);
+    setMessages([]);
+    window.kiroductor.session.load(sessionId, cwd).then(() => {
+      window.kiroductor.session.getMessages().then(setMessages);
+    });
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
