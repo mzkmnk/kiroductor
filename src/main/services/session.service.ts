@@ -43,9 +43,10 @@ export class SessionService {
    * 4. `ConfigRepository` にセッション情報を永続化する
    *
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
+   * @param sourceBranch - worktree 作成時のベースブランチ名
    * @param repoId - リポジトリの識別子（{@link RepoMapping.repoId} への参照）
    */
-  async create(cwd: string, repoId: string = ''): Promise<void> {
+  async create(cwd: string, sourceBranch: string, repoId: string = ''): Promise<void> {
     log.info(`newSession 開始 cwd=${cwd}`);
     // TODO: mcpServers に対応する
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
@@ -59,6 +60,7 @@ export class SessionService {
       repoId,
       cwd,
       title: generateSessionTitle(),
+      sourceBranch,
       createdAt: now,
       updatedAt: now,
     });

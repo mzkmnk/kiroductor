@@ -43,6 +43,8 @@ export interface SessionMapping {
   cwd: string;
   /** セッションのタイトル（kiro-cli から取得、または null） */
   title: string | null;
+  /** worktree 作成時のベースブランチ名 */
+  sourceBranch: string;
   /** 作成日時（ISO 8601） */
   createdAt: string;
   /** 最終更新日時（ISO 8601） */

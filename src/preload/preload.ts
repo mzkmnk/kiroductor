@@ -63,7 +63,7 @@ export interface AcpAPI {
  */
 export interface SessionAPI {
   /** 指定した作業ディレクトリで新規セッションを作成する。 */
-  create: (cwd: string) => Promise<void>;
+  create: (cwd: string, branch: string) => Promise<void>;
   /** 既存セッションを指定した作業ディレクトリで復元する。 */
   load: (sessionId: SessionId, cwd: string) => Promise<void>;
   /** ユーザーテキストをエージェントへ送信する。 */
@@ -111,8 +111,8 @@ export interface RepoAPI {
   clone: (url: string) => Promise<{ repoId: string }>;
   /** クローン済みリポジトリの一覧を返す。 */
   list: () => Promise<RepoMapping[]>;
-  /** bare repo から worktree を作成し、`cwd` を返す。 */
-  createWorktree: (repoId: string, branch?: string) => Promise<{ cwd: string }>;
+  /** bare repo から worktree を作成し、`cwd` と使用ブランチ名を返す。 */
+  createWorktree: (repoId: string, branch?: string) => Promise<{ cwd: string; branch: string }>;
   /** 指定リポジトリのリモートブランチ一覧を返す。 */
   listBranches: (repoId: string) => Promise<string[]>;
 }
@@ -153,7 +153,7 @@ const kiroductorAPI: KiroductorAPI = {
       typedOn('acp:status-change', (_event, payload) => callback(payload)),
   },
   session: {
-    create: (cwd) => invoke('session:new', cwd),
+    create: (cwd, branch) => invoke('session:new', cwd, branch),
     load: (sessionId, cwd) => invoke('session:load', sessionId, cwd),
     prompt: (text) => invoke('session:prompt', text),
     cancel: () => invoke('session:cancel'),
