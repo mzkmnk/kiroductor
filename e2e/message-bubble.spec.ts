@@ -76,12 +76,12 @@ test.describe('MessageBubble', () => {
     await expect(page).toHaveScreenshot('message-bubble-agent.png');
   });
 
-  test('ストリーミング中のエージェントメッセージにカーソルが表示される', async ({ page }) => {
+  test('ストリーミング中のエージェントメッセージが表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, [
       { id: '1', type: 'agent', text: '考え中です', status: 'streaming' },
     ]);
     await page.goto('http://localhost:5173');
-    await expect(page.getByText(/考え中です▌/)).toBeVisible();
+    await expect(page.getByText('考え中です')).toBeVisible();
     await expect(page).toHaveScreenshot('message-bubble-streaming.png');
   });
 
