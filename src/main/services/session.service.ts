@@ -44,7 +44,7 @@ export class SessionService {
     log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.setSessionId(sessionId);
-    this.messageRepo.clear();
+    this.messageRepo.initSession(sessionId);
   }
 
   /**
@@ -61,7 +61,7 @@ export class SessionService {
     log.info(`loadSession 開始 sessionId=${sessionId} cwd=${cwd}`);
     this.sessionRepo.setIsLoading(true);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: true });
-    this.messageRepo.clear();
+    this.messageRepo.clearSession(sessionId);
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);

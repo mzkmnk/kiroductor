@@ -51,21 +51,21 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param params - ACP `session/update` 通知パラメータ
    */
   async handle(params: SessionNotification): Promise<void> {
-    const { update } = params;
+    const { sessionId, update } = params;
     log.info(`sessionUpdate=${update.sessionUpdate}`);
 
     switch (update.sessionUpdate) {
       case 'user_message_chunk':
-        this.handleUserMessageChunk(update);
+        this.handleUserMessageChunk(sessionId, update);
         break;
       case 'agent_message_chunk':
-        this.handleAgentMessageChunk(update);
+        this.handleAgentMessageChunk(sessionId, update);
         break;
       case 'tool_call':
-        this.handleToolCall(update);
+        this.handleToolCall(sessionId, update);
         break;
       case 'tool_call_update':
-        this.handleToolCallUpdate(update);
+        this.handleToolCallUpdate(sessionId, update);
         break;
       default:
         // フォールスルー: レンダラーへ転送するだけ
@@ -81,13 +81,14 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    *
    * `content.type === 'text'` のとき、ユーザーメッセージをリポジトリに追加する。
    *
+   * @param sessionId - セッション ID
    * @param update - `user_message_chunk` イベントデータ
    */
-  private handleUserMessageChunk(update: ContentChunk): void {
+  private handleUserMessageChunk(sessionId: string, update: ContentChunk): void {
     if (update.content.type !== 'text') return;
 
     const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
-    this.messageRepository.addUserMessage(text);
+    this.messageRepository.addUserMessage(sessionId, text);
   }
 
   /**
@@ -98,14 +99,15 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * メッセージを作成する（ツール呼び出し後の返答を分離するため）。
    * streaming 中のメッセージが存在しない場合もフォールバックとして新規追加する。
    *
+   * @param sessionId - セッション ID
    * @param update - `agent_message_chunk` イベントデータ
    */
-  private handleAgentMessageChunk(update: ContentChunk): void {
+  private handleAgentMessageChunk(sessionId: string, update: ContentChunk): void {
     if (update.content.type !== 'text') return;
 
     const chunk = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
 
-    const messages = this.messageRepository.getAll();
+    const messages = this.messageRepository.getAll(sessionId);
     const shouldCreateNew = messages.at(-1)?.type === 'tool_call';
 
     const streamingMessage = shouldCreateNew
@@ -113,10 +115,10 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
       : messages.filter((m) => m.type === 'agent' && m.status === 'streaming').at(-1);
 
     if (streamingMessage) {
-      this.messageRepository.appendAgentChunk(streamingMessage.id, chunk);
+      this.messageRepository.appendAgentChunk(sessionId, streamingMessage.id, chunk);
     } else {
-      const newMessage = this.messageRepository.addAgentMessage(randomUUID());
-      this.messageRepository.appendAgentChunk(newMessage.id, chunk);
+      const newMessage = this.messageRepository.addAgentMessage(sessionId, randomUUID());
+      this.messageRepository.appendAgentChunk(sessionId, newMessage.id, chunk);
     }
   }
 
@@ -127,34 +129,40 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * 同じ `toolCallId` のメッセージが未登録なら `addToolCall` を呼び、
    * 既存なら `updateToolCall` で `name` / `input` を更新する。
    *
+   * @param sessionId - セッション ID
    * @param update - `tool_call` イベントデータ
    */
-  private handleToolCall(update: ToolCall): void {
+  private handleToolCall(sessionId: string, update: ToolCall): void {
     // ツール呼び出し前の streaming メッセージを確定する
-    this.completeStreamingMessages();
+    this.completeStreamingMessages(sessionId);
 
     const { toolCallId, title, rawInput } = update;
     const existing = this.messageRepository
-      .getAll()
+      .getAll(sessionId)
       .find((m) => m.type === 'tool_call' && m.id === toolCallId);
 
     if (existing) {
-      this.messageRepository.updateToolCall(toolCallId, { name: title, input: rawInput });
+      this.messageRepository.updateToolCall(sessionId, toolCallId, {
+        name: title,
+        input: rawInput,
+      });
     } else {
-      this.messageRepository.addToolCall(toolCallId, title, rawInput);
+      this.messageRepository.addToolCall(sessionId, toolCallId, title, rawInput);
     }
   }
 
   /**
    * streaming 中のすべてのエージェントメッセージを `completed` に変更する。
+   *
+   * @param sessionId - セッション ID
    */
-  private completeStreamingMessages(): void {
+  private completeStreamingMessages(sessionId: string): void {
     const streamingMessages = this.messageRepository
-      .getAll()
+      .getAll(sessionId)
       .filter((m) => m.type === 'agent' && m.status === 'streaming');
 
     for (const msg of streamingMessages) {
-      this.messageRepository.completeAgentMessage(msg.id);
+      this.messageRepository.completeAgentMessage(sessionId, msg.id);
     }
   }
 
@@ -163,11 +171,12 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    *
    * `status` と `rawOutput` を `updateToolCall` へ渡す。`rawOutput` が `undefined` の場合は `result` を更新しない。
    *
+   * @param sessionId - セッション ID
    * @param update - `tool_call_update` イベントデータ
    */
-  private handleToolCallUpdate(update: ToolCallUpdate): void {
+  private handleToolCallUpdate(sessionId: string, update: ToolCallUpdate): void {
     const { toolCallId, status, rawOutput } = update;
-    this.messageRepository.updateToolCall(toolCallId, {
+    this.messageRepository.updateToolCall(sessionId, toolCallId, {
       ...(status != null ? { status } : {}),
       ...(rawOutput !== undefined ? { result: JSON.stringify(rawOutput) } : {}),
     });

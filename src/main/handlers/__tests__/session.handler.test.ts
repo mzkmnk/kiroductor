@@ -4,6 +4,7 @@ import { SessionHandler } from '../session.handler';
 import { SessionService } from '../../services/session.service';
 import { PromptService } from '../../services/prompt.service';
 import { MessageRepository } from '../../repositories/message.repository';
+import { SessionRepository } from '../../repositories/session.repository';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -14,7 +15,10 @@ vi.mock('electron', () => ({
 }));
 
 describe('SessionHandler', () => {
+  const SESSION_ID = 'test-session-id';
+
   let messageRepo: MessageRepository;
+  let sessionRepo: SessionRepository;
   let sessionService: {
     create: MockedFunction<(cwd: string) => Promise<void>>;
     cancel: MockedFunction<() => Promise<void>>;
@@ -28,6 +32,9 @@ describe('SessionHandler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     messageRepo = new MessageRepository();
+    sessionRepo = new SessionRepository();
+    sessionRepo.addSession(SESSION_ID);
+    sessionRepo.setActiveSession(SESSION_ID);
     sessionService = {
       create: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn().mockResolvedValue(undefined),
@@ -40,6 +47,7 @@ describe('SessionHandler', () => {
       sessionService as unknown as SessionService,
       promptService as unknown as PromptService,
       messageRepo,
+      sessionRepo,
     );
   });
 
@@ -109,8 +117,8 @@ describe('SessionHandler', () => {
     });
 
     describe('session:messages', () => {
-      it('messageRepository.getAll() の結果を返す', async () => {
-        messageRepo.addUserMessage('test message');
+      it('アクティブセッションの messageRepository.getAll(sessionId) の結果を返す', async () => {
+        messageRepo.addUserMessage(SESSION_ID, 'test message');
         handler.register();
         const messagesHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:messages',

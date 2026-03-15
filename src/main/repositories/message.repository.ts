@@ -63,25 +63,65 @@ function findByType<T extends Message['type']>(
 /**
  * チャット上のメッセージ一覧をインメモリで管理するリポジトリ。
  *
+ * セッションごとにメッセージを分離して保持する。
  * ユーザーメッセージ・エージェントメッセージ・ツール呼び出しを追加順に保持する。
  * 副作用を持たず、状態の読み書きのみを担う。
  */
 export class MessageRepository {
-  private messages: Message[] = [];
+  /** セッション ID をキー、メッセージ配列を値とする Map */
+  private sessions: Map<string, Message[]> = new Map();
+
+  /**
+   * 指定セッション用の空メッセージ配列を初期化する。
+   *
+   * 既に存在する場合は上書きしない。
+   *
+   * @param sessionId - セッション ID
+   */
+  initSession(sessionId: string): void {
+    if (!this.sessions.has(sessionId)) {
+      this.sessions.set(sessionId, []);
+    }
+  }
+
+  /**
+   * 指定セッションのメッセージをクリアする。
+   *
+   * @param sessionId - セッション ID
+   */
+  clearSession(sessionId: string): void {
+    this.sessions.delete(sessionId);
+  }
+
+  /**
+   * 指定セッションのメッセージ配列を取得する。存在しなければ空配列を返す。
+   *
+   * @param sessionId - セッション ID
+   * @returns メッセージ配列への参照
+   */
+  private getMessages(sessionId: string): Message[] {
+    let messages = this.sessions.get(sessionId);
+    if (!messages) {
+      messages = [];
+      this.sessions.set(sessionId, messages);
+    }
+    return messages;
+  }
 
   /**
    * ユーザーが入力したメッセージを追加する。
    *
+   * @param sessionId - セッション ID
    * @param text - ユーザーが入力したテキスト
    * @returns 追加された {@link UserMessage}
    */
-  addUserMessage(text: string): UserMessage {
+  addUserMessage(sessionId: string, text: string): UserMessage {
     const message: UserMessage = {
       id: randomUUID(),
       type: 'user',
       text,
     };
-    this.messages.push(message);
+    this.getMessages(sessionId).push(message);
     return message;
   }
 
@@ -90,17 +130,18 @@ export class MessageRepository {
    *
    * 追加直後の `status` は `'streaming'`、`text` は空文字列。
    *
+   * @param sessionId - セッション ID
    * @param id - メッセージの一意識別子（ACP プロトコルから受け取った ID）
    * @returns 追加された {@link AgentMessage}
    */
-  addAgentMessage(id: string): AgentMessage {
+  addAgentMessage(sessionId: string, id: string): AgentMessage {
     const message: AgentMessage = {
       id,
       type: 'agent',
       text: '',
       status: 'streaming',
     };
-    this.messages.push(message);
+    this.getMessages(sessionId).push(message);
     return message;
   }
 
@@ -109,11 +150,12 @@ export class MessageRepository {
    *
    * 指定した `id` のメッセージが存在しない場合は何もしない。
    *
+   * @param sessionId - セッション ID
    * @param id - 対象メッセージの ID
    * @param chunk - 追記するテキストチャンク
    */
-  appendAgentChunk(id: string, chunk: string): void {
-    const message = findByType(this.messages, id, 'agent');
+  appendAgentChunk(sessionId: string, id: string, chunk: string): void {
+    const message = findByType(this.getMessages(sessionId), id, 'agent');
     if (message) {
       message.text += chunk;
     }
@@ -124,10 +166,11 @@ export class MessageRepository {
    *
    * 指定した `id` のメッセージが存在しない場合は何もしない。
    *
+   * @param sessionId - セッション ID
    * @param id - 対象メッセージの ID
    */
-  completeAgentMessage(id: string): void {
-    const message = findByType(this.messages, id, 'agent');
+  completeAgentMessage(sessionId: string, id: string): void {
+    const message = findByType(this.getMessages(sessionId), id, 'agent');
     if (message) {
       message.status = 'completed';
     }
@@ -138,12 +181,13 @@ export class MessageRepository {
    *
    * 追加直後の `status` は `'running'`。
    *
+   * @param sessionId - セッション ID
    * @param id - ツール呼び出しの一意識別子（ACP プロトコルから受け取った ID）
    * @param name - ツール名
    * @param input - ツールへの入力パラメータ
    * @returns 追加された {@link ToolCallMessage}
    */
-  addToolCall(id: string, name: string, input: unknown): ToolCallMessage {
+  addToolCall(sessionId: string, id: string, name: string, input: unknown): ToolCallMessage {
     const message: ToolCallMessage = {
       id,
       type: 'tool_call',
@@ -151,7 +195,7 @@ export class MessageRepository {
       input,
       status: 'in_progress',
     };
-    this.messages.push(message);
+    this.getMessages(sessionId).push(message);
     return message;
   }
 
@@ -160,14 +204,16 @@ export class MessageRepository {
    *
    * 指定した `id` のメッセージが存在しない場合は何もしない。
    *
+   * @param sessionId - セッション ID
    * @param id - 対象ツール呼び出しの ID
    * @param update - 更新する値（`status`・`result`・`name`・`input` の部分更新）
    */
   updateToolCall(
+    sessionId: string,
     id: string,
     update: Partial<Pick<ToolCallMessage, 'status' | 'result' | 'name' | 'input'>>,
   ): void {
-    const message = findByType(this.messages, id, 'tool_call');
+    const message = findByType(this.getMessages(sessionId), id, 'tool_call');
     if (message) {
       if (update.status !== undefined) {
         message.status = update.status;
@@ -185,18 +231,19 @@ export class MessageRepository {
   }
 
   /**
-   * メッセージ一覧を全件取得する。
+   * 指定セッションのメッセージ一覧を全件取得する。
    *
+   * @param sessionId - セッション ID
    * @returns 追加順のメッセージ配列（内部配列のコピー）
    */
-  getAll(): Message[] {
-    return [...this.messages];
+  getAll(sessionId: string): Message[] {
+    return [...(this.sessions.get(sessionId) ?? [])];
   }
 
   /**
-   * メッセージ一覧をリセットする。
+   * 全セッションのメッセージをクリアする。
    */
   clear(): void {
-    this.messages = [];
+    this.sessions.clear();
   }
 }

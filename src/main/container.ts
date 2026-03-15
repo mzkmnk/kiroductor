@@ -128,7 +128,12 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
 
   // Handlers
   const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);
-  const sessionHandler = new SessionHandler(sessionService, promptService, messageRepo);
+  const sessionHandler = new SessionHandler(
+    sessionService,
+    promptService,
+    messageRepo,
+    sessionRepo,
+  );
   const repoHandler = new RepoHandler(repoService, configRepo);
 
   return { acpHandler, sessionHandler, repoHandler, acpConnectionService, sessionService };
