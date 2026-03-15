@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
-import type {
-  AgentMessage,
-  Message,
-  ToolCallMessage,
-  UserMessage,
-} from '../main/repositories/message.repository';
-import { MessageBubble } from './components/MessageBubble';
-import { ToolCallCard } from './components/ToolCallCard';
+import type { Message, UserMessage } from '../main/repositories/message.repository';
+import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 
 /**
@@ -49,14 +43,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {messages.map((m) => {
-          if (m.type === 'tool_call') {
-            return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
-          }
-          return <MessageBubble key={m.id} message={m as UserMessage | AgentMessage} />;
-        })}
-      </div>
+      <ChatView messages={messages} />
       <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
     </div>
   );
