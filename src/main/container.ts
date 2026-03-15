@@ -51,9 +51,6 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       fs.promises.readFile(filePath, encoding),
     writeFile: (filePath: string, content: string, encoding: BufferEncoding): Promise<void> =>
       fs.promises.writeFile(filePath, content, encoding),
-    mkdir: (dirPath: string, opts?: { recursive?: boolean }): Promise<string | undefined> =>
-      fs.promises.mkdir(dirPath, opts),
-    access: (filePath: string): Promise<void> => fs.promises.access(filePath),
   };
 
   const readTextFileMethod = new ReadTextFileMethod(fsAdapter);
