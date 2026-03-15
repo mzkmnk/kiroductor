@@ -106,4 +106,82 @@ test.describe('MessageBubble', () => {
     await expect(page.getByText('TypeScript について教えてください。')).toBeVisible();
     await expect(page).toHaveScreenshot('message-bubble-conversation.png');
   });
+
+  test('エージェントメッセージがMarkdownでレンダリングされる', async ({ page }) => {
+    await page.addInitScript(mockKiroductorAPIWithMessages, [
+      {
+        id: '1',
+        type: 'agent',
+        text: [
+          '## TypeScript の特徴',
+          '',
+          'TypeScript には以下の特徴があります：',
+          '',
+          '- **静的型付け**: コンパイル時に型エラーを検出',
+          '- *型推論*: 明示的な型注釈なしでも型を推論',
+          '- `interface` と `type` による型定義',
+          '',
+          '```typescript',
+          'const greet = (name: string): string => {',
+          '  return `Hello, ${name}!`;',
+          '};',
+          '```',
+          '',
+          '> TypeScript は JavaScript のスーパーセットです。',
+        ].join('\n'),
+        status: 'completed',
+      },
+    ]);
+    await page.goto('http://localhost:5173');
+    await expect(page.getByRole('heading', { name: 'TypeScript の特徴' })).toBeVisible();
+    await expect(page).toHaveScreenshot('message-bubble-markdown-agent.png');
+  });
+
+  test('ユーザーメッセージがMarkdownでレンダリングされる', async ({ page }) => {
+    await page.addInitScript(mockKiroductorAPIWithMessages, [
+      {
+        id: '1',
+        type: 'user',
+        text: [
+          '以下の関数を修正してください：',
+          '',
+          '```typescript',
+          'function add(a, b) {',
+          '  return a + b;',
+          '}',
+          '```',
+          '',
+          '1. 引数に型注釈を追加',
+          '2. 戻り値の型を明示',
+        ].join('\n'),
+      },
+    ]);
+    await page.goto('http://localhost:5173');
+    await expect(page.getByText('以下の関数を修正してください：')).toBeVisible();
+    await expect(page).toHaveScreenshot('message-bubble-markdown-user.png');
+  });
+
+  test('Markdownのテーブルとリンクが正しく表示される', async ({ page }) => {
+    await page.addInitScript(mockKiroductorAPIWithMessages, [
+      {
+        id: '1',
+        type: 'agent',
+        text: [
+          '型の比較表です：',
+          '',
+          '| 型 | 説明 | 例 |',
+          '|---|---|---|',
+          '| `string` | 文字列 | `"hello"` |',
+          '| `number` | 数値 | `42` |',
+          '| `boolean` | 真偽値 | `true` |',
+          '',
+          '詳細は [TypeScript公式ドキュメント](https://www.typescriptlang.org/) を参照してください。',
+        ].join('\n'),
+        status: 'completed',
+      },
+    ]);
+    await page.goto('http://localhost:5173');
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page).toHaveScreenshot('message-bubble-markdown-table.png');
+  });
 });

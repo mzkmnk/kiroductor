@@ -1,3 +1,6 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 import type { AgentMessage, UserMessage } from '../../main/repositories/message.repository';
 
 /**
@@ -14,6 +17,7 @@ interface MessageBubbleProps {
  * - ユーザー発言: 右寄せ、`bg-primary/20 border-primary/30`
  * - エージェント返答: 左寄せ、`bg-card border-border`
  * - エージェントのストリーミング中はカーソル（`▌`）を末尾に表示する。
+ * - メッセージ本文は Markdown としてレンダリングされる。
  */
 function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.type === 'user';
@@ -22,13 +26,15 @@ function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[75%] rounded-2xl border px-4 py-2 text-sm whitespace-pre-wrap break-words ${
+        className={`max-w-[75%] rounded-2xl border px-4 py-2 text-sm break-words ${
           isUser
             ? 'bg-primary/20 border-primary/30 text-foreground'
             : 'bg-card border-border text-foreground'
         }`}
       >
-        {message.text}
+        <div className="markdown-body">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+        </div>
         {isStreaming && <span aria-hidden="true">▌</span>}
       </div>
     </div>
