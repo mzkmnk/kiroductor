@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import type {
   AgentMessage,
   Message,
@@ -14,6 +15,8 @@ import { ToolCallCard } from './ToolCallCard';
 interface ChatViewProps {
   /** 表示するメッセージ一覧。 */
   messages: Message[];
+  /** セッション復元中かどうか。true のときローディング表示になる。 */
+  isRestoring?: boolean;
 }
 
 /**
@@ -22,12 +25,23 @@ interface ChatViewProps {
  * - `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを提供する。
  * - 新しいメッセージが届いたら自動で最下部へスクロールする。
  */
-function ChatView({ messages }: ChatViewProps) {
+function ChatView({ messages, isRestoring = false }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  if (isRestoring) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="size-6 animate-spin" />
+          <span className="text-sm">Restoring session...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-3 overflow-y-auto p-4">

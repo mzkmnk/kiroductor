@@ -15,6 +15,7 @@ import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
  */
 function App() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
@@ -59,13 +60,15 @@ function App() {
     setIsProcessing(false);
   }
 
-  /** セッション切り替えハンドラ。先に遷移してからバックグラウンドで session:load を実行する。 */
-  function handleSwitchSession(sessionId: string, cwd: string) {
+  /** セッション切り替えハンドラ。復元中は isRestoring を true にしてローディング UI を表示する。 */
+  async function handleSwitchSession(sessionId: string, cwd: string) {
     setActiveSessionId(sessionId);
     setMessages([]);
-    window.kiroductor.session.load(sessionId, cwd).then(() => {
-      window.kiroductor.session.getMessages().then(setMessages);
-    });
+    setIsRestoring(true);
+    await window.kiroductor.session.load(sessionId, cwd);
+    const msgs = await window.kiroductor.session.getMessages();
+    setMessages(msgs);
+    setIsRestoring(false);
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
@@ -85,8 +88,8 @@ function App() {
       <SidebarInset>
         {activeSessionId ? (
           <div className="flex h-full flex-col">
-            <ChatView messages={messages} />
-            <PromptInput onSubmit={handleSubmit} disabled={isProcessing} />
+            <ChatView messages={messages} isRestoring={isRestoring} />
+            <PromptInput onSubmit={handleSubmit} disabled={isProcessing || isRestoring} />
           </div>
         ) : (
           <WelcomeScreen onSessionCreated={handleSessionCreated} />
