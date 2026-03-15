@@ -28,19 +28,6 @@
 
 ## 設定ファイル設計
 
-### `settings.json` — アプリ全体の設定
-
-```typescript
-interface KiroductorSettings {
-  /** kiro-cli の実行パス（デフォルト: "kiro-cli"） */
-  kiroCli: {
-    path: string;
-  };
-  /** bare repo のルートディレクトリ（デフォルト: "~/.kiroductor/repos"） */
-  reposRoot: string;
-}
-```
-
 ### `sessions.json` — セッションとリポジトリの紐付け
 
 ```typescript
@@ -64,9 +51,6 @@ interface SessionsFile {
 }
 ```
 
-> **設計判断**: `settings.json` と `sessions.json` を分離する。
-> 理由: 設定はユーザーが手動編集する可能性があるが、セッション情報はアプリが自動管理するため、ファイルの更新頻度と管理主体が異なる。
-
 > **重要**: kiro-cli v1.27.2 では `listSessions` が未サポート（`-32601`）のため、
 > セッション一覧はこの `sessions.json` がマスターデータとなる。
 > `~/.kiro/sessions/cli/` には全クライアントのセッションが混在するため、
@@ -75,25 +59,25 @@ interface SessionsFile {
 
 ## ConfigRepository — `.kiroductor/` ディレクトリの読み書きを管理する
 
-- [ ] `ConfigRepository` クラスを作成し、ファイルシステム（`fs`）を依存注入で受け取るようにする
-- [ ] `getBaseDir()`: `~/.kiroductor/` のパスを返す（`os.homedir()` ベース）
-- [ ] `ensureBaseDir()`: ベースディレクトリと `repos/` サブディレクトリが存在しなければ作成する
+- [x] `ConfigRepository` クラスを作成し、ファイルシステム（`fs`）を依存注入で受け取るようにする
+- [x] `getBaseDir()`: `~/.kiroductor/` のパスを返す（`os.homedir()` ベース）
+- [x] `ensureBaseDir()`: ベースディレクトリと `repos/` サブディレクトリが存在しなければ作成する
   - **AC**: ディレクトリが存在しない場合、`mkdir -p` 相当で作成される
   - **AC**: 既に存在する場合、エラーにならない
-- [ ] `readSettings()`: `settings.json` を読み込み、デフォルト値とマージして返す
+- [x] `readSettings()`: `settings.json` を読み込み、デフォルト値とマージして返す
   - **AC**: ファイルが存在しない場合、デフォルト設定を返す
   - **AC**: ファイルが存在する場合、JSON をパースして返す
-- [ ] `writeSettings(settings)`: `settings.json` を書き込む
+- [x] `writeSettings(settings)`: `settings.json` を書き込む
   - **AC**: JSON を整形（2 スペースインデント）して書き込む
-- [ ] `readSessions()`: `sessions.json` を読み込み、セッション一覧を返す
+- [x] `readSessions()`: `sessions.json` を読み込み、セッション一覧を返す
   - **AC**: ファイルが存在しない場合、空配列を返す
-- [ ] `writeSessions(sessions)`: `sessions.json` を書き込む
-- [ ] `upsertSession(mapping)`: `acpSessionId` をキーにセッションを追加または更新する
+- [x] `writeSessions(sessions)`: `sessions.json` を書き込む
+- [x] `upsertSession(mapping)`: `acpSessionId` をキーにセッションを追加または更新する
   - **AC**: 同じ `acpSessionId` が存在する場合、更新される
   - **AC**: 存在しない場合、新規追加される
   - **AC**: `updatedAt` が現在時刻に更新される
-- [ ] `removeSession(acpSessionId)`: セッションを削除する
-- [ ] テスト: 各メソッドの動作を一時ディレクトリで検証する
+- [x] `removeSession(acpSessionId)`: セッションを削除する
+- [x] テスト: 各メソッドの動作を一時ディレクトリで検証する
 
 ## RepoService — Bare Repo のクローンと管理
 

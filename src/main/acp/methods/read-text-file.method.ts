@@ -2,12 +2,7 @@ import type {
   ReadTextFileRequest,
   ReadTextFileResponse,
 } from '@agentclientprotocol/sdk/dist/schema/index';
-
-/** `fs.readFile` の最小インターフェース。依存注入・テスト用。 */
-export interface FileSystem {
-  /** ファイルを読み込む。 */
-  readFile(path: string, encoding: BufferEncoding): Promise<string>;
-}
+import type { FileSystem } from '../../fs';
 
 /** `fs/readTextFile` リクエストを処理できるオブジェクトの最小インターフェース。 */
 export interface IReadTextFileMethod {
@@ -25,7 +20,7 @@ export class ReadTextFileMethod implements IReadTextFileMethod {
   /**
    * @param fs - ファイルシステム操作を提供するオブジェクト（依存注入）
    */
-  constructor(private readonly fs: FileSystem) {}
+  constructor(private readonly fs: Pick<FileSystem, 'readFile'>) {}
 
   /**
    * 指定されたパスのファイルを UTF-8 で読み込んで返す。
