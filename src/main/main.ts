@@ -13,9 +13,8 @@ const log = createDebugLogger('Main');
 /** アプリケーションのメインウィンドウインスタンス。未生成または破棄済みの場合は `null`。 */
 let mainWindow: BrowserWindow | null = null;
 
-const { acpHandler, sessionHandler, acpConnectionService, sessionService } = buildContainer(
-  () => mainWindow,
-);
+const { acpHandler, sessionHandler, repoHandler, acpConnectionService, sessionService } =
+  buildContainer(() => mainWindow);
 
 /**
  * Electron の `BrowserWindow` を生成してアプリケーションウィンドウを初期化する。
@@ -62,7 +61,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   log.info('app ready');
-  registerHandlers(acpHandler, sessionHandler);
+  registerHandlers(acpHandler, sessionHandler, repoHandler);
   createWindow();
 
   app.on('activate', () => {

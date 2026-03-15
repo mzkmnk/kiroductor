@@ -2,6 +2,15 @@ import os from 'os';
 import path from 'path';
 import type { FileSystem } from '../fs';
 
+/** アプリ全体の設定。`settings.json` に永続化される。 */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface KiroductorSettings {
+  // 将来の設定フィールドのためのプレースホルダー
+}
+
+/** `settings.json` のデフォルト値。 */
+const DEFAULT_SETTINGS: KiroductorSettings = {};
+
 /** クローン済みリポジトリの情報。`repos.json` に永続化される。 */
 export interface RepoMapping {
   /** リポジトリの識別子（nanoid で生成） */
@@ -157,6 +166,37 @@ export class ConfigRepository {
   async findRepoByPath(host: string, org: string, repo: string): Promise<RepoMapping | undefined> {
     const repos = await this.readRepos();
     return repos.find((r) => r.host === host && r.org === org && r.name === repo);
+  }
+
+  /**
+   * `settings.json` を読み込み、デフォルト値とマージして返す。
+   *
+   * ファイルが存在しない場合はデフォルト設定を返す。
+   *
+   * @returns {@link KiroductorSettings}
+   */
+  async readSettings(): Promise<KiroductorSettings> {
+    const filePath = path.join(this.baseDir, 'settings.json');
+    try {
+      await this.fs.access(filePath);
+      const raw = await this.fs.readFile(filePath, 'utf-8');
+      const data = JSON.parse(raw) as KiroductorSettings;
+      return { ...DEFAULT_SETTINGS, ...data };
+    } catch {
+      return { ...DEFAULT_SETTINGS };
+    }
+  }
+
+  /**
+   * `settings.json` を書き込む。
+   *
+   * JSON を整形（2 スペースインデント）して書き込む。
+   *
+   * @param settings - 書き込む {@link KiroductorSettings}
+   */
+  async writeSettings(settings: KiroductorSettings): Promise<void> {
+    const filePath = path.join(this.baseDir, 'settings.json');
+    await this.fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
   }
 
   /**

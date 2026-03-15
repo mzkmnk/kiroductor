@@ -1,13 +1,16 @@
 import fs from 'fs';
+import { spawn } from 'child_process';
 import type { BrowserWindow } from 'electron';
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { ConnectionRepository } from './repositories/connection.repository';
 import { SessionRepository } from './repositories/session.repository';
 import { MessageRepository } from './repositories/message.repository';
+import { ConfigRepository } from './repositories/config.repository';
 import { ElectronNotificationService } from './services/notification.service';
 import { AcpConnectionService, type ClientHandlerFactory } from './services/acp-connection.service';
 import { SessionService } from './services/session.service';
 import { PromptService } from './services/prompt.service';
+import { RepoService } from './services/repo.service';
 import { KiroductorClientHandler } from './acp/client-handler';
 import { ReadTextFileMethod } from './acp/methods/read-text-file.method';
 import { WriteTextFileMethod } from './acp/methods/write-text-file.method';
@@ -15,6 +18,7 @@ import { RequestPermissionMethod } from './acp/methods/request-permission.method
 import { SessionUpdateMethod } from './acp/methods/session-update.method';
 import { AcpHandler } from './handlers/acp.handler';
 import { SessionHandler } from './handlers/session.handler';
+import { RepoHandler } from './handlers/repo.handler';
 
 /** {@link buildContainer} の戻り値。IPCハンドラ登録と自動初期化に必要なオブジェクト。 */
 export interface AppContainer {
@@ -22,6 +26,8 @@ export interface AppContainer {
   acpHandler: AcpHandler;
   /** セッション管理ハンドラ。 */
   sessionHandler: SessionHandler;
+  /** リポジトリ操作・設定管理ハンドラ。 */
+  repoHandler: RepoHandler;
   /** ACP接続のライフサイクルを管理するサービス。自動初期化に使用する。 */
   acpConnectionService: Pick<AcpConnectionService, 'start'>;
   /** セッションのライフサイクルを管理するサービス。自動初期化に使用する。 */
@@ -43,15 +49,22 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const sessionRepo = new SessionRepository();
   const messageRepo = new MessageRepository();
 
-  // Services
-  const notificationService = new ElectronNotificationService(getMainWindow);
-
   const fsAdapter = {
     readFile: (filePath: string, encoding: BufferEncoding): Promise<string> =>
       fs.promises.readFile(filePath, encoding),
     writeFile: (filePath: string, content: string, encoding: BufferEncoding): Promise<void> =>
       fs.promises.writeFile(filePath, content, encoding),
+    mkdir: (dirPath: string, opts?: { recursive?: boolean }): Promise<string | undefined> =>
+      fs.promises.mkdir(dirPath, opts),
+    access: (targetPath: string): Promise<void> => fs.promises.access(targetPath),
+    readdir: (dirPath: string): Promise<string[]> => fs.promises.readdir(dirPath),
   };
+
+  const configRepo = new ConfigRepository(fsAdapter);
+
+  // Services
+  const notificationService = new ElectronNotificationService(getMainWindow);
+  const repoService = new RepoService(configRepo, fsAdapter, spawn);
 
   const readTextFileMethod = new ReadTextFileMethod(fsAdapter);
   const writeTextFileMethod = new WriteTextFileMethod(fsAdapter);
@@ -103,6 +116,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   // Handlers
   const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);
   const sessionHandler = new SessionHandler(sessionService, promptService, messageRepo);
+  const repoHandler = new RepoHandler(repoService, configRepo);
 
-  return { acpHandler, sessionHandler, acpConnectionService, sessionService };
+  return { acpHandler, sessionHandler, repoHandler, acpConnectionService, sessionService };
 }

@@ -113,10 +113,10 @@ interface SessionsFile {
 
 ## RepoHandler — リポジトリ操作の IPC ハンドラー
 
-- [ ] `repo:clone`、`repo:list`、`repo:create-worktree` チャネルを登録する
-- [ ] `config:get-settings`、`config:update-settings` チャネルを登録する
+- [x] `repo:clone`、`repo:list`、`repo:create-worktree` チャネルを登録する
+- [x] `config:get-settings`、`config:update-settings` チャネルを登録する
 
 ## Preload API の追加
 
-- [ ] `window.kiroductor.repo` に `clone`、`list`、`createWorktree` を公開する
-- [ ] `window.kiroductor.config` に `getSettings`、`updateSettings` を公開する
+- [x] `window.kiroductor.repo` に `clone`、`list`、`createWorktree` を公開する
+- [x] `window.kiroductor.config` に `getSettings`、`updateSettings` を公開する
