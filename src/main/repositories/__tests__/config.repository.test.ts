@@ -49,36 +49,9 @@ describe('ConfigRepository', () => {
     });
   });
 
-  describe('readSettings()', () => {
-    it('ファイルが存在しない場合、デフォルト設定を返す', async () => {
-      const settings = await repo.readSettings();
-      expect(settings).toEqual({
-        reposRoot: path.join(tmpDir, 'repos'),
-      });
-    });
-
-    it('ファイルが存在する場合、JSON をパースして返す', async () => {
-      const customSettings = {
-        reposRoot: '/custom/repos',
-      };
-      await fs.promises.writeFile(
-        path.join(tmpDir, 'settings.json'),
-        JSON.stringify(customSettings, null, 2),
-        'utf-8',
-      );
-      const settings = await repo.readSettings();
-      expect(settings).toEqual(customSettings);
-    });
-  });
-
-  describe('writeSettings()', () => {
-    it('JSON を整形（2 スペースインデント）して書き込む', async () => {
-      const settings = {
-        reposRoot: '/custom/repos',
-      };
-      await repo.writeSettings(settings);
-      const raw = await fs.promises.readFile(path.join(tmpDir, 'settings.json'), 'utf-8');
-      expect(raw).toBe(JSON.stringify(settings, null, 2));
+  describe('getReposRoot()', () => {
+    it('baseDir + "/repos" のパスを返す', () => {
+      expect(repo.getReposRoot()).toBe(path.join(tmpDir, 'repos'));
     });
   });
 

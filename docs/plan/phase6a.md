@@ -28,15 +28,6 @@
 
 ## 設定ファイル設計
 
-### `settings.json` — アプリ全体の設定
-
-```typescript
-interface KiroductorSettings {
-  /** bare repo のルートディレクトリ（デフォルト: "~/.kiroductor/repos"） */
-  reposRoot: string;
-}
-```
-
 ### `sessions.json` — セッションとリポジトリの紐付け
 
 ```typescript
@@ -59,9 +50,6 @@ interface SessionsFile {
   sessions: SessionMapping[];
 }
 ```
-
-> **設計判断**: `settings.json` と `sessions.json` を分離する。
-> 理由: 設定はユーザーが手動編集する可能性があるが、セッション情報はアプリが自動管理するため、ファイルの更新頻度と管理主体が異なる。
 
 > **重要**: kiro-cli v1.27.2 では `listSessions` が未サポート（`-32601`）のため、
 > セッション一覧はこの `sessions.json` がマスターデータとなる。

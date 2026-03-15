@@ -2,12 +2,6 @@ import os from 'os';
 import path from 'path';
 import type { FileSystem } from '../fs';
 
-/** アプリ全体の設定。`settings.json` に永続化される。 */
-export interface KiroductorSettings {
-  /** bare repo のルートディレクトリ（デフォルト: "~/.kiroductor/repos"） */
-  reposRoot: string;
-}
-
 /** ACP セッションとリポジトリの紐付け情報。`sessions.json` に永続化される。 */
 export interface SessionMapping {
   /** kiro-cli の ACP セッション ID */
@@ -61,6 +55,15 @@ export class ConfigRepository {
   }
 
   /**
+   * bare repo のルートディレクトリのパスを返す。
+   *
+   * @returns `~/.kiroductor/repos/` の絶対パス
+   */
+  getReposRoot(): string {
+    return path.join(this.baseDir, 'repos');
+  }
+
+  /**
    * ベースディレクトリと `repos/` サブディレクトリが存在しなければ作成する。
    *
    * `mkdir -p` 相当の処理を行い、既に存在する場合はエラーにならない。
@@ -68,40 +71,6 @@ export class ConfigRepository {
   async ensureBaseDir(): Promise<void> {
     await this.fs.mkdir(this.baseDir, { recursive: true });
     await this.fs.mkdir(path.join(this.baseDir, 'repos'), { recursive: true });
-  }
-
-  /**
-   * `settings.json` を読み込み、デフォルト値とマージして返す。
-   *
-   * ファイルが存在しない場合はデフォルト設定を返す。
-   *
-   * @returns {@link KiroductorSettings}
-   */
-  async readSettings(): Promise<KiroductorSettings> {
-    const defaultSettings: KiroductorSettings = {
-      reposRoot: path.join(this.baseDir, 'repos'),
-    };
-
-    const filePath = path.join(this.baseDir, 'settings.json');
-    try {
-      await this.fs.access(filePath);
-      const raw = await this.fs.readFile(filePath, 'utf-8');
-      return JSON.parse(raw) as KiroductorSettings;
-    } catch {
-      return defaultSettings;
-    }
-  }
-
-  /**
-   * `settings.json` を書き込む。
-   *
-   * JSON を 2 スペースインデントで整形して書き込む。
-   *
-   * @param settings - 書き込む {@link KiroductorSettings}
-   */
-  async writeSettings(settings: KiroductorSettings): Promise<void> {
-    const filePath = path.join(this.baseDir, 'settings.json');
-    await this.fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
   }
 
   /**
