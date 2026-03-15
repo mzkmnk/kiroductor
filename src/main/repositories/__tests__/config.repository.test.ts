@@ -53,14 +53,12 @@ describe('ConfigRepository', () => {
     it('ファイルが存在しない場合、デフォルト設定を返す', async () => {
       const settings = await repo.readSettings();
       expect(settings).toEqual({
-        kiroCli: { path: 'kiro-cli' },
         reposRoot: path.join(tmpDir, 'repos'),
       });
     });
 
     it('ファイルが存在する場合、JSON をパースして返す', async () => {
       const customSettings = {
-        kiroCli: { path: '/usr/local/bin/kiro-cli' },
         reposRoot: '/custom/repos',
       };
       await fs.promises.writeFile(
@@ -76,7 +74,6 @@ describe('ConfigRepository', () => {
   describe('writeSettings()', () => {
     it('JSON を整形（2 スペースインデント）して書き込む', async () => {
       const settings = {
-        kiroCli: { path: '/usr/local/bin/kiro-cli' },
         reposRoot: '/custom/repos',
       };
       await repo.writeSettings(settings);

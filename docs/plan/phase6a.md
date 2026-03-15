@@ -32,10 +32,6 @@
 
 ```typescript
 interface KiroductorSettings {
-  /** kiro-cli の実行パス（デフォルト: "kiro-cli"） */
-  kiroCli: {
-    path: string;
-  };
   /** bare repo のルートディレクトリ（デフォルト: "~/.kiroductor/repos"） */
   reposRoot: string;
 }

@@ -4,11 +4,6 @@ import type { FileSystem } from '../fs';
 
 /** アプリ全体の設定。`settings.json` に永続化される。 */
 export interface KiroductorSettings {
-  /** kiro-cli の実行パス（デフォルト: "kiro-cli"） */
-  kiroCli: {
-    /** kiro-cli 実行ファイルのパス */
-    path: string;
-  };
   /** bare repo のルートディレクトリ（デフォルト: "~/.kiroductor/repos"） */
   reposRoot: string;
 }
@@ -84,7 +79,6 @@ export class ConfigRepository {
    */
   async readSettings(): Promise<KiroductorSettings> {
     const defaultSettings: KiroductorSettings = {
-      kiroCli: { path: 'kiro-cli' },
       reposRoot: path.join(this.baseDir, 'repos'),
     };
 
