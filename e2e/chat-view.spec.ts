@@ -54,7 +54,7 @@ test.describe('ChatView', () => {
       },
     ]);
     await page.goto('http://localhost:5173');
-    await expect(page.getByText('こんにちは！')).toBeVisible();
+    await expect(page.getByText('こんにちは！', { exact: true })).toBeVisible();
     await expect(page.getByText('TypeScript について教えてください。')).toBeVisible();
     await expect(page).toHaveScreenshot('chat-view-messages.png');
   });
