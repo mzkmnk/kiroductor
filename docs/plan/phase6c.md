@@ -63,7 +63,7 @@
 
 ## SessionUpdateMethod の修正
 
-- [ ] `session/update` 通知に含まれる `sessionId` を使って、正しいセッションのメッセージを更新する
+- [x] `session/update` 通知に含まれる `sessionId` を使って、正しいセッションのメッセージを更新する
   - **AC**: `params.sessionId` が `messageRepo.addAgentMessage(sessionId, ...)` 等に渡される
   - **AC**: 異なるセッションの更新が混在しない
 

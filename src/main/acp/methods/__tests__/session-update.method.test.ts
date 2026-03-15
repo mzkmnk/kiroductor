@@ -223,6 +223,57 @@ describe('SessionUpdateMethod', () => {
     });
   });
 
+  describe('マルチセッション分離', () => {
+    const SESSION_A = 'session-A';
+    const SESSION_B = 'session-B';
+
+    it('params.sessionId が messageRepo の各メソッドに渡され、異なるセッションの更新が混在しないこと', async () => {
+      // セッションAにエージェントメッセージを送信
+      await method.handle({
+        sessionId: SESSION_A,
+        update: {
+          sessionUpdate: 'agent_message_chunk',
+          content: { type: 'text', text: 'Hello from A' },
+        },
+      });
+
+      // セッションBにエージェントメッセージを送信
+      await method.handle({
+        sessionId: SESSION_B,
+        update: {
+          sessionUpdate: 'agent_message_chunk',
+          content: { type: 'text', text: 'Hello from B' },
+        },
+      });
+
+      // セッションAにツールコールを送信
+      await method.handle({
+        sessionId: SESSION_A,
+        update: {
+          sessionUpdate: 'tool_call',
+          toolCallId: 'tc-a',
+          title: 'Tool A',
+          rawInput: {},
+          status: 'in_progress',
+        },
+      });
+
+      // セッションAのメッセージにはAの内容のみ含まれること
+      const messagesA = repo.getAll(SESSION_A);
+      expect(messagesA).toHaveLength(2);
+      assert(messagesA[0].type === 'agent');
+      expect(messagesA[0].text).toBe('Hello from A');
+      assert(messagesA[1].type === 'tool_call');
+      expect(messagesA[1].name).toBe('Tool A');
+
+      // セッションBのメッセージにはBの内容のみ含まれること
+      const messagesB = repo.getAll(SESSION_B);
+      expect(messagesB).toHaveLength(1);
+      assert(messagesB[0].type === 'agent');
+      expect(messagesB[0].text).toBe('Hello from B');
+    });
+  });
+
   describe('その他のイベント（フォールスルー）', () => {
     it('tool_call / tool_call_update / agent_message_chunk 以外では sendToRenderer のみ呼ばれ、repo への操作が行われないこと', async () => {
       const params: SessionNotification = {
