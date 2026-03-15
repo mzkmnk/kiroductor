@@ -89,10 +89,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
     const chunk = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
 
     const messages = this.messageRepository.getAll();
-    const lastMessage = messages.at(-1);
-    const hasToolCallBefore = lastMessage?.type === 'tool_call';
+    const shouldCreateNew = messages.at(-1)?.type === 'tool_call';
 
-    const streamingMessage = hasToolCallBefore
+    const streamingMessage = shouldCreateNew
       ? undefined
       : messages.filter((m) => m.type === 'agent' && m.status === 'streaming').at(-1);
 
