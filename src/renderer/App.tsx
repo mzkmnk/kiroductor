@@ -113,6 +113,18 @@ function App() {
   }, []);
 
   /**
+   * エージェントの実行をキャンセルする。
+   *
+   * 停止ボタン押下時に呼ばれ、ACP の cancel 通知を送信する。
+   * prompt() は stopReason: "cancelled" で完了するため、isProcessing は
+   * handleSubmit() の await 解除時に自動で false になる。
+   */
+  function handleCancel() {
+    if (!isProcessing) return;
+    window.kiroductor.session.cancel();
+  }
+
+  /**
    * ユーザーのプロンプトを送信する。
    *
    * ユーザーメッセージを楽観的に即時表示してから IPC を呼ぶ。
@@ -166,7 +178,12 @@ function App() {
               animSplits={chatState.animSplits}
               isRestoring={isRestoring}
             />
-            <PromptInput onSubmit={handleSubmit} disabled={isProcessing || isRestoring} />
+            <PromptInput
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              isProcessing={isProcessing}
+              disabled={isProcessing || isRestoring}
+            />
           </div>
         ) : (
           <WelcomeScreen onSessionCreated={handleSessionCreated} />
