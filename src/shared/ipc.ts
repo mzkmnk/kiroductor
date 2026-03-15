@@ -25,6 +25,7 @@ export interface IpcInvokeChannels {
   'session:messages': { args: [sessionId?: SessionId]; return: Message[] };
   'session:switch': { args: [sessionId: SessionId]; return: void };
   'session:active': { args: []; return: SessionId | null };
+  'session:all': { args: []; return: SessionId[] };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };

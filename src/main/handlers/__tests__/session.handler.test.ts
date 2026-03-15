@@ -71,6 +71,7 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:messages');
       expect(channels).toContain('session:switch');
       expect(channels).toContain('session:active');
+      expect(channels).toContain('session:all');
     });
 
     describe('session:new', () => {
@@ -203,6 +204,21 @@ describe('SessionHandler', () => {
         const result = activeHandler();
 
         expect(result).toBeNull();
+      });
+    });
+
+    describe('session:all', () => {
+      it('管理中の全セッション ID を返す', () => {
+        const OTHER_SESSION_ID = 'other-session-id';
+        sessionRepo.addSession(OTHER_SESSION_ID);
+        handler.register();
+        const allHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:all',
+        )?.[1] as () => string[];
+
+        const result = allHandler();
+
+        expect(result).toEqual([SESSION_ID, OTHER_SESSION_ID]);
       });
     });
   });
