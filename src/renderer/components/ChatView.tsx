@@ -1,0 +1,45 @@
+import { useEffect, useRef } from 'react';
+import type {
+  AgentMessage,
+  Message,
+  ToolCallMessage,
+  UserMessage,
+} from '../../main/repositories/message.repository';
+import { MessageBubble } from './MessageBubble';
+import { ToolCallCard } from './ToolCallCard';
+
+/**
+ * ChatView コンポーネントの props。
+ */
+interface ChatViewProps {
+  /** 表示するメッセージ一覧。 */
+  messages: Message[];
+}
+
+/**
+ * メッセージ一覧を表示するスクロール可能なコンテナ。
+ *
+ * - `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを提供する。
+ * - 新しいメッセージが届いたら自動で最下部へスクロールする。
+ */
+function ChatView({ messages }: ChatViewProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      {messages.map((m) => {
+        if (m.type === 'tool_call') {
+          return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
+        }
+        return <MessageBubble key={m.id} message={m as UserMessage | AgentMessage} />;
+      })}
+      <div ref={bottomRef} />
+    </div>
+  );
+}
+
+export { ChatView };
