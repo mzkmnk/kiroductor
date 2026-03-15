@@ -3,6 +3,7 @@ import type { spawn } from 'child_process';
 import { nanoid } from 'nanoid';
 import { createDebugLogger } from '../debug-logger';
 import type { ConfigRepository } from '../repositories/config.repository';
+import type { RepoMapping } from '../repositories/config.repository';
 import type { FileSystem } from '../fs';
 
 const log = createDebugLogger('Repo');
@@ -25,15 +26,19 @@ export type SpawnFn = typeof spawn;
  *
  * `~/.kiroductor/repos/` 配下にホスト/組織/リポジトリ名でディレクトリを構造化し、
  * bare clone を格納する。worktree は `~/.kiroductor/worktrees/` 配下に作成する。
+ * クローン済みリポジトリの情報は `repos.json` に永続化する。
  */
 export class RepoService {
   /**
-   * @param configRepo - ベースディレクトリ情報を提供する {@link ConfigRepository}
+   * @param configRepo - 設定ファイルとディレクトリ情報を提供する {@link ConfigRepository}
    * @param fs - ファイルシステム操作のアダプター
    * @param spawnFn - 子プロセスを起動する関数（テスト時にモック差し替え可能）
    */
   constructor(
-    private readonly configRepo: Pick<ConfigRepository, 'getBaseDir' | 'getReposRoot'>,
+    private readonly configRepo: Pick<
+      ConfigRepository,
+      'getBaseDir' | 'getReposRoot' | 'readRepos' | 'upsertRepo' | 'findRepoByPath'
+    >,
     private readonly fs: FileSystem,
     private readonly spawnFn: SpawnFn,
   ) {}
@@ -65,42 +70,55 @@ export class RepoService {
   }
 
   /**
-   * リポジトリ ID から bare clone のパスを返す。
+   * リポジトリの bare clone パスを返す。
    *
-   * @param repoId - リポジトリの識別子（例: "github.com/mzkmnk/kiroductor"）
+   * @param parsed - パース済みのリポジトリ URL 構成要素
    * @returns bare clone ディレクトリの絶対パス
    */
-  getRepoPath(repoId: string): string {
-    return path.join(this.configRepo.getReposRoot(), `${repoId}.git`);
+  getRepoPath(parsed: ParsedRepoUrl): string {
+    return path.join(this.configRepo.getReposRoot(), parsed.host, parsed.org, `${parsed.repo}.git`);
   }
 
   /**
    * リポジトリを bare clone する。
    *
-   * 既にクローン済みの場合は `git fetch --all` で最新に更新する。
+   * 既にクローン済みの場合は `git fetch --all` で最新に更新し、既存の repoId を返す。
    * クローン先ディレクトリの親が存在しなければ再帰的に作成する。
+   * クローン情報は `repos.json` に永続化する。
    *
    * @param url - クローンするリポジトリの URL
-   * @returns リポジトリの識別子（repoId）
+   * @returns リポジトリの識別子（nanoid）
    * @throws git コマンドが失敗した場合
    */
   async clone(url: string): Promise<string> {
     const parsed = this.parseRepoUrl(url);
-    const repoId = `${parsed.host}/${parsed.org}/${parsed.repo}`;
-    const repoPath = this.getRepoPath(repoId);
+    const repoPath = this.getRepoPath(parsed);
 
-    const exists = await this.pathExists(repoPath);
+    // 既にクローン済みか repos.json で確認
+    const existing = await this.configRepo.findRepoByPath(parsed.host, parsed.org, parsed.repo);
 
-    if (exists) {
-      log.info(`既にクローン済み: ${repoId} → fetch --all`);
+    if (existing) {
+      log.info(`既にクローン済み: ${existing.repoId} → fetch --all`);
       await this.execGit(['fetch', '--all'], repoPath);
-    } else {
-      const parentDir = path.dirname(repoPath);
-      await this.fs.mkdir(parentDir, { recursive: true });
-
-      log.info(`bare clone: ${url} → ${repoPath}`);
-      await this.execGit(['clone', '--bare', url, repoPath]);
+      return existing.repoId;
     }
+
+    const parentDir = path.dirname(repoPath);
+    await this.fs.mkdir(parentDir, { recursive: true });
+
+    log.info(`bare clone: ${url} → ${repoPath}`);
+    await this.execGit(['clone', '--bare', url, repoPath]);
+
+    const repoId = nanoid();
+    const mapping: RepoMapping = {
+      repoId,
+      url,
+      host: parsed.host,
+      org: parsed.org,
+      repo: parsed.repo,
+      clonedAt: new Date().toISOString(),
+    };
+    await this.configRepo.upsertRepo(mapping);
 
     return repoId;
   }
@@ -111,19 +129,23 @@ export class RepoService {
    * worktree は `~/.kiroductor/worktrees/{nanoid}/{repoName}` に作成する。
    * branch を省略した場合はデフォルトブランチ（HEAD）を使用する。
    *
-   * @param repoId - リポジトリの識別子
+   * @param repoId - リポジトリの識別子（nanoid）
    * @param branch - チェックアウトするブランチ名（省略時は HEAD）
    * @returns `{ cwd: string }` — worktree のパス
-   * @throws git コマンドが失敗した場合
+   * @throws リポジトリが見つからない場合、または git コマンドが失敗した場合
    */
   async createWorktree(repoId: string, branch?: string): Promise<{ cwd: string }> {
-    const repoPath = this.getRepoPath(repoId);
-    const parts = repoId.split('/');
-    const repoName = parts[parts.length - 1];
+    const repos = await this.configRepo.readRepos();
+    const repo = repos.find((r) => r.repoId === repoId);
+    if (!repo) {
+      throw new Error(`Repository not found: ${repoId}`);
+    }
+
+    const repoPath = this.getRepoPath(repo);
     const id = nanoid();
     const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', id);
     await this.fs.mkdir(worktreeDir, { recursive: true });
-    const worktreePath = path.join(worktreeDir, repoName);
+    const worktreePath = path.join(worktreeDir, repo.repo);
 
     const targetBranch = branch ?? 'HEAD';
 
@@ -134,35 +156,14 @@ export class RepoService {
   }
 
   /**
-   * クローン済みリポジトリの repoId 一覧を返す。
+   * クローン済みリポジトリの一覧を返す。
    *
-   * `~/.kiroductor/repos/` 配下のディレクトリ構造を走査し、
-   * `host/org/repo` 形式の repoId を生成する。
+   * `repos.json` から読み込む。
    *
-   * @returns repoId の配列
+   * @returns {@link RepoMapping} の配列
    */
-  async listClonedRepos(): Promise<string[]> {
-    const reposRoot = this.configRepo.getReposRoot();
-    const repoIds: string[] = [];
-
-    try {
-      const hosts = await this.fs.readdir(reposRoot);
-      for (const host of hosts) {
-        const orgs = await this.fs.readdir(path.join(reposRoot, host));
-        for (const org of orgs) {
-          const repos = await this.fs.readdir(path.join(reposRoot, host, org));
-          for (const repo of repos) {
-            if (repo.endsWith('.git')) {
-              repoIds.push(`${host}/${org}/${repo.replace(/\.git$/, '')}`);
-            }
-          }
-        }
-      }
-    } catch {
-      // ディレクトリが存在しない場合は空配列を返す
-    }
-
-    return repoIds;
+  async listClonedRepos(): Promise<RepoMapping[]> {
+    return this.configRepo.readRepos();
   }
 
   /** パスが存在するか確認する。 */

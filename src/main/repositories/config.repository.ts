@@ -2,11 +2,33 @@ import os from 'os';
 import path from 'path';
 import type { FileSystem } from '../fs';
 
+/** クローン済みリポジトリの情報。`repos.json` に永続化される。 */
+export interface RepoMapping {
+  /** リポジトリの識別子（nanoid で生成） */
+  repoId: string;
+  /** クローン元 URL */
+  url: string;
+  /** ホスト名（例: "github.com"） */
+  host: string;
+  /** 組織またはユーザー名（例: "mzkmnk"） */
+  org: string;
+  /** リポジトリ名（例: "kiroductor"） */
+  repo: string;
+  /** クローン日時（ISO 8601） */
+  clonedAt: string;
+}
+
+/** `repos.json` のファイル構造 */
+interface ReposFile {
+  /** リポジトリ一覧 */
+  repos: RepoMapping[];
+}
+
 /** ACP セッションとリポジトリの紐付け情報。`sessions.json` に永続化される。 */
 export interface SessionMapping {
   /** kiro-cli の ACP セッション ID */
   acpSessionId: string;
-  /** リポジトリの識別子（例: "github.com/mzkmnk/kiroductor"） */
+  /** リポジトリの識別子（{@link RepoMapping.repoId} への参照） */
   repoId: string;
   /** セッション作成時の作業ディレクトリ */
   cwd: string;
@@ -27,7 +49,7 @@ interface SessionsFile {
 /**
  * `.kiroductor/` ディレクトリの読み書きを管理するリポジトリ。
  *
- * `settings.json` および `sessions.json` の永続化と、
+ * `repos.json`・`sessions.json` の永続化と、
  * ベースディレクトリ・`repos/` サブディレクトリの作成を担う。
  * ファイルシステム操作は {@link FileSystem} を介して行い、テスト可能にしている。
  */
@@ -71,6 +93,70 @@ export class ConfigRepository {
   async ensureBaseDir(): Promise<void> {
     await this.fs.mkdir(this.baseDir, { recursive: true });
     await this.fs.mkdir(path.join(this.baseDir, 'repos'), { recursive: true });
+  }
+
+  /**
+   * `repos.json` を読み込み、リポジトリ一覧を返す。
+   *
+   * ファイルが存在しない場合は空配列を返す。
+   *
+   * @returns {@link RepoMapping} の配列
+   */
+  async readRepos(): Promise<RepoMapping[]> {
+    const filePath = path.join(this.baseDir, 'repos.json');
+    try {
+      await this.fs.access(filePath);
+      const raw = await this.fs.readFile(filePath, 'utf-8');
+      const data = JSON.parse(raw) as ReposFile;
+      return data.repos;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * `repos.json` を書き込む。
+   *
+   * @param repos - 書き込む {@link RepoMapping} の配列
+   */
+  async writeRepos(repos: RepoMapping[]): Promise<void> {
+    const filePath = path.join(this.baseDir, 'repos.json');
+    const data: ReposFile = { repos };
+    await this.fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  }
+
+  /**
+   * `repoId` をキーにリポジトリを追加または更新する。
+   *
+   * 同じ `repoId` が存在する場合は上書き更新する。
+   * 存在しない場合は新規追加する。
+   *
+   * @param mapping - 追加または更新する {@link RepoMapping}
+   */
+  async upsertRepo(mapping: RepoMapping): Promise<void> {
+    const repos = await this.readRepos();
+    const idx = repos.findIndex((r) => r.repoId === mapping.repoId);
+
+    if (idx >= 0) {
+      repos[idx] = mapping;
+    } else {
+      repos.push(mapping);
+    }
+
+    await this.writeRepos(repos);
+  }
+
+  /**
+   * URL に一致するリポジトリを検索する。
+   *
+   * @param host - ホスト名
+   * @param org - 組織名
+   * @param repo - リポジトリ名
+   * @returns 一致する {@link RepoMapping}、存在しない場合は `undefined`
+   */
+  async findRepoByPath(host: string, org: string, repo: string): Promise<RepoMapping | undefined> {
+    const repos = await this.readRepos();
+    return repos.find((r) => r.host === host && r.org === org && r.repo === repo);
   }
 
   /**

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MockedFunction } from 'vitest';
 import type { ChildProcess } from 'child_process';
 import { RepoService, type SpawnFn } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
+import type { RepoMapping } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
 
 describe('RepoService', () => {
@@ -45,9 +45,13 @@ describe('RepoService', () => {
     });
   });
 
-  describe('getRepoPath(repoId)', () => {
-    it('repoId から bare clone のパスを返すこと', () => {
-      const result = service.getRepoPath('github.com/mzkmnk/kiroductor');
+  describe('getRepoPath(parsed)', () => {
+    it('パース結果から bare clone のパスを返すこと', () => {
+      const result = service.getRepoPath({
+        host: 'github.com',
+        org: 'mzkmnk',
+        repo: 'kiroductor',
+      });
       expect(result).toBe('/home/test/.kiroductor/repos/github.com/mzkmnk/kiroductor.git');
     });
   });
@@ -72,12 +76,28 @@ describe('RepoService', () => {
     });
 
     it('既にクローン済みの場合 git fetch --all が実行されること', async () => {
-      (fs.access as MockedFunction<FileSystem['access']>).mockResolvedValue(undefined);
+      // repos.json に既存エントリを設定
+      const existing: RepoMapping = {
+        repoId: 'existing-id',
+        url: 'https://github.com/mzkmnk/kiroductor.git',
+        host: 'github.com',
+        org: 'mzkmnk',
+        repo: 'kiroductor',
+        clonedAt: '2026-03-15T00:00:00.000Z',
+      };
+      (fs.access as ReturnType<typeof vi.fn>).mockImplementation(async (p: string) => {
+        if (p.endsWith('repos.json')) return;
+        throw new Error('ENOENT');
+      });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ repos: [existing] }),
+      );
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
-      await service.clone('https://github.com/mzkmnk/kiroductor.git');
+      const repoId = await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
+      expect(repoId).toBe('existing-id');
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
         ['fetch', '--all'],
@@ -107,22 +127,63 @@ describe('RepoService', () => {
       );
     });
 
-    it('clone が成功した場合 repoId を返すこと', async () => {
+    it('clone が成功した場合 nanoid の repoId を返すこと', async () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
       const result = await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
-      expect(result).toBe('github.com/mzkmnk/kiroductor');
+      // nanoid は 21 文字のデフォルト長
+      expect(result).toMatch(/^[A-Za-z0-9_-]{21}$/);
+    });
+
+    it('clone 後に repos.json にエントリが書き込まれること', async () => {
+      const mockProcess = createMockProcess(0);
+      spawnMock.mockReturnValue(mockProcess);
+
+      const repoId = await service.clone('https://github.com/mzkmnk/kiroductor.git');
+
+      // writeFile が repos.json に呼ばれたことを検証
+      const writeFileMock = fs.writeFile as ReturnType<typeof vi.fn>;
+      const reposJsonCall = writeFileMock.mock.calls.find((call: unknown[]) =>
+        (call[0] as string).endsWith('repos.json'),
+      );
+      expect(reposJsonCall).toBeDefined();
+      const written = JSON.parse(reposJsonCall![1] as string) as { repos: RepoMapping[] };
+      expect(written.repos).toHaveLength(1);
+      expect(written.repos[0].repoId).toBe(repoId);
+      expect(written.repos[0].host).toBe('github.com');
+      expect(written.repos[0].org).toBe('mzkmnk');
+      expect(written.repos[0].repo).toBe('kiroductor');
     });
   });
 
   describe('createWorktree(repoId, branch?)', () => {
+    const repoMapping: RepoMapping = {
+      repoId: 'test-repo-id',
+      url: 'https://github.com/mzkmnk/kiroductor.git',
+      host: 'github.com',
+      org: 'mzkmnk',
+      repo: 'kiroductor',
+      clonedAt: '2026-03-15T00:00:00.000Z',
+    };
+
+    beforeEach(() => {
+      // repos.json に既存エントリを設定
+      (fs.access as ReturnType<typeof vi.fn>).mockImplementation(async (p: string) => {
+        if (p.endsWith('repos.json')) return;
+        throw new Error('ENOENT');
+      });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ repos: [repoMapping] }),
+      );
+    });
+
     it('git worktree add が実行されること', async () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
-      await service.createWorktree('github.com/mzkmnk/kiroductor');
+      await service.createWorktree('test-repo-id');
 
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
@@ -137,7 +198,7 @@ describe('RepoService', () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
-      await service.createWorktree('github.com/mzkmnk/kiroductor', 'feature/test');
+      await service.createWorktree('test-repo-id', 'feature/test');
 
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
@@ -146,51 +207,60 @@ describe('RepoService', () => {
       );
     });
 
-    it('返されたパスが ~/.kiroductor/worktrees/{random}/{repoName} 形式であること', async () => {
+    it('返されたパスが ~/.kiroductor/worktrees/{nanoid}/{repoName} 形式であること', async () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
-      const result = await service.createWorktree('github.com/mzkmnk/kiroductor');
+      const result = await service.createWorktree('test-repo-id');
 
       expect(result.cwd).toMatch(/\.kiroductor\/worktrees\/[A-Za-z0-9_-]+\/kiroductor$/);
     });
 
-    it('worktrees/{random} ディレクトリが存在しなければ作成すること', async () => {
+    it('worktrees/{nanoid} ディレクトリが存在しなければ作成すること', async () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
 
-      await service.createWorktree('github.com/mzkmnk/kiroductor');
+      await service.createWorktree('test-repo-id');
 
       expect(fs.mkdir).toHaveBeenCalledWith(
         expect.stringMatching(/\.kiroductor\/worktrees\/[A-Za-z0-9_-]+$/),
         { recursive: true },
       );
     });
+
+    it('存在しない repoId の場合エラーを投げること', async () => {
+      await expect(service.createWorktree('nonexistent-id')).rejects.toThrow(
+        'Repository not found: nonexistent-id',
+      );
+    });
   });
 
   describe('listClonedRepos()', () => {
-    it('repos/ 配下のディレクトリ構造から repoId の一覧を生成すること', async () => {
-      (fs.readdir as MockedFunction<FileSystem['readdir']>)
-        .mockResolvedValueOnce(['github.com']) // hosts
-        .mockResolvedValueOnce(['mzkmnk']) // orgs
-        .mockResolvedValueOnce(['kiroductor.git']); // repos
+    it('repos.json からリポジトリ一覧を返すこと', async () => {
+      const repos: RepoMapping[] = [
+        {
+          repoId: 'abc123',
+          url: 'https://github.com/mzkmnk/kiroductor.git',
+          host: 'github.com',
+          org: 'mzkmnk',
+          repo: 'kiroductor',
+          clonedAt: '2026-03-15T00:00:00.000Z',
+        },
+      ];
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ repos }));
 
       const result = await service.listClonedRepos();
 
-      expect(result).toEqual(['github.com/mzkmnk/kiroductor']);
+      expect(result).toEqual(repos);
     });
   });
 });
 
 /** テスト用のモックプロセスを作成する。 */
 function createMockProcess(exitCode: number, stderrOutput?: string): ChildProcess {
-  const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
-
   const proc = {
     on: vi.fn((event: string, cb: (...args: unknown[]) => void) => {
-      listeners[event] = listeners[event] ?? [];
-      listeners[event].push(cb);
-      // exit イベントを次の tick で発火
       if (event === 'close') {
         setTimeout(() => cb(exitCode), 0);
       }
@@ -209,5 +279,5 @@ function createMockProcess(exitCode: number, stderrOutput?: string): ChildProces
     },
   };
 
-  return proc as unknown as ReturnType<SpawnFn>;
+  return proc as unknown as ChildProcess;
 }
