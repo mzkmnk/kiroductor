@@ -236,6 +236,106 @@ describe('RepoService', () => {
     });
   });
 
+  describe('listBranches(repoId)', () => {
+    const repoMapping: RepoMapping = {
+      repoId: 'test-repo-id',
+      url: 'https://github.com/mzkmnk/kiroductor.git',
+      host: 'github.com',
+      org: 'mzkmnk',
+      name: 'kiroductor',
+      clonedAt: '2026-03-15T00:00:00.000Z',
+    };
+
+    beforeEach(() => {
+      (fs.access as ReturnType<typeof vi.fn>).mockImplementation(async (p: string) => {
+        if (p.endsWith('repos.json')) return;
+        throw new Error('ENOENT');
+      });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ repos: [repoMapping] }),
+      );
+    });
+
+    it('origin/ プレフィックス付きでリモートブランチ一覧を返すこと', async () => {
+      // fetch --all 用
+      const fetchProcess = createMockProcess(0);
+      // branch -r 用
+      const branchProcess = createMockProcess(
+        0,
+        undefined,
+        '  origin/main\n  origin/feature/test\n  origin/develop\n',
+      );
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      const result = await service.listBranches('test-repo-id');
+
+      expect(result).toEqual(['origin/develop', 'origin/feature/test', 'origin/main']);
+    });
+
+    it('HEAD -> origin/main のようなポインタ行は除外すること', async () => {
+      const fetchProcess = createMockProcess(0);
+      const branchProcess = createMockProcess(
+        0,
+        undefined,
+        '  origin/HEAD -> origin/main\n  origin/main\n  origin/develop\n',
+      );
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      const result = await service.listBranches('test-repo-id');
+
+      expect(result).toEqual(['origin/develop', 'origin/main']);
+    });
+
+    it('結果がアルファベット順にソートされること', async () => {
+      const fetchProcess = createMockProcess(0);
+      const branchProcess = createMockProcess(
+        0,
+        undefined,
+        '  origin/zebra\n  origin/alpha\n  origin/middle\n',
+      );
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      const result = await service.listBranches('test-repo-id');
+
+      expect(result).toEqual(['origin/alpha', 'origin/middle', 'origin/zebra']);
+    });
+
+    it('存在しない repoId の場合エラーを投げること', async () => {
+      await expect(service.listBranches('nonexistent-id')).rejects.toThrow(
+        'Repository not found: nonexistent-id',
+      );
+    });
+
+    it('ブランチが無い場合は空配列を返すこと', async () => {
+      const fetchProcess = createMockProcess(0);
+      const branchProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      const result = await service.listBranches('test-repo-id');
+
+      expect(result).toEqual([]);
+    });
+
+    it('git fetch --all と git branch -r が bare repo パスで実行されること', async () => {
+      const fetchProcess = createMockProcess(0);
+      const branchProcess = createMockProcess(0, undefined, '  origin/main\n');
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      await service.listBranches('test-repo-id');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['fetch', '--all'],
+        expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
+      );
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['branch', '-r'],
+        expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
+      );
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [
@@ -259,11 +359,19 @@ describe('RepoService', () => {
 });
 
 /** テスト用のモックプロセスを作成する。 */
-function createMockProcess(exitCode: number, stderrOutput?: string): ChildProcess {
+function createMockProcess(
+  exitCode: number,
+  stderrOutput?: string,
+  stdoutOutput?: string,
+): ChildProcess {
   const proc = new EventEmitter() as ChildProcess;
   proc.stderr = new EventEmitter() as ChildProcess['stderr'];
+  proc.stdout = new EventEmitter() as ChildProcess['stdout'];
 
   setTimeout(() => {
+    if (stdoutOutput) {
+      proc.stdout!.emit('data', Buffer.from(stdoutOutput));
+    }
     if (stderrOutput) {
       proc.stderr!.emit('data', Buffer.from(stderrOutput));
     }

@@ -166,6 +166,35 @@ export class RepoService {
     return this.configRepo.readRepos();
   }
 
+  /**
+   * 指定リポジトリのリモートブランチ一覧を返す。
+   *
+   * `git fetch --all` で最新化した後、`git branch -r` の出力をパースする。
+   * `origin/HEAD -> origin/main` のようなポインタ行は除外する。
+   *
+   * @param repoId - リポジトリの識別子
+   * @returns リモートブランチ名の配列（`origin/` プレフィックス付き、アルファベット順）
+   * @throws リポジトリが見つからない場合
+   */
+  async listBranches(repoId: string): Promise<string[]> {
+    const repos = await this.configRepo.readRepos();
+    const repo = repos.find((r) => r.repoId === repoId);
+    if (!repo) {
+      throw new Error(`Repository not found: ${repoId}`);
+    }
+
+    const repoPath = this.getRepoPath(repo);
+
+    await this.execGit(['fetch', '--all'], repoPath);
+    const stdout = await this.execGit(['branch', '-r'], repoPath);
+
+    return stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.includes('->'))
+      .sort();
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -176,11 +205,16 @@ export class RepoService {
     }
   }
 
-  /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。 */
-  private execGit(args: string[], cwd?: string): Promise<void> {
+  /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。stdout を返す。 */
+  private execGit(args: string[], cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const proc = this.spawnFn('git', args, { cwd, stdio: 'pipe' });
+      let stdout = '';
       let stderr = '';
+
+      proc.stdout?.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString();
+      });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
         stderr += chunk.toString();
@@ -188,7 +222,7 @@ export class RepoService {
 
       proc.on('close', (code: number | null) => {
         if (code === 0) {
-          resolve();
+          resolve(stdout);
         } else {
           reject(new Error(stderr.trim() || `git ${args[0]} failed with code ${String(code)}`));
         }

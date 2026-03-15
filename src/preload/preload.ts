@@ -113,6 +113,8 @@ export interface RepoAPI {
   list: () => Promise<RepoMapping[]>;
   /** bare repo から worktree を作成し、`cwd` を返す。 */
   createWorktree: (repoId: string, branch?: string) => Promise<{ cwd: string }>;
+  /** 指定リポジトリのリモートブランチ一覧を返す。 */
+  listBranches: (repoId: string) => Promise<string[]>;
 }
 
 /**
@@ -170,6 +172,7 @@ const kiroductorAPI: KiroductorAPI = {
     clone: (url) => invoke('repo:clone', url),
     list: () => invoke('repo:list'),
     createWorktree: (repoId, branch) => invoke('repo:create-worktree', repoId, branch),
+    listBranches: (repoId) => invoke('repo:list-branches', repoId),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),
