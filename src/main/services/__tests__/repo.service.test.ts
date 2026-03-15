@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChildProcess } from 'child_process';
 import { RepoService, type SpawnFn } from '../repo.service';
@@ -259,25 +260,15 @@ describe('RepoService', () => {
 
 /** テスト用のモックプロセスを作成する。 */
 function createMockProcess(exitCode: number, stderrOutput?: string): ChildProcess {
-  const proc = {
-    on: vi.fn((event: string, cb: (...args: unknown[]) => void) => {
-      if (event === 'close') {
-        setTimeout(() => cb(exitCode), 0);
-      }
-      return proc;
-    }),
-    stdout: {
-      on: vi.fn(),
-    },
-    stderr: {
-      on: vi.fn((event: string, cb: (data: Buffer) => void) => {
-        if (event === 'data' && stderrOutput) {
-          setTimeout(() => cb(Buffer.from(stderrOutput)), 0);
-        }
-        return proc.stderr;
-      }),
-    },
-  };
+  const proc = new EventEmitter() as ChildProcess;
+  proc.stderr = new EventEmitter() as ChildProcess['stderr'];
 
-  return proc as unknown as ChildProcess;
+  setTimeout(() => {
+    if (stderrOutput) {
+      proc.stderr!.emit('data', Buffer.from(stderrOutput));
+    }
+    proc.emit('close', exitCode);
+  }, 0);
+
+  return proc;
 }
