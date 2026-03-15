@@ -268,6 +268,16 @@ describe('RepoService', () => {
       expect(result).toEqual(['develop', 'feature/test', 'main']);
     });
 
+    it('他の worktree でチェックアウト中のブランチ（+ マーカー）を正しく処理すること', async () => {
+      const fetchProcess = createMockProcess(0);
+      const branchProcess = createMockProcess(0, undefined, '+ feature-wt\n* main\n  develop\n');
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+
+      const result = await service.listBranches('test-repo-id');
+
+      expect(result).toEqual(['develop', 'feature-wt', 'main']);
+    });
+
     it('結果がアルファベット順にソートされること', async () => {
       const fetchProcess = createMockProcess(0);
       const branchProcess = createMockProcess(0, undefined, '  zebra\n* alpha\n  middle\n');
