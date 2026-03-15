@@ -1,6 +1,7 @@
 import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
 import type { MessageRepository } from '../repositories/message.repository';
+import type { SessionRepository } from '../repositories/session.repository';
 import { handle } from '../ipc';
 
 /**
@@ -13,11 +14,13 @@ export class SessionHandler {
    * @param sessionService - セッションのライフサイクルを管理するサービス（依存注入）
    * @param promptService - ユーザー入力をエージェントへ送るサービス（依存注入）
    * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
+   * @param sessionRepo - セッション状態を管理するリポジトリ（依存注入）
    */
   constructor(
     private readonly sessionService: Pick<SessionService, 'create' | 'cancel' | 'load'>,
     private readonly promptService: Pick<PromptService, 'send'>,
     private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
+    private readonly sessionRepo: Pick<SessionRepository, 'getActiveSessionId'>,
   ) {}
 
   /**
@@ -38,6 +41,9 @@ export class SessionHandler {
       return { stopReason };
     });
     handle('session:cancel', () => this.sessionService.cancel());
-    handle('session:messages', () => this.messageRepo.getAll());
+    handle('session:messages', () => {
+      const sessionId = this.sessionRepo.getActiveSessionId();
+      return sessionId ? this.messageRepo.getAll(sessionId) : [];
+    });
   }
 }

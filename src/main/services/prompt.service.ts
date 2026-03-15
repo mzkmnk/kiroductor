@@ -46,8 +46,8 @@ export class PromptService {
     log.info(
       `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
     );
-    this.messageRepo.addUserMessage(text);
-    const agentMessage = this.messageRepo.addAgentMessage(crypto.randomUUID());
+    this.messageRepo.addUserMessage(sessionId, text);
+    const agentMessage = this.messageRepo.addAgentMessage(sessionId, crypto.randomUUID());
 
     const { stopReason } = await this.connection.prompt({
       sessionId,
@@ -55,7 +55,7 @@ export class PromptService {
     });
     log.info(`send 完了 stopReason=${stopReason}`);
 
-    this.messageRepo.completeAgentMessage(agentMessage.id);
+    this.messageRepo.completeAgentMessage(sessionId, agentMessage.id);
 
     return stopReason;
   }

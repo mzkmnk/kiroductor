@@ -44,13 +44,13 @@
 
 ## MessageRepository の拡張
 
-- [ ] 内部データ構造を `Map<string, Message[]>` に変更する
+- [x] 内部データ構造を `Map<string, Message[]>` に変更する
   - キー: セッション ID
   - 値: そのセッションのメッセージ配列
-- [ ] `initSession(sessionId)`: セッション用の空メッセージ配列を初期化する
+- [x] `initSession(sessionId)`: セッション用の空メッセージ配列を初期化する
   - **AC**: 既に存在する場合、上書きしない
-- [ ] `clearSession(sessionId)`: 特定セッションのメッセージをクリアする
-- [ ] 既存メソッドにセッション ID パラメータを追加する:
+- [x] `clearSession(sessionId)`: 特定セッションのメッセージをクリアする
+- [x] 既存メソッドにセッション ID パラメータを追加する:
   - `getAll(sessionId)` → 指定セッションのメッセージを返す
   - `addUserMessage(sessionId, text)`
   - `addAgentMessage(sessionId, id)`
@@ -59,7 +59,7 @@
   - `addToolCall(sessionId, id, name, input)`
   - `updateToolCall(sessionId, id, update)`
   - `clear()` → 全セッションのメッセージをクリア
-- [ ] テスト: セッション間でメッセージが分離されていることを検証する
+- [x] テスト: セッション間でメッセージが分離されていることを検証する
 
 ## SessionUpdateMethod の修正
 

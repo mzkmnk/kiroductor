@@ -56,10 +56,9 @@ describe('SessionService', () => {
       expect(sessionRepo.getSessionId()).toBe('test-session-id');
     });
 
-    it('create() 後に MessageRepository がクリアされること', async () => {
-      messageRepo.addUserMessage('existing message');
+    it('create() 後に MessageRepository にセッションが初期化されること', async () => {
       await service.create('/path/to/project');
-      expect(messageRepo.getAll()).toHaveLength(0);
+      expect(messageRepo.getAll('test-session-id')).toEqual([]);
     });
   });
 
@@ -77,11 +76,11 @@ describe('SessionService', () => {
   });
 
   describe('load(sessionId, cwd)', () => {
-    it('load() 前に messageRepo がクリアされること', async () => {
-      messageRepo.addUserMessage('existing message');
+    it('load() 前に対象セッションの messageRepo がクリアされること', async () => {
+      messageRepo.addUserMessage('session-abc', 'existing message');
       let clearedBeforeLoad = false;
       connection.loadSession.mockImplementation(async () => {
-        clearedBeforeLoad = messageRepo.getAll().length === 0;
+        clearedBeforeLoad = messageRepo.getAll('session-abc').length === 0;
         return { sessionId: 'loaded-session-id' };
       });
 
