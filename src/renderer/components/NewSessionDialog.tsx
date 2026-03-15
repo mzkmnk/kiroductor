@@ -58,7 +58,7 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
       }
 
       if (!repoId) {
-        setError('リポジトリを選択するか、クローン URL を入力してください。');
+        setError('Please select a repository or enter a clone URL.');
         return;
       }
 
@@ -67,7 +67,7 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
       onSessionCreated();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'セッションの作成に失敗しました。');
+      setError(err instanceof Error ? err.message : 'Failed to create session.');
     } finally {
       setIsStarting(false);
     }
@@ -83,10 +83,10 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         <div className="space-y-4 py-2">
           {/* 既存リポジトリ選択 */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">クローン済みリポジトリ</label>
+            <label className="text-sm font-medium text-foreground">Cloned repositories</label>
             <Select value={selectedRepoId} onValueChange={setSelectedRepoId}>
               <SelectTrigger>
-                <SelectValue placeholder="リポジトリを選択..." />
+                <SelectValue placeholder="Select a repository..." />
               </SelectTrigger>
               <SelectContent>
                 {repos.map((repo) => (
@@ -100,13 +100,13 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
 
           <div className="flex items-center gap-2">
             <div className="flex-1 border-t border-border" />
-            <span className="text-xs text-muted-foreground">または</span>
+            <span className="text-xs text-muted-foreground">or</span>
             <div className="flex-1 border-t border-border" />
           </div>
 
           {/* 新規クローン URL */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">リポジトリ URL をクローン</label>
+            <label className="text-sm font-medium text-foreground">Clone repository URL</label>
             <Input
               placeholder="https://github.com/org/repo.git"
               value={cloneUrl}

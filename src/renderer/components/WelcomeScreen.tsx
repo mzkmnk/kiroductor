@@ -13,18 +13,18 @@ interface WelcomeScreenProps {
 const FEATURES = [
   {
     icon: MessageSquareIcon,
-    title: 'AI コーディング',
-    description: 'kiro-cli を通じてエージェントと対話しながらコードを書く',
+    title: 'AI Coding',
+    description: 'Write code through interactive AI conversations via kiro-cli',
   },
   {
     icon: GitBranchIcon,
-    title: 'Worktree 管理',
-    description: '複数の作業ブランチを並列で安全に操作する',
+    title: 'Worktree Management',
+    description: 'Safely manage multiple work branches in parallel',
   },
   {
     icon: TerminalIcon,
-    title: 'マルチセッション',
-    description: '複数のリポジトリ・セッションをサイドバーで管理する',
+    title: 'Multi-Session',
+    description: 'Manage multiple repositories and sessions from the sidebar',
   },
 ] as const;
 
@@ -48,7 +48,7 @@ export function WelcomeScreen({ onSessionCreated }: WelcomeScreenProps) {
             <div className="space-y-1.5">
               <h1 className="text-3xl font-bold tracking-tight">Kiroductor</h1>
               <p className="text-sm text-muted-foreground">
-                kiro-cli で動く AI コーディングアシスタント
+                AI coding assistant powered by kiro-cli
               </p>
             </div>
           </div>
