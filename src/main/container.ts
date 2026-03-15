@@ -118,7 +118,12 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     },
   };
 
-  const sessionService = new SessionService(sessionRepo, messageRepo, connectionProxy);
+  const sessionService = new SessionService(
+    sessionRepo,
+    messageRepo,
+    connectionProxy,
+    notificationService,
+  );
   const promptService = new PromptService(sessionRepo, messageRepo, connectionProxy);
 
   // Handlers

@@ -14,6 +14,7 @@ export interface IpcInvokeChannels {
   'acp:stop': { args: []; return: void };
   'acp:status': { args: []; return: AcpStatus };
   'session:new': { args: [cwd: string]; return: void };
+  'session:load': { args: [sessionId: string, cwd: string]; return: void };
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
   'session:messages': { args: []; return: Message[] };
@@ -32,4 +33,5 @@ export interface IpcInvokeChannels {
 export interface IpcOnChannels {
   'acp:status-change': { status: AcpStatus; reason?: string };
   'acp:session-update': SessionNotification;
+  'acp:session-loading': { loading: boolean };
 }

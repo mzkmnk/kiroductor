@@ -18,6 +18,7 @@ describe('SessionHandler', () => {
   let sessionService: {
     create: MockedFunction<(cwd: string) => Promise<void>>;
     cancel: MockedFunction<() => Promise<void>>;
+    load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
   };
   let promptService: {
     send: MockedFunction<(text: string) => Promise<string>>;
@@ -30,6 +31,7 @@ describe('SessionHandler', () => {
     sessionService = {
       create: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn().mockResolvedValue(undefined),
+      load: vi.fn().mockResolvedValue(undefined),
     };
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
@@ -42,11 +44,12 @@ describe('SessionHandler', () => {
   });
 
   describe('register()', () => {
-    it('session:new / session:prompt / session:cancel / session:messages の4チャンネルを登録する', () => {
+    it('session:new / session:load / session:prompt / session:cancel / session:messages の5チャンネルを登録する', () => {
       handler.register();
 
       const channels = ipcHandle.mock.calls.map((call) => call[0] as string);
       expect(channels).toContain('session:new');
+      expect(channels).toContain('session:load');
       expect(channels).toContain('session:prompt');
       expect(channels).toContain('session:cancel');
       expect(channels).toContain('session:messages');
@@ -63,6 +66,19 @@ describe('SessionHandler', () => {
         await newHandler(null, '/workspace/myproject');
 
         expect(sessionService.create).toHaveBeenCalledWith('/workspace/myproject');
+      });
+    });
+
+    describe('session:load', () => {
+      it('受け取った sessionId と cwd を引数として sessionService.load() を呼ぶ', async () => {
+        handler.register();
+        const loadHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:load',
+        )?.[1] as (_event: unknown, sessionId: string, cwd: string) => Promise<void>;
+
+        await loadHandler(null, 'session-abc', '/workspace/myproject');
+
+        expect(sessionService.load).toHaveBeenCalledWith('session-abc', '/workspace/myproject');
       });
     });
 

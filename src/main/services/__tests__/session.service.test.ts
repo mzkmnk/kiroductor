@@ -4,6 +4,7 @@ import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import { SessionService } from '../session.service';
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
+import type { NotificationService } from '../../acp/methods/session-update.method';
 
 describe('SessionService', () => {
   let sessionRepo: SessionRepository;
@@ -17,6 +18,9 @@ describe('SessionService', () => {
       (params: { sessionId: string; cwd: string; mcpServers: [] }) => Promise<{ sessionId: string }>
     >;
   };
+  let notificationService: {
+    sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
+  };
   let service: SessionService;
 
   beforeEach(() => {
@@ -27,10 +31,14 @@ describe('SessionService', () => {
       cancel: vi.fn().mockResolvedValue(undefined),
       loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
     };
+    notificationService = {
+      sendToRenderer: vi.fn(),
+    };
     service = new SessionService(
       sessionRepo,
       messageRepo,
       connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel' | 'loadSession'>,
+      notificationService as unknown as NotificationService,
     );
   });
 
@@ -94,6 +102,37 @@ describe('SessionService', () => {
     it('load() 完了後に sessionRepo のセッション ID が更新されること', async () => {
       await service.load('session-abc', '/path/to/project');
       expect(sessionRepo.getSessionId()).toBe('session-abc');
+    });
+
+    it('load() 開始時に sessionRepo.isLoading が true になること', async () => {
+      let isLoadingDuringLoad = false;
+      connection.loadSession.mockImplementation(async () => {
+        isLoadingDuringLoad = sessionRepo.getIsLoading();
+        return { sessionId: 'loaded-session-id' };
+      });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(isLoadingDuringLoad).toBe(true);
+    });
+
+    it('load() 完了後に sessionRepo.isLoading が false になること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.getIsLoading()).toBe(false);
+    });
+
+    it('load() 開始時に acp:session-loading { loading: true } を通知すること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-loading', {
+        loading: true,
+      });
+    });
+
+    it('load() 完了後に acp:session-loading { loading: false } を通知すること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-loading', {
+        loading: false,
+      });
     });
   });
 });
