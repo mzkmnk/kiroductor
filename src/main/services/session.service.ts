@@ -69,7 +69,6 @@ export class SessionService {
    * 1. `MessageRepository` をクリアしてメッセージ履歴をリセットする
    * 2. ACP 接続の `loadSession()` を呼んでセッションを復元する
    * 3. 指定した `sessionId` を `SessionRepository` に保存する
-   * 4. `ConfigRepository` のセッション情報を更新する
    *
    * @param sessionId - 復元するセッションの ID
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
@@ -85,15 +84,6 @@ export class SessionService {
     this.sessionRepo.setActiveSession(sessionId);
     this.sessionRepo.setIsLoading(false);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
-    const now = new Date().toISOString();
-    await this.configRepo.upsertSession({
-      acpSessionId: sessionId,
-      repoId: '',
-      cwd,
-      title: null,
-      createdAt: now,
-      updatedAt: now,
-    });
   }
 
   /**

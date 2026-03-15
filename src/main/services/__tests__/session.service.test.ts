@@ -186,17 +186,6 @@ describe('SessionService', () => {
         loading: false,
       });
     });
-
-    it('load() 後に configRepo.upsertSession() でセッション情報が永続化されること', async () => {
-      await service.load('session-abc', '/path/to/project');
-      expect(configRepo.upsertSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          acpSessionId: 'session-abc',
-          cwd: '/path/to/project',
-          title: null,
-        }),
-      );
-    });
   });
 
   describe('restoreSessions()', () => {
