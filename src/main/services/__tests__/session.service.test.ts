@@ -56,9 +56,19 @@ describe('SessionService', () => {
       expect(sessionRepo.getSessionId()).toBe('test-session-id');
     });
 
-    it('create() 後に MessageRepository にセッションが初期化されること', async () => {
+    it('create() 後に sessionRepo.addSession() でセッションが追加されること', async () => {
+      await service.create('/path/to/project');
+      expect(sessionRepo.getAllSessionIds()).toContain('test-session-id');
+    });
+
+    it('create() 後に messageRepo.initSession() でセッションが初期化されること', async () => {
       await service.create('/path/to/project');
       expect(messageRepo.getAll('test-session-id')).toEqual([]);
+    });
+
+    it('create() 後に sessionRepo.setActiveSession() でアクティブセッションが設定されること', async () => {
+      await service.create('/path/to/project');
+      expect(sessionRepo.getActiveSessionId()).toBe('test-session-id');
     });
   });
 
@@ -101,6 +111,16 @@ describe('SessionService', () => {
     it('load() 完了後に sessionRepo のセッション ID が更新されること', async () => {
       await service.load('session-abc', '/path/to/project');
       expect(sessionRepo.getSessionId()).toBe('session-abc');
+    });
+
+    it('load() 後に sessionRepo.addSession() でセッションが追加されること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.getAllSessionIds()).toContain('session-abc');
+    });
+
+    it('load() 後に sessionRepo.setActiveSession() でアクティブセッションが設定されること', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
 
     it('load() 開始時に sessionRepo.isLoading が true になること', async () => {

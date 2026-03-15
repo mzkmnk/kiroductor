@@ -75,11 +75,11 @@
 
 ## SessionService の修正
 
-- [ ] `create(cwd)` でセッション作成後に `SessionRepository` と `MessageRepository` の両方を更新する
+- [x] `create(cwd)` でセッション作成後に `SessionRepository` と `MessageRepository` の両方を更新する
   - **AC**: `sessionRepo.addSession(sessionId)` が呼ばれる
   - **AC**: `messageRepo.initSession(sessionId)` が呼ばれる
   - **AC**: `sessionRepo.setActiveSession(sessionId)` が呼ばれる
-- [ ] `load(sessionId, cwd)` でも同様にマルチセッション対応する
+- [x] `load(sessionId, cwd)` でも同様にマルチセッション対応する
 
 ## SessionHandler の修正
 

@@ -43,8 +43,8 @@ export class SessionService {
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
     log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);
-    this.sessionRepo.setSessionId(sessionId);
     this.messageRepo.initSession(sessionId);
+    this.sessionRepo.setActiveSession(sessionId);
   }
 
   /**
@@ -65,7 +65,7 @@ export class SessionService {
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);
-    this.sessionRepo.setSessionId(sessionId);
+    this.sessionRepo.setActiveSession(sessionId);
     this.sessionRepo.setIsLoading(false);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
   }
@@ -76,7 +76,7 @@ export class SessionService {
    * アクティブなセッションが存在しない場合は何もしない。
    */
   async cancel(): Promise<void> {
-    const sessionId = this.sessionRepo.getSessionId();
+    const sessionId = this.sessionRepo.getActiveSessionId();
     if (!sessionId) {
       log.info('cancel: アクティブなセッションがありません');
       return;
