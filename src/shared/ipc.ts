@@ -1,6 +1,7 @@
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
 import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
 
 /**
  * renderer → main の invoke/handle チャネルマップ。
@@ -16,6 +17,11 @@ export interface IpcInvokeChannels {
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
   'session:messages': { args: []; return: Message[] };
+  'repo:clone': { args: [url: string]; return: { repoId: string } };
+  'repo:list': { args: []; return: RepoMapping[] };
+  'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };
+  'config:get-settings': { args: []; return: KiroductorSettings };
+  'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }
 
 /**

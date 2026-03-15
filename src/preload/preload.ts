@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/repositories/connection.repository';
 import type { Message } from '../main/repositories/message.repository';
+import type { RepoMapping, KiroductorSettings } from '../main/repositories/config.repository';
 import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
@@ -75,6 +76,28 @@ export interface SessionAPI {
 }
 
 /**
+ * レンダラーに公開するリポジトリ操作 API。
+ */
+export interface RepoAPI {
+  /** リポジトリを bare clone し、`repoId` を返す。 */
+  clone: (url: string) => Promise<{ repoId: string }>;
+  /** クローン済みリポジトリの一覧を返す。 */
+  list: () => Promise<RepoMapping[]>;
+  /** bare repo から worktree を作成し、`cwd` を返す。 */
+  createWorktree: (repoId: string, branch?: string) => Promise<{ cwd: string }>;
+}
+
+/**
+ * レンダラーに公開するアプリ設定 API。
+ */
+export interface ConfigAPI {
+  /** アプリ設定を取得する。 */
+  getSettings: () => Promise<KiroductorSettings>;
+  /** アプリ設定を部分更新する。 */
+  updateSettings: (settings: Partial<KiroductorSettings>) => Promise<void>;
+}
+
+/**
  * `window.kiroductor` として公開される型付き API。
  *
  * レンダラーはこのインターフェースを通じてメインプロセスと通信する。
@@ -85,6 +108,10 @@ export interface KiroductorAPI {
   acp: AcpAPI;
   /** セッション操作 API。 */
   session: SessionAPI;
+  /** リポジトリ操作 API。 */
+  repo: RepoAPI;
+  /** アプリ設定 API。 */
+  config: ConfigAPI;
 }
 
 const kiroductorAPI: KiroductorAPI = {
@@ -101,6 +128,15 @@ const kiroductorAPI: KiroductorAPI = {
     cancel: () => invoke('session:cancel'),
     getMessages: () => invoke('session:messages'),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
+  },
+  repo: {
+    clone: (url) => invoke('repo:clone', url),
+    list: () => invoke('repo:list'),
+    createWorktree: (repoId, branch) => invoke('repo:create-worktree', repoId, branch),
+  },
+  config: {
+    getSettings: () => invoke('config:get-settings'),
+    updateSettings: (settings) => invoke('config:update-settings', settings),
   },
 };
 
