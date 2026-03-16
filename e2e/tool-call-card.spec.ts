@@ -61,6 +61,10 @@ function mockKiroductorAPIWithMessages(
 }
 
 test.describe('ToolCallCard', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
+  });
+
   test('実行中（in_progress）のツール呼び出しが表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, [
       {

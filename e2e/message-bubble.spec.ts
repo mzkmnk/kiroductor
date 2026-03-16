@@ -58,6 +58,10 @@ function mockKiroductorAPIWithMessages(
 }
 
 test.describe('MessageBubble', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
+  });
+
   test('ユーザーメッセージが右寄せで表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, [
       { id: '1', type: 'user', text: 'こんにちは！' },

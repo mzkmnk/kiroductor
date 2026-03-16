@@ -30,16 +30,16 @@ function mockKiroductorAPIRestoring() {
             repoId: 'repo-1',
             cwd: '/projects/my-app',
             title: 'My App',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z',
           },
           {
             acpSessionId: 'session-2',
             repoId: 'repo-2',
             cwd: '/projects/other-app',
             title: 'Other App',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z',
           },
         ]),
       getMessages: () => Promise.resolve([]),
@@ -87,16 +87,16 @@ function mockKiroductorAPIRestored() {
             repoId: 'repo-1',
             cwd: '/projects/my-app',
             title: 'My App',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z',
           },
           {
             acpSessionId: 'session-2',
             repoId: 'repo-2',
             cwd: '/projects/other-app',
             title: 'Other App',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z',
           },
         ]),
       getMessages: () =>
@@ -126,6 +126,10 @@ function mockKiroductorAPIRestored() {
 }
 
 test.describe('セッション復元中の UI', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
+  });
+
   test('復元中はスピナーと "Restoring session..." が表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIRestoring);
     await page.goto('http://localhost:5173');
