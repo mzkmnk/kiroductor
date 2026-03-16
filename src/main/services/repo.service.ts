@@ -237,7 +237,34 @@ export class RepoService {
       const stdout = await this.execGit(['diff', '--shortstat', sourceBranch], cwd);
       const stats = parseDiffShortstat(stdout);
       log.info(`getDiffStats: stdout=${JSON.stringify(stdout)}, parsed=`, stats);
-      return stats;
+
+      // untracked ファイルも集計対象に含める
+      const untrackedStdout = await this.execGit(
+        ['ls-files', '--others', '--exclude-standard'],
+        cwd,
+      );
+      const untrackedFiles = untrackedStdout
+        .trim()
+        .split('\n')
+        .filter((f) => f.length > 0);
+
+      let untrackedInsertions = 0;
+      for (const file of untrackedFiles) {
+        try {
+          const content = await this.fs.readFile(path.join(cwd, file), 'utf-8');
+          untrackedInsertions += content.split('\n').length;
+        } catch {
+          // バイナリファイル等はスキップ
+        }
+      }
+
+      const result: DiffStats = {
+        filesChanged: stats.filesChanged + untrackedFiles.length,
+        insertions: stats.insertions + untrackedInsertions,
+        deletions: stats.deletions,
+      };
+      log.info(`getDiffStats: untracked=${untrackedFiles.length}, final=`, result);
+      return result;
     } catch (err) {
       log.error(`getDiffStats: failed cwd=${cwd}, sourceBranch=${sourceBranch}, error=`, err);
       return null;

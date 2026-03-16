@@ -368,13 +368,14 @@ describe('RepoService', () => {
   });
 
   describe('getDiffStats(cwd, sourceBranch)', () => {
-    it('git diff --shortstat の結果をパースして DiffStats を返すこと', async () => {
-      const mockProcess = createMockProcess(
+    it('tracked な変更のみの場合 git diff --shortstat の結果を返すこと', async () => {
+      const diffProcess = createMockProcess(
         0,
         undefined,
         ' 3 files changed, 111 insertions(+), 51 deletions(-)\n',
       );
-      spawnMock.mockReturnValue(mockProcess);
+      const lsFilesProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
 
       const result = await service.getDiffStats('/worktree/path', 'main');
 
@@ -386,7 +387,49 @@ describe('RepoService', () => {
       expect(result).toEqual({ filesChanged: 3, insertions: 111, deletions: 51 });
     });
 
-    it('git コマンドが失敗した場合 null を返すこと', async () => {
+    it('untracked ファイルの行数が insertions に加算されること', async () => {
+      const diffProcess = createMockProcess(0, undefined, '');
+      const lsFilesProcess = createMockProcess(0, undefined, 'newfile.md\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce('line1\nline2\nline3');
+
+      const result = await service.getDiffStats('/worktree/path', 'main');
+
+      expect(result).toEqual({ filesChanged: 1, insertions: 3, deletions: 0 });
+    });
+
+    it('tracked と untracked の両方がある場合に合算されること', async () => {
+      const diffProcess = createMockProcess(
+        0,
+        undefined,
+        ' 2 files changed, 10 insertions(+), 5 deletions(-)\n',
+      );
+      const lsFilesProcess = createMockProcess(0, undefined, 'a.txt\nb.txt\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce('line1\nline2')
+        .mockResolvedValueOnce('single');
+
+      const result = await service.getDiffStats('/worktree/path', 'main');
+
+      expect(result).toEqual({ filesChanged: 4, insertions: 13, deletions: 5 });
+    });
+
+    it('バイナリファイル（readFile 失敗）はスキップされること', async () => {
+      const diffProcess = createMockProcess(0, undefined, '');
+      const lsFilesProcess = createMockProcess(0, undefined, 'image.png\ntext.txt\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(new Error('binary'))
+        .mockResolvedValueOnce('hello\nworld');
+
+      const result = await service.getDiffStats('/worktree/path', 'main');
+
+      // image.png はスキップされるが filesChanged にはカウントされる
+      expect(result).toEqual({ filesChanged: 2, insertions: 2, deletions: 0 });
+    });
+
+    it('git diff コマンドが失敗した場合 null を返すこと', async () => {
       const mockProcess = createMockProcess(1, 'fatal: bad revision');
       spawnMock.mockReturnValue(mockProcess);
 
