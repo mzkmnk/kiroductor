@@ -171,16 +171,24 @@ function App() {
    */
   async function handleSubmit(text: string) {
     if (!activeSessionId) return;
+    const submittedSessionId = activeSessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
     const optimisticMessage: UserMessage = { id: crypto.randomUUID(), type: 'user', text };
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);
-    setProcessingSessionIds((prev) => new Set(prev).add(activeSessionId));
-    await window.kiroductor.session.prompt(text, activeSessionId);
-    // prompt() 完了後に最終状態を反映する（onUpdate が拾えなかった末尾を補完）
-    const msgs = await window.kiroductor.session.getMessages(activeSessionId);
-    dispatchChat({ type: 'set', messages: msgs });
-    setIsProcessing(false);
+    setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
+    await window.kiroductor.session.prompt(text, submittedSessionId);
+
+    // まだ同じセッションを表示中の場合のみ UI を更新する
+    if (activeSessionIdRef.current === submittedSessionId) {
+      const msgs = await window.kiroductor.session.getMessages(submittedSessionId);
+      dispatchChat({ type: 'set', messages: msgs });
+      setIsProcessing(false);
+    }
+    // 切り替え済みの場合:
+    // - メッセージは main の MessageRepository に蓄積済み（戻れば見える）
+    // - isProcessing は切り替え時に handleSwitchSession で制御済み
+    // - processingSessionIds は onPromptCompleted で削除済み
   }
 
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
