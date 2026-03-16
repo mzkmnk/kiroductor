@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, GitBranchIcon, Loader2 } from 'lucide-react';
 import type {
   AgentMessage,
   Message,
@@ -63,6 +63,7 @@ function ChatView({
     <>
       {currentBranch && sourceBranch && (
         <div className="flex items-center gap-2 border-b px-6 py-2 text-sm text-muted-foreground">
+          <GitBranchIcon className="size-4" />
           <span>{sourceBranch}</span>
           <ArrowLeft className="size-4" />
           <span>{currentBranch}</span>
