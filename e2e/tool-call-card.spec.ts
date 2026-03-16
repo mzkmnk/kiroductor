@@ -44,6 +44,7 @@ function mockKiroductorAPIWithMessages(
           },
         ]),
       getMessages: () => Promise.resolve(messages),
+      isAcpConnected: () => Promise.resolve(true),
       onUpdate: () => () => {},
       getProcessingSessions: () => Promise.resolve([]),
       onSessionSwitched: () => () => {},
