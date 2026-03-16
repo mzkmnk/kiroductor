@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build & make DMG
-        run: pnpm make --platform darwin
+        run: pnpm make:mac
 
       - name: Create GitHub Release
         env:
@@ -67,4 +67,4 @@ jobs:
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
             --generate-notes \
-            out/make/**/*.dmg
+            release/*.dmg release/*.zip
