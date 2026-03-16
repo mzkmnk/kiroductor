@@ -40,7 +40,8 @@
       "esbuild",
       "electron-winstaller",
       "@electron/fuses",
-      "lefthook"
+      "lefthook",
+      "macos-alias"
     ]
   },
   "devDependencies": {
