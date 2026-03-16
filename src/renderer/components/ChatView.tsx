@@ -50,7 +50,7 @@ function ChatView({ messages, animSplits, isRestoring = false }: ChatViewProps) 
   }
 
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto p-4">
+    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
       {messages.map((m) => {
         if (m.type === 'tool_call') {
           return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;

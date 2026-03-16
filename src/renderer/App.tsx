@@ -166,7 +166,7 @@ function App() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh">
       <SessionSidebar
         activeSessionId={activeSessionId}
         promptCompletedCount={promptCompletedCount}
