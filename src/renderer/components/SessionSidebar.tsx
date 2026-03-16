@@ -78,31 +78,43 @@ export function SessionSidebar({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  /** セッション一覧と接続状態を最新化する。 */
-  const refresh = useCallback(() => {
-    Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
-      ([all, list]) => {
-        setConnectedIds(new Set(all));
-        const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-        setSessions(sorted);
-
-        Promise.all(
-          sorted.map((s) =>
-            window.kiroductor.repo
-              .getDiffStats(s.acpSessionId)
-              .then((stats) => [s.acpSessionId, stats] as const),
-          ),
-        ).then((entries) => {
-          setDiffStatsMap(Object.fromEntries(entries));
-        });
-      },
-    );
+  /** 全セッションの diff stats を取得する。 */
+  const refreshDiffStats = useCallback((sessionList: SessionMapping[]) => {
+    Promise.all(
+      sessionList.map((s) =>
+        window.kiroductor.repo
+          .getDiffStats(s.acpSessionId)
+          .then((stats) => [s.acpSessionId, stats] as const),
+      ),
+    ).then((entries) => {
+      setDiffStatsMap(Object.fromEntries(entries));
+    });
   }, []);
 
-  useEffect(() => {
-    refresh();
+  /** セッション一覧と接続状態を最新化する。 */
+  const refresh = useCallback(
+    (opts?: { withDiffStats?: boolean }) => {
+      Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
+        ([all, list]) => {
+          setConnectedIds(new Set(all));
+          const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+          setSessions(sorted);
 
-    const unsubSwitched = window.kiroductor.session.onSessionSwitched(() => refresh());
+          if (opts?.withDiffStats) {
+            refreshDiffStats(sorted);
+          }
+        },
+      );
+    },
+    [refreshDiffStats],
+  );
+
+  useEffect(() => {
+    refresh({ withDiffStats: true });
+
+    const unsubSwitched = window.kiroductor.session.onSessionSwitched(() =>
+      refresh({ withDiffStats: true }),
+    );
     const unsubUpdate = window.kiroductor.session.onUpdate(() => refresh());
 
     // 1分ごとに相対タイムスタンプを更新する
@@ -117,7 +129,7 @@ export function SessionSidebar({
 
   function handleSessionCreated() {
     onSessionCreated();
-    refresh();
+    refresh({ withDiffStats: true });
   }
 
   return (

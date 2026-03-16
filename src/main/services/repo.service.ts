@@ -232,14 +232,14 @@ export class RepoService {
    * @returns {@link DiffStats} または `null`
    */
   async getDiffStats(cwd: string, sourceBranch: string): Promise<DiffStats | null> {
-    log.info('getDiffStats: cwd=%s, sourceBranch=%s', cwd, sourceBranch);
+    log.info(`getDiffStats: cwd=${cwd}, sourceBranch=${sourceBranch}`);
     try {
       const stdout = await this.execGit(['diff', '--shortstat', sourceBranch], cwd);
       const stats = parseDiffShortstat(stdout);
-      log.info('getDiffStats: stdout=%s, parsed=%o', JSON.stringify(stdout), stats);
+      log.info(`getDiffStats: stdout=${JSON.stringify(stdout)}, parsed=`, stats);
       return stats;
     } catch (err) {
-      log.error('getDiffStats: failed cwd=%s, sourceBranch=%s, error=%s', cwd, sourceBranch, err);
+      log.error(`getDiffStats: failed cwd=${cwd}, sourceBranch=${sourceBranch}, error=`, err);
       return null;
     }
   }
