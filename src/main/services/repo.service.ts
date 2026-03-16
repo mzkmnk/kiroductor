@@ -5,6 +5,7 @@ import { createDebugLogger } from '../debug-logger';
 import type { ConfigRepository } from '../repositories/config.repository';
 import type { RepoMapping } from '../repositories/config.repository';
 import type { FileSystem } from '../fs';
+import { generateSessionTitle } from './session-title.generator';
 
 const log = createDebugLogger('Repo');
 
@@ -130,11 +131,14 @@ export class RepoService {
    * branch を省略した場合は `git symbolic-ref HEAD` でデフォルトブランチを解決する。
    *
    * @param repoId - リポジトリの識別子（nanoid）
-   * @param branch - チェックアウトするブランチ名（省略時はデフォルトブランチ）
-   * @returns `{ cwd: string; branch: string }` — worktree のパスと使用ブランチ名
+   * @param branch - ベースブランチ名（省略時はデフォルトブランチ）
+   * @returns `{ cwd, branch, sourceBranch }` — worktree のパス、新規作業ブランチ名、ベースブランチ名
    * @throws リポジトリが見つからない場合、または git コマンドが失敗した場合
    */
-  async createWorktree(repoId: string, branch?: string): Promise<{ cwd: string; branch: string }> {
+  async createWorktree(
+    repoId: string,
+    branch?: string,
+  ): Promise<{ cwd: string; branch: string; sourceBranch: string }> {
     const repos = await this.configRepo.readRepos();
     const repo = repos.find((r) => r.repoId === repoId);
     if (!repo) {
@@ -142,17 +146,18 @@ export class RepoService {
     }
 
     const repoPath = this.getRepoPath(repo);
-    const resolvedBranch = branch ?? (await this.resolveDefaultBranch(repoPath));
+    const sourceBranch = branch ?? (await this.resolveDefaultBranch(repoPath));
+    const newBranch = `kiroductor/${generateSessionTitle().toLowerCase().replace(/\s+/g, '-')}`;
 
     const id = nanoid();
     const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', id);
     await this.fs.mkdir(worktreeDir, { recursive: true });
     const worktreePath = path.join(worktreeDir, repo.name);
 
-    log.info(`worktree add: ${worktreePath} (branch: ${resolvedBranch})`);
-    await this.execGit(['worktree', 'add', worktreePath, resolvedBranch], repoPath);
+    log.info(`worktree add: ${worktreePath} (branch: ${newBranch}, source: ${sourceBranch})`);
+    await this.execGit(['worktree', 'add', '-b', newBranch, worktreePath, sourceBranch], repoPath);
 
-    return { cwd: worktreePath, branch: resolvedBranch };
+    return { cwd: worktreePath, branch: newBranch, sourceBranch };
   }
 
   /**

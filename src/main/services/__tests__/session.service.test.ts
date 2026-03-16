@@ -57,9 +57,9 @@ describe('SessionService', () => {
     );
   });
 
-  describe('create(cwd, sourceBranch)', () => {
-    it('create(cwd, sourceBranch) を呼ぶと connection.newSession({ cwd, mcpServers: [] }) が呼ばれること', async () => {
-      await service.create('/path/to/project', 'main');
+  describe('create(cwd, currentBranch, sourceBranch)', () => {
+    it('create() を呼ぶと connection.newSession({ cwd, mcpServers: [] }) が呼ばれること', async () => {
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(connection.newSession).toHaveBeenCalledWith({
         cwd: '/path/to/project',
         mcpServers: [],
@@ -67,49 +67,51 @@ describe('SessionService', () => {
     });
 
     it('newSession() が返した sessionId が SessionRepository に保存されること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(sessionRepo.getActiveSessionId()).toBe('test-session-id');
     });
 
     it('create() 後に sessionRepo.addSession() でセッションが追加されること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(sessionRepo.getAllSessionIds()).toContain('test-session-id');
     });
 
     it('create() 後に messageRepo.initSession() でセッションが初期化されること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(messageRepo.getAll('test-session-id')).toEqual([]);
     });
 
     it('create() 後に sessionRepo.setActiveSession() でアクティブセッションが設定されること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(sessionRepo.getActiveSessionId()).toBe('test-session-id');
     });
 
     it('create() 後に configRepo.upsertSession() でセッション情報が永続化されること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       expect(configRepo.upsertSession).toHaveBeenCalledWith(
         expect.objectContaining({
           acpSessionId: 'test-session-id',
           cwd: '/path/to/project',
           repoId: '',
           title: 'Kyoto',
+          currentBranch: 'kiroductor/tokyo',
           sourceBranch: 'main',
         }),
       );
     });
 
-    it('create(cwd, sourceBranch) で指定した sourceBranch が永続化されること', async () => {
-      await service.create('/path/to/project', 'feature/my-feature');
+    it('create() で指定した currentBranch と sourceBranch が永続化されること', async () => {
+      await service.create('/path/to/project', 'kiroductor/bourbon', 'feature/my-feature');
       expect(configRepo.upsertSession).toHaveBeenCalledWith(
         expect.objectContaining({
+          currentBranch: 'kiroductor/bourbon',
           sourceBranch: 'feature/my-feature',
         }),
       );
     });
 
-    it('create(cwd, sourceBranch, repoId) で指定した repoId が永続化されること', async () => {
-      await service.create('/path/to/project', 'main', 'repo-123');
+    it('create(cwd, currentBranch, sourceBranch, repoId) で指定した repoId が永続化されること', async () => {
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main', 'repo-123');
       expect(configRepo.upsertSession).toHaveBeenCalledWith(
         expect.objectContaining({
           acpSessionId: 'test-session-id',
@@ -121,7 +123,7 @@ describe('SessionService', () => {
 
   describe('cancel()', () => {
     it('cancel() を呼ぶと connection.cancel({ sessionId }) が呼ばれること', async () => {
-      await service.create('/path/to/project', 'main');
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       await service.cancel();
       expect(connection.cancel).toHaveBeenCalledWith({ sessionId: 'test-session-id' });
     });
@@ -210,6 +212,7 @@ describe('SessionService', () => {
           repoId: 'repo-1',
           cwd: '/path/1',
           title: null,
+          currentBranch: 'kiroductor/tokyo',
           sourceBranch: 'main',
           createdAt: '2026-01-01T00:00:00.000Z',
           updatedAt: '2026-01-01T00:00:00.000Z',
@@ -219,6 +222,7 @@ describe('SessionService', () => {
           repoId: 'repo-2',
           cwd: '/path/2',
           title: 'My Session',
+          currentBranch: 'kiroductor/bourbon',
           sourceBranch: 'feature/test',
           createdAt: '2026-01-02T00:00:00.000Z',
           updatedAt: '2026-01-02T00:00:00.000Z',

@@ -47,7 +47,9 @@ export class SessionHandler {
    * - `session:list` — 永続化済みの全セッションマッピングを返す
    */
   register(): void {
-    handle('session:new', (_event, cwd, branch) => this.sessionService.create(cwd, branch));
+    handle('session:new', (_event, cwd, currentBranch, sourceBranch) =>
+      this.sessionService.create(cwd, currentBranch, sourceBranch),
+    );
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
     handle('session:prompt', async (_event, text) => {
       const sessionId = this.sessionRepo.getActiveSessionId();
