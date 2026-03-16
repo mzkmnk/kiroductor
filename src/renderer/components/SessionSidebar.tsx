@@ -11,7 +11,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from './ui/sidebar';
@@ -159,26 +158,25 @@ export function SessionSidebar({
                         <SidebarMenuButton
                           isActive={isActive}
                           onClick={() => onSwitchSession(session.acpSessionId, session.cwd)}
-                          className={`h-auto items-start py-2${hasDiff ? ' pr-14' : ''}`}
+                          className="h-auto items-start py-2"
                         >
-                          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <span className="truncate text-sm font-medium leading-none">
-                              {session.title ?? 'New Session'}
-                            </span>
-                            <span className="truncate text-xs leading-none text-sidebar-foreground/50">
-                              {extractRepoName(session.cwd)}
-                            </span>
+                          <div className="flex min-w-0 flex-1 items-center gap-1">
+                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                              <span className="truncate text-sm font-medium leading-none">
+                                {session.title ?? 'New Session'}
+                              </span>
+                              <span className="truncate text-xs leading-none text-sidebar-foreground/50">
+                                {extractRepoName(session.cwd)}
+                              </span>
+                            </div>
+                            {hasDiff && (
+                              <span className="shrink-0 text-[10px] font-medium leading-none">
+                                <span className="text-green-500">+{stats.insertions}</span>{' '}
+                                <span className="text-red-500">-{stats.deletions}</span>
+                              </span>
+                            )}
                           </div>
                         </SidebarMenuButton>
-                        {(() => {
-                          if (!hasDiff) return null;
-                          return (
-                            <SidebarMenuBadge className="text-[10px] font-medium leading-none">
-                              <span className="text-green-500">+{stats.insertions}</span>{' '}
-                              <span className="text-red-500">-{stats.deletions}</span>
-                            </SidebarMenuBadge>
-                          );
-                        })()}
                       </SidebarMenuItem>
                     );
                   })
