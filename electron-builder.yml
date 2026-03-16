@@ -13,10 +13,3 @@ mac:
     - dmg
     - zip
   artifactName: '${productName}-${version}-${arch}.${ext}'
-win:
-  target:
-    - squirrel
-linux:
-  target:
-    - deb
-    - rpm
