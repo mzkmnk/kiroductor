@@ -380,7 +380,7 @@ describe('RepoService', () => {
 
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
-        ['diff', '--shortstat', 'main...HEAD'],
+        ['diff', '--shortstat', 'main'],
         expect.objectContaining({ cwd: '/worktree/path' }),
       );
       expect(result).toEqual({ filesChanged: 3, insertions: 111, deletions: 51 });

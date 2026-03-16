@@ -223,7 +223,8 @@ export class RepoService {
   /**
    * ワーキングツリーの差分統計を取得する。
    *
-   * `git diff --shortstat sourceBranch...HEAD` を実行し、結果をパースして返す。
+   * `git diff --shortstat sourceBranch` を実行し、結果をパースして返す。
+   * ワーキングツリーの未コミット変更も含めた差分を返す。
    * git コマンドが失敗した場合は `null` を返す。
    *
    * @param cwd - worktree のパス
@@ -233,7 +234,7 @@ export class RepoService {
   async getDiffStats(cwd: string, sourceBranch: string): Promise<DiffStats | null> {
     log.info('getDiffStats: cwd=%s, sourceBranch=%s', cwd, sourceBranch);
     try {
-      const stdout = await this.execGit(['diff', '--shortstat', `${sourceBranch}...HEAD`], cwd);
+      const stdout = await this.execGit(['diff', '--shortstat', sourceBranch], cwd);
       const stats = parseDiffShortstat(stdout);
       log.info('getDiffStats: stdout=%s, parsed=%o', JSON.stringify(stdout), stats);
       return stats;
