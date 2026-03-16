@@ -17,11 +17,6 @@ import {
 } from './ui/sidebar';
 import { Button } from './ui/button';
 import { NewSessionDialog } from './NewSessionDialog';
-import { cn } from '../lib/utils';
-
-/** セッションの接続状態。 */
-type SessionStatus = 'connected' | 'disconnected';
-
 /** {@link SessionSidebar} のプロパティ。 */
 interface SessionSidebarProps {
   /** 現在のアクティブセッション ID。 */
@@ -58,7 +53,6 @@ export function SessionSidebar({
   onSessionCreated,
 }: SessionSidebarProps) {
   const [sessions, setSessions] = useState<SessionMapping[]>([]);
-  const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [diffStatsMap, setDiffStatsMap] = useState<Record<string, DiffStats | null>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -78,17 +72,14 @@ export function SessionSidebar({
   /** セッション一覧と接続状態を最新化する。 */
   const refresh = useCallback(
     (opts?: { withDiffStats?: boolean }) => {
-      Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
-        ([all, list]) => {
-          setConnectedIds(new Set(all));
-          const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-          setSessions(sorted);
+      window.kiroductor.session.list().then((list) => {
+        const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        setSessions(sorted);
 
-          if (opts?.withDiffStats) {
-            refreshDiffStats(sorted);
-          }
-        },
-      );
+        if (opts?.withDiffStats) {
+          refreshDiffStats(sorted);
+        }
+      });
     },
     [refreshDiffStats],
   );
@@ -160,9 +151,6 @@ export function SessionSidebar({
                 ) : (
                   sessions.map((session) => {
                     const isActive = session.acpSessionId === activeSessionId;
-                    const status: SessionStatus = connectedIds.has(session.acpSessionId)
-                      ? 'connected'
-                      : 'disconnected';
 
                     return (
                       <SidebarMenuItem key={session.acpSessionId}>
@@ -171,13 +159,6 @@ export function SessionSidebar({
                           onClick={() => onSwitchSession(session.acpSessionId, session.cwd)}
                           className="h-auto items-start py-2"
                         >
-                          {/* ステータスドット */}
-                          <span
-                            className={cn(
-                              'mt-1 h-2 w-2 shrink-0 rounded-full',
-                              status === 'connected' ? 'bg-blue-400' : 'bg-sidebar-foreground/20',
-                            )}
-                          />
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-sm font-medium leading-none">
                               {session.title ?? 'New Session'}
