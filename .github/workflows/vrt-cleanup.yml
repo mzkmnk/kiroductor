@@ -13,12 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Delete report branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           REPORT_BRANCH="vrt-report/pr-${PR_NUMBER}"
 
-          if git ls-remote --heads "https://github.com/${{ github.repository }}.git" "$REPORT_BRANCH" | grep -q "$REPORT_BRANCH"; then
-            git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" --delete "$REPORT_BRANCH"
+          if gh api "repos/${{ github.repository }}/branches/${REPORT_BRANCH}" --silent 2>/dev/null; then
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${REPORT_BRANCH}"
             echo "Deleted branch: $REPORT_BRANCH"
           else
             echo "Branch $REPORT_BRANCH does not exist, skipping"
