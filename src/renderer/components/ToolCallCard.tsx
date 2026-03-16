@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { ToolCallMessage } from '../../main/repositories/message.repository';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
@@ -12,61 +12,19 @@ interface ToolCallCardProps {
 }
 
 /**
- * ステータスに対応するアイコンと色クラスを返す。
- *
- * @param status - ツール呼び出しの実行状態
- * @returns アイコンコンポーネントと Tailwind の色クラス
- */
-function getStatusStyle(status: ToolCallMessage['status']) {
-  switch (status) {
-    case 'pending':
-      return {
-        icon: Clock,
-        colorClass: 'text-muted-foreground',
-        label: 'Pending',
-      };
-    case 'in_progress':
-      return {
-        icon: Loader2,
-        colorClass: 'text-muted-foreground',
-        label: 'Running',
-      };
-    case 'completed':
-      return {
-        icon: CheckCircle2,
-        colorClass: 'text-emerald-500',
-        label: 'Completed',
-      };
-    case 'failed':
-      return {
-        icon: AlertCircle,
-        colorClass: 'text-red-500',
-        label: 'Failed',
-      };
-  }
-}
-
-/**
  * エージェントが実行中のツール操作をインラインで表示するコンポーネント。
  *
- * - ツール名とステータスアイコンをコンパクトに表示する
+ * - ツール名をコンパクトに表示する
  * - クリックで入力パラメータと実行結果を展開できる
- * - ステータスに応じてアイコンの色が変わる
  */
 function ToolCallCard({ message }: ToolCallCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { icon: StatusIcon, colorClass, label } = getStatusStyle(message.status);
-  const isSpinning = message.status === 'in_progress';
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
         <ChevronRight
           className={`size-3 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-        />
-        <StatusIcon
-          className={`size-3.5 shrink-0 ${colorClass} ${isSpinning ? 'animate-spin' : ''}`}
-          aria-label={label}
         />
         <span className="font-medium">{message.name}</span>
       </CollapsibleTrigger>
