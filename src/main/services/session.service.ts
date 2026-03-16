@@ -58,6 +58,7 @@ export class SessionService {
     const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
     log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);
+    this.sessionRepo.markAcpConnected(sessionId);
     this.messageRepo.initSession(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
     const now = new Date().toISOString();
@@ -92,6 +93,7 @@ export class SessionService {
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.completeAllStreamingMessages(sessionId);
     this.sessionRepo.addSession(sessionId);
+    this.sessionRepo.markAcpConnected(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
     this.sessionRepo.setIsLoading(false);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: false });

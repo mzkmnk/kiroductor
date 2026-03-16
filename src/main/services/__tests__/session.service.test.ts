@@ -110,6 +110,11 @@ describe('SessionService', () => {
       );
     });
 
+    it('create() 後に sessionRepo.isAcpConnected() が true を返すこと', async () => {
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      expect(sessionRepo.isAcpConnected('test-session-id')).toBe(true);
+    });
+
     it('create(cwd, currentBranch, sourceBranch, repoId) で指定した repoId が永続化されること', async () => {
       await service.create('/path/to/project', 'kiroductor/tokyo', 'main', 'repo-123');
       expect(configRepo.upsertSession).toHaveBeenCalledWith(
@@ -193,6 +198,11 @@ describe('SessionService', () => {
         loading: false,
       });
     });
+
+    it('load() 後に sessionRepo.isAcpConnected() が true を返すこと', async () => {
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.isAcpConnected('session-abc')).toBe(true);
+    });
   });
 
   describe('restoreSessions()', () => {
@@ -224,6 +234,26 @@ describe('SessionService', () => {
       await service.restoreSessions();
 
       expect(sessionRepo.getAllSessionIds()).toEqual(['session-1', 'session-2']);
+    });
+
+    it('restoreSessions() で復元されたセッションは isAcpConnected() が false であること', async () => {
+      const sessions: SessionMapping[] = [
+        {
+          acpSessionId: 'session-1',
+          repoId: 'repo-1',
+          cwd: '/path/1',
+          title: null,
+          currentBranch: 'kiroductor/tokyo',
+          sourceBranch: 'main',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ];
+      configRepo.readSessions.mockResolvedValue(sessions);
+
+      await service.restoreSessions();
+
+      expect(sessionRepo.isAcpConnected('session-1')).toBe(false);
     });
   });
 });

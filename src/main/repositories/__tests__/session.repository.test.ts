@@ -122,6 +122,22 @@ describe('SessionRepository', () => {
     });
   });
 
+  describe('acpConnected', () => {
+    it('初期状態で isAcpConnected() は false を返す', () => {
+      expect(repo.isAcpConnected('session-1')).toBe(false);
+    });
+
+    it('markAcpConnected() 後に isAcpConnected() は true を返す', () => {
+      repo.markAcpConnected('session-1');
+      expect(repo.isAcpConnected('session-1')).toBe(true);
+    });
+
+    it('markAcpConnected していないセッション ID は false を返す', () => {
+      repo.markAcpConnected('session-1');
+      expect(repo.isAcpConnected('session-2')).toBe(false);
+    });
+  });
+
   describe('isLoading', () => {
     it('初期状態で getIsLoading() は false を返す', () => {
       expect(repo.getIsLoading()).toBe(false);
