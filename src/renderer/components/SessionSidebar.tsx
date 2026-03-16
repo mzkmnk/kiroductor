@@ -26,6 +26,8 @@ type SessionStatus = 'connected' | 'disconnected';
 interface SessionSidebarProps {
   /** 現在のアクティブセッション ID。 */
   activeSessionId: string | null;
+  /** プロンプト完了回数。変化時に diff stats を再取得する。 */
+  promptCompletedCount: number;
   /** セッションを切り替える際に呼ばれるコールバック。 */
   onSwitchSession: (sessionId: string, cwd: string) => void;
   /** 新規セッション作成後に呼ばれるコールバック。 */
@@ -69,6 +71,7 @@ function extractRepoName(cwd: string): string {
  */
 export function SessionSidebar({
   activeSessionId,
+  promptCompletedCount,
   onSwitchSession,
   onSessionCreated,
 }: SessionSidebarProps) {
@@ -126,6 +129,13 @@ export function SessionSidebar({
       clearInterval(timer);
     };
   }, [refresh]);
+
+  // プロンプト完了時に diff stats を再取得する
+  useEffect(() => {
+    if (promptCompletedCount > 0) {
+      refreshDiffStats(sessions);
+    }
+  }, [promptCompletedCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSessionCreated() {
     onSessionCreated();
