@@ -43,6 +43,8 @@ function mockKiroductorAPI() {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
       list: () => Promise.resolve([]),
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
+      listBranches: () => Promise.resolve([]),
+      getDiffStats: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
