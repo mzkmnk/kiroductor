@@ -94,6 +94,34 @@ describe('SessionRepository', () => {
     });
   });
 
+  describe('processing', () => {
+    it('初期状態で getProcessingSessionIds() は空配列を返す', () => {
+      expect(repo.getProcessingSessionIds()).toEqual([]);
+    });
+
+    it('addProcessing() 後に isProcessing() は true を返す', () => {
+      repo.addProcessing('session-1');
+      expect(repo.isProcessing('session-1')).toBe(true);
+    });
+
+    it('removeProcessing() 後に isProcessing() は false を返す', () => {
+      repo.addProcessing('session-1');
+      repo.removeProcessing('session-1');
+      expect(repo.isProcessing('session-1')).toBe(false);
+    });
+
+    it('getProcessingSessionIds() は処理中セッション ID の配列を返す', () => {
+      repo.addProcessing('session-1');
+      repo.addProcessing('session-2');
+      expect(repo.getProcessingSessionIds()).toEqual(['session-1', 'session-2']);
+    });
+
+    it('管理外のセッション ID でも addProcessing は例外を投げない', () => {
+      expect(() => repo.addProcessing('unmanaged')).not.toThrow();
+      expect(repo.isProcessing('unmanaged')).toBe(true);
+    });
+  });
+
   describe('isLoading', () => {
     it('初期状態で getIsLoading() は false を返す', () => {
       expect(repo.getIsLoading()).toBe(false);

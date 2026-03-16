@@ -26,7 +26,12 @@ export class SessionHandler {
     private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
     private readonly sessionRepo: Pick<
       SessionRepository,
-      'getActiveSessionId' | 'setActiveSession' | 'getAllSessionIds'
+      | 'getActiveSessionId'
+      | 'setActiveSession'
+      | 'getAllSessionIds'
+      | 'addProcessing'
+      | 'removeProcessing'
+      | 'getProcessingSessionIds'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
@@ -51,16 +56,21 @@ export class SessionHandler {
       this.sessionService.create(cwd, currentBranch, sourceBranch),
     );
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
-    handle('session:prompt', async (_event, text) => {
-      const sessionId = this.sessionRepo.getActiveSessionId();
-      if (!sessionId) throw new Error('No active session');
-      const stopReason = await this.promptService.send(sessionId, text);
-      return { stopReason };
+    handle('session:prompt', async (_event, sessionId, text) => {
+      this.sessionRepo.addProcessing(sessionId);
+      try {
+        const stopReason = await this.promptService.send(sessionId, text);
+        return { stopReason };
+      } finally {
+        this.sessionRepo.removeProcessing(sessionId);
+        this.notificationService.sendToRenderer('acp:prompt-completed', { sessionId });
+      }
     });
-    handle('session:cancel', () => this.sessionService.cancel());
-    handle('session:messages', (_event, sessionId?) => {
-      const targetSessionId = sessionId ?? this.sessionRepo.getActiveSessionId();
-      return targetSessionId ? this.messageRepo.getAll(targetSessionId) : [];
+    handle('session:cancel', (_event, sessionId) => {
+      return this.sessionService.cancel(sessionId);
+    });
+    handle('session:messages', (_event, sessionId) => {
+      return this.messageRepo.getAll(sessionId);
     });
     handle('session:switch', (_event, sessionId) => {
       this.sessionRepo.setActiveSession(sessionId);
@@ -74,6 +84,9 @@ export class SessionHandler {
     });
     handle('session:list', () => {
       return this.configRepo.readSessions();
+    });
+    handle('session:processing-sessions', () => {
+      return this.sessionRepo.getProcessingSessionIds();
     });
   }
 }

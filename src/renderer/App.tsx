@@ -1,4 +1,4 @@
-import { useState, useReducer, useEffect } from 'react';
+import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
@@ -84,32 +84,70 @@ function App() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [chatState, dispatchChat] = useReducer(chatReducer, { messages: [], animSplits: {} });
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [processingSessionIds, setProcessingSessionIds] = useState<Set<string>>(new Set());
+
+  // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
+  const activeSessionIdRef = useRef(activeSessionId);
+
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
 
   useEffect(() => {
     // 初回: アクティブセッション ID とメッセージを取得
-    window.kiroductor.session.getActive().then(setActiveSessionId);
-    window.kiroductor.session
-      .getMessages()
-      .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+    window.kiroductor.session.getActive().then((id) => {
+      setActiveSessionId(id);
+      activeSessionIdRef.current = id;
+      if (id) {
+        window.kiroductor.session
+          .getMessages(id)
+          .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+      }
+    });
 
-    // エージェントからの session/update 通知を受け取るたびにメッセージを再取得する
-    const unsubUpdate = window.kiroductor.session.onUpdate(() => {
+    // 初回: 処理中セッションを取得
+    window.kiroductor.session.getProcessingSessions().then((ids) => {
+      setProcessingSessionIds(new Set(ids));
+    });
+
+    // エージェントからの session/update 通知 — アクティブセッションのみ UI 更新
+    const unsubUpdate = window.kiroductor.session.onUpdate((notification) => {
+      if (notification.sessionId === activeSessionIdRef.current) {
+        window.kiroductor.session
+          .getMessages(activeSessionIdRef.current)
+          .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+      }
+    });
+
+    // セッション切り替え通知
+    const unsubSwitched = window.kiroductor.session.onSessionSwitched(({ sessionId }) => {
+      setActiveSessionId(sessionId);
+      activeSessionIdRef.current = sessionId;
       window.kiroductor.session
-        .getMessages()
+        .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
     });
 
-    // セッション切り替え通知を受け取ったらアクティブセッションとメッセージを更新する
-    const unsubSwitched = window.kiroductor.session.onSessionSwitched(({ sessionId }) => {
-      setActiveSessionId(sessionId);
-      window.kiroductor.session
-        .getMessages()
-        .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+    // プロンプト完了通知 — processing 状態を解除
+    const unsubCompleted = window.kiroductor.session.onPromptCompleted(({ sessionId }) => {
+      setProcessingSessionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(sessionId);
+        return next;
+      });
+      // 完了したのがアクティブセッションなら最終メッセージを反映
+      if (sessionId === activeSessionIdRef.current) {
+        window.kiroductor.session
+          .getMessages(sessionId)
+          .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+      }
+      setPromptCompletedCount((c) => c + 1);
     });
 
     return () => {
       unsubUpdate();
       unsubSwitched();
+      unsubCompleted();
     };
   }, []);
 
@@ -117,12 +155,10 @@ function App() {
    * エージェントの実行をキャンセルする。
    *
    * 停止ボタン押下時に呼ばれ、ACP の cancel 通知を送信する。
-   * prompt() は stopReason: "cancelled" で完了するため、isProcessing は
-   * handleSubmit() の await 解除時に自動で false になる。
    */
   function handleCancel() {
-    if (!isProcessing) return;
-    window.kiroductor.session.cancel();
+    if (!activeSessionId) return;
+    window.kiroductor.session.cancel(activeSessionId);
   }
 
   /**
@@ -134,35 +170,60 @@ function App() {
    * @param text - 送信するテキスト
    */
   async function handleSubmit(text: string) {
+    if (!activeSessionId) return;
+    const submittedSessionId = activeSessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
     const optimisticMessage: UserMessage = { id: crypto.randomUUID(), type: 'user', text };
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);
-    await window.kiroductor.session.prompt(text);
-    // prompt() 完了後に最終状態を反映する（onUpdate が拾えなかった末尾を補完）
-    const msgs = await window.kiroductor.session.getMessages();
-    dispatchChat({ type: 'set', messages: msgs });
-    setIsProcessing(false);
-    setPromptCompletedCount((c) => c + 1);
+    setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
+    await window.kiroductor.session.prompt(text, submittedSessionId);
+
+    // まだ同じセッションを表示中の場合のみ UI を更新する
+    if (activeSessionIdRef.current === submittedSessionId) {
+      const msgs = await window.kiroductor.session.getMessages(submittedSessionId);
+      dispatchChat({ type: 'set', messages: msgs });
+      setIsProcessing(false);
+    }
+    // 切り替え済みの場合:
+    // - メッセージは main の MessageRepository に蓄積済み（戻れば見える）
+    // - isProcessing は切り替え時に handleSwitchSession で制御済み
+    // - processingSessionIds は onPromptCompleted で削除済み
   }
 
-  /** セッション切り替えハンドラ。復元中は isRestoring を true にしてローディング UI を表示する。 */
-  async function handleSwitchSession(sessionId: string, cwd: string) {
+  /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
+  async function handleSwitchSession(sessionId: string, _cwd: string) {
+    if (sessionId === activeSessionId) return;
     setActiveSessionId(sessionId);
+    activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
-    setIsRestoring(true);
-    await window.kiroductor.session.load(sessionId, cwd);
-    const msgs = await window.kiroductor.session.getMessages();
-    dispatchChat({ type: 'set', messages: msgs });
-    setIsRestoring(false);
+
+    // 切り替え先セッションが処理中かどうかで isProcessing を更新
+    setIsProcessing(processingSessionIds.has(sessionId));
+
+    // メッセージがメモリ上にある場合はそのまま表示する
+    const msgs = await window.kiroductor.session.getMessages(sessionId);
+    if (msgs.length > 0) {
+      dispatchChat({ type: 'set', messages: msgs });
+    } else {
+      // メモリにメッセージがない場合（初回ロード）は load で復元する
+      setIsRestoring(true);
+      await window.kiroductor.session.load(sessionId, _cwd);
+      const loadedMsgs = await window.kiroductor.session.getMessages(sessionId);
+      dispatchChat({ type: 'set', messages: loadedMsgs });
+      setIsRestoring(false);
+    }
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
   async function handleSessionCreated() {
     const id = await window.kiroductor.session.getActive();
     setActiveSessionId(id);
-    const msgs = await window.kiroductor.session.getMessages();
-    dispatchChat({ type: 'set', messages: msgs });
+    activeSessionIdRef.current = id;
+    if (id) {
+      const msgs = await window.kiroductor.session.getMessages(id);
+      dispatchChat({ type: 'set', messages: msgs });
+    }
   }
 
   return (
@@ -170,6 +231,7 @@ function App() {
       <SessionSidebar
         activeSessionId={activeSessionId}
         promptCompletedCount={promptCompletedCount}
+        processingSessionIds={processingSessionIds}
         onSwitchSession={handleSwitchSession}
         onSessionCreated={handleSessionCreated}
       />

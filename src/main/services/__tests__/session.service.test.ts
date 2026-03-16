@@ -121,31 +121,22 @@ describe('SessionService', () => {
     });
   });
 
-  describe('cancel()', () => {
-    it('cancel() を呼ぶと connection.cancel({ sessionId }) が呼ばれること', async () => {
-      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
-      await service.cancel();
+  describe('cancel(sessionId)', () => {
+    it('cancel(sessionId) を呼ぶと connection.cancel({ sessionId }) が呼ばれること', async () => {
+      await service.cancel('test-session-id');
       expect(connection.cancel).toHaveBeenCalledWith({ sessionId: 'test-session-id' });
-    });
-
-    it('アクティブなセッションがない場合、cancel() は何もしない（エラーを投げない）こと', async () => {
-      await expect(service.cancel()).resolves.not.toThrow();
-      expect(connection.cancel).not.toHaveBeenCalled();
     });
   });
 
   describe('load(sessionId, cwd)', () => {
-    it('load() 前に対象セッションの messageRepo がクリアされること', async () => {
+    it('load() 時に既存メッセージが保持されること', async () => {
       messageRepo.addUserMessage('session-abc', 'existing message');
-      let clearedBeforeLoad = false;
-      connection.loadSession.mockImplementation(async () => {
-        clearedBeforeLoad = messageRepo.getAll('session-abc').length === 0;
-        return { sessionId: 'loaded-session-id' };
-      });
 
       await service.load('session-abc', '/path/to/project');
 
-      expect(clearedBeforeLoad).toBe(true);
+      expect(messageRepo.getAll('session-abc')).toEqual([
+        expect.objectContaining({ type: 'user', text: 'existing message' }),
+      ]);
     });
 
     it('connection.loadSession() に正しいパラメータが渡されること', async () => {
