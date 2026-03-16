@@ -181,8 +181,9 @@ describe('RepoService', () => {
     });
 
     it('git worktree add が実行されること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
 
       await service.createWorktree('test-repo-id');
 
@@ -208,9 +209,35 @@ describe('RepoService', () => {
       );
     });
 
-    it('返されたパスが ~/.kiroductor/worktrees/{nanoid}/{repoName} 形式であること', async () => {
+    it('branch を省略した場合 git symbolic-ref HEAD でデフォルトブランチを解決すること', async () => {
+      const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/develop\n');
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
+
+      const result = await service.createWorktree('test-repo-id');
+
+      expect(spawnMock).toHaveBeenNthCalledWith(
+        1,
+        'git',
+        ['symbolic-ref', 'HEAD'],
+        expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
+      );
+      expect(result.branch).toBe('develop');
+    });
+
+    it('branch を指定した場合その branch が result.branch として返されること', async () => {
       const mockProcess = createMockProcess(0);
       spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.createWorktree('test-repo-id', 'feature/test');
+
+      expect(result.branch).toBe('feature/test');
+    });
+
+    it('返されたパスが ~/.kiroductor/worktrees/{nanoid}/{repoName} 形式であること', async () => {
+      const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
 
       const result = await service.createWorktree('test-repo-id');
 
@@ -218,8 +245,9 @@ describe('RepoService', () => {
     });
 
     it('worktrees/{nanoid} ディレクトリが存在しなければ作成すること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
 
       await service.createWorktree('test-repo-id');
 

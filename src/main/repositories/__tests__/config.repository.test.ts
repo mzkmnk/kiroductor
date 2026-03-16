@@ -88,6 +88,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/worktree',
         title: null,
+        sourceBranch: 'main',
         createdAt: '2026-03-15T00:00:00.000Z',
         updatedAt: '2026-03-15T00:00:00.000Z',
       };
@@ -107,6 +108,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/worktree',
         title: null,
+        sourceBranch: 'main',
         createdAt: '2026-03-15T00:00:00.000Z',
         updatedAt: '2026-03-15T00:00:00.000Z',
       };
@@ -127,6 +129,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/worktree',
         title: null,
+        sourceBranch: 'main',
         createdAt: '2026-03-15T00:00:00.000Z',
         updatedAt: '2026-03-15T00:00:00.000Z',
       };
@@ -154,6 +157,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/worktree',
         title: null,
+        sourceBranch: 'main',
         createdAt: '2026-03-01T00:00:00.000Z',
         updatedAt: '2026-03-01T00:00:00.000Z',
       };
@@ -178,6 +182,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/w1',
         title: null,
+        sourceBranch: 'main',
         createdAt: '2026-03-15T00:00:00.000Z',
         updatedAt: '2026-03-15T00:00:00.000Z',
       };
@@ -186,6 +191,7 @@ describe('ConfigRepository', () => {
         repoId: 'github.com/mzkmnk/kiroductor',
         cwd: '/tmp/w2',
         title: null,
+        sourceBranch: 'develop',
         createdAt: '2026-03-15T00:00:00.000Z',
         updatedAt: '2026-03-15T00:00:00.000Z',
       };

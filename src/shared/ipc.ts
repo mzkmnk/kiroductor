@@ -22,7 +22,7 @@ export interface IpcInvokeChannels {
   'acp:start': { args: []; return: void };
   'acp:stop': { args: []; return: void };
   'acp:status': { args: []; return: AcpStatus };
-  'session:new': { args: [cwd: string]; return: void };
+  'session:new': { args: [cwd: string, branch: string]; return: void };
   'session:load': { args: [sessionId: SessionId, cwd: string]; return: void };
   'session:prompt': { args: [text: string]; return: { stopReason: string } };
   'session:cancel': { args: []; return: void };
@@ -33,7 +33,10 @@ export interface IpcInvokeChannels {
   'session:list': { args: []; return: SessionMapping[] };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
-  'repo:create-worktree': { args: [repoId: string, branch?: string]; return: { cwd: string } };
+  'repo:create-worktree': {
+    args: [repoId: string, branch?: string];
+    return: { cwd: string; branch: string };
+  };
   'repo:list-branches': { args: [repoId: string]; return: string[] };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };

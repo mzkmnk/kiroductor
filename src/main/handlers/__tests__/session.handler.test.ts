@@ -21,7 +21,7 @@ describe('SessionHandler', () => {
   let messageRepo: MessageRepository;
   let sessionRepo: SessionRepository;
   let sessionService: {
-    create: MockedFunction<(cwd: string) => Promise<void>>;
+    create: MockedFunction<(cwd: string, sourceBranch: string) => Promise<void>>;
     cancel: MockedFunction<() => Promise<void>>;
     load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
   };
@@ -82,16 +82,17 @@ describe('SessionHandler', () => {
     });
 
     describe('session:new', () => {
-      it('受け取った cwd を引数として sessionService.create() を呼ぶ', async () => {
+      it('受け取った cwd と branch を引数として sessionService.create() を呼ぶ', async () => {
         handler.register();
         const newHandler = ipcHandle.mock.calls.find((call) => call[0] === 'session:new')?.[1] as (
           _event: unknown,
           cwd: string,
+          branch: string,
         ) => Promise<void>;
 
-        await newHandler(null, '/workspace/myproject');
+        await newHandler(null, '/workspace/myproject', 'main');
 
-        expect(sessionService.create).toHaveBeenCalledWith('/workspace/myproject');
+        expect(sessionService.create).toHaveBeenCalledWith('/workspace/myproject', 'main');
       });
     });
 

@@ -124,17 +124,17 @@ export class RepoService {
   }
 
   /**
-   * bare repo から worktree を作成し、パスを返す。
+   * bare repo から worktree を作成し、パスと使用ブランチ名を返す。
    *
    * worktree は `~/.kiroductor/worktrees/{nanoid}/{repoName}` に作成する。
-   * branch を省略した場合はデフォルトブランチ（HEAD）を使用する。
+   * branch を省略した場合は `git symbolic-ref HEAD` でデフォルトブランチを解決する。
    *
    * @param repoId - リポジトリの識別子（nanoid）
-   * @param branch - チェックアウトするブランチ名（省略時は HEAD）
-   * @returns `{ cwd: string }` — worktree のパス
+   * @param branch - チェックアウトするブランチ名（省略時はデフォルトブランチ）
+   * @returns `{ cwd: string; branch: string }` — worktree のパスと使用ブランチ名
    * @throws リポジトリが見つからない場合、または git コマンドが失敗した場合
    */
-  async createWorktree(repoId: string, branch?: string): Promise<{ cwd: string }> {
+  async createWorktree(repoId: string, branch?: string): Promise<{ cwd: string; branch: string }> {
     const repos = await this.configRepo.readRepos();
     const repo = repos.find((r) => r.repoId === repoId);
     if (!repo) {
@@ -142,17 +142,31 @@ export class RepoService {
     }
 
     const repoPath = this.getRepoPath(repo);
+    const resolvedBranch = branch ?? (await this.resolveDefaultBranch(repoPath));
+
     const id = nanoid();
     const worktreeDir = path.join(this.configRepo.getBaseDir(), 'worktrees', id);
     await this.fs.mkdir(worktreeDir, { recursive: true });
     const worktreePath = path.join(worktreeDir, repo.name);
 
-    const targetBranch = branch ?? 'HEAD';
+    log.info(`worktree add: ${worktreePath} (branch: ${resolvedBranch})`);
+    await this.execGit(['worktree', 'add', worktreePath, resolvedBranch], repoPath);
 
-    log.info(`worktree add: ${worktreePath} (branch: ${targetBranch})`);
-    await this.execGit(['worktree', 'add', worktreePath, targetBranch], repoPath);
+    return { cwd: worktreePath, branch: resolvedBranch };
+  }
 
-    return { cwd: worktreePath };
+  /**
+   * bare repo のデフォルトブランチ名を解決する。
+   *
+   * `git symbolic-ref HEAD` の出力（例: `refs/heads/main`）から
+   * `refs/heads/` プレフィックスを除去してブランチ名を返す。
+   *
+   * @param repoPath - bare repo のパス
+   * @returns デフォルトブランチ名
+   */
+  private async resolveDefaultBranch(repoPath: string): Promise<string> {
+    const ref = await this.execGit(['symbolic-ref', 'HEAD'], repoPath);
+    return ref.trim().replace(/^refs\/heads\//, '');
   }
 
   /**
