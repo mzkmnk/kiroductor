@@ -50,20 +50,22 @@ function ChatView({ messages, animSplits, isRestoring = false }: ChatViewProps) 
   }
 
   return (
-    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-      {messages.map((m) => {
-        if (m.type === 'tool_call') {
-          return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
-        }
-        return (
-          <MessageBubble
-            key={m.id}
-            message={m as UserMessage | AgentMessage}
-            animSplit={animSplits[m.id]}
-          />
-        );
-      })}
-      <div ref={bottomRef} />
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="space-y-4 px-6 py-6">
+        {messages.map((m) => {
+          if (m.type === 'tool_call') {
+            return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
+          }
+          return (
+            <MessageBubble
+              key={m.id}
+              message={m as UserMessage | AgentMessage}
+              animSplit={animSplits[m.id]}
+            />
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
     </div>
   );
 }

@@ -22,36 +22,36 @@ function getStatusStyle(status: ToolCallMessage['status']) {
     case 'pending':
       return {
         icon: Clock,
-        colorClass: 'text-blue-400',
+        colorClass: 'text-muted-foreground',
         label: 'Pending',
       };
     case 'in_progress':
       return {
         icon: Loader2,
-        colorClass: 'text-blue-400',
+        colorClass: 'text-muted-foreground',
         label: 'Running',
       };
     case 'completed':
       return {
         icon: CheckCircle2,
-        colorClass: 'text-emerald-400',
+        colorClass: 'text-emerald-500',
         label: 'Completed',
       };
     case 'failed':
       return {
         icon: AlertCircle,
-        colorClass: 'text-red-400',
+        colorClass: 'text-red-500',
         label: 'Failed',
       };
   }
 }
 
 /**
- * エージェントが実行中のツール操作を表示するカード。
+ * エージェントが実行中のツール操作をインラインで表示するコンポーネント。
  *
- * - ツール名とステータスアイコンをヘッダーに表示する
- * - 折りたたみ可能な本文にツールの入力パラメータと実行結果を表示する
- * - ステータスに応じて色が変わる（blue: pending/in_progress、emerald: completed、red: failed）
+ * - ツール名とステータスアイコンをコンパクトに表示する
+ * - クリックで入力パラメータと実行結果を展開できる
+ * - ステータスに応じてアイコンの色が変わる
  */
 function ToolCallCard({ message }: ToolCallCardProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,40 +59,42 @@ function ToolCallCard({ message }: ToolCallCardProps) {
   const isSpinning = message.status === 'in_progress';
 
   return (
-    <div className="flex justify-start">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full max-w-[75%]">
-        <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-2xl border border-border bg-card px-4 py-2 text-sm text-foreground transition-colors hover:bg-accent">
-          <ChevronRight
-            className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-          />
-          <StatusIcon
-            className={`h-4 w-4 shrink-0 ${colorClass} ${isSpinning ? 'animate-spin' : ''}`}
-            aria-label={label}
-          />
-          <span className="truncate font-medium">{message.name}</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-1 rounded-2xl border border-border bg-card px-4 py-3 text-xs">
-          {message.input !== undefined && (
-            <div>
-              <div className="mb-1 font-medium text-muted-foreground">Input</div>
-              <pre className="overflow-x-auto whitespace-pre-wrap break-words text-foreground">
-                {typeof message.input === 'string'
-                  ? message.input
-                  : JSON.stringify(message.input, null, 2)}
-              </pre>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger className="group flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+        <ChevronRight
+          className={`size-3 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+        />
+        <StatusIcon
+          className={`size-3.5 shrink-0 ${colorClass} ${isSpinning ? 'animate-spin' : ''}`}
+          aria-label={label}
+        />
+        <span className="font-medium">{message.name}</span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-1.5 ml-5 rounded-lg bg-muted/50 px-3 py-2.5 text-xs">
+        {message.input !== undefined && (
+          <div>
+            <div className="mb-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Input
             </div>
-          )}
-          {message.result !== undefined && (
-            <div className={message.input !== undefined ? 'mt-3' : ''}>
-              <div className="mb-1 font-medium text-muted-foreground">Output</div>
-              <pre className="overflow-x-auto whitespace-pre-wrap break-words text-foreground">
-                {message.result}
-              </pre>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-words text-foreground/80">
+              {typeof message.input === 'string'
+                ? message.input
+                : JSON.stringify(message.input, null, 2)}
+            </pre>
+          </div>
+        )}
+        {message.result !== undefined && (
+          <div className={message.input !== undefined ? 'mt-2.5' : ''}>
+            <div className="mb-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Output
             </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-words text-foreground/80">
+              {message.result}
+            </pre>
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
