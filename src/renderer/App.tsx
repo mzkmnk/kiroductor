@@ -79,6 +79,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
  * チャットエリアはアクティブセッションのメッセージを表示する。
  */
 function App() {
+  const [promptCompletedCount, setPromptCompletedCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [chatState, dispatchChat] = useReducer(chatReducer, { messages: [], animSplits: {} });
@@ -142,6 +143,7 @@ function App() {
     const msgs = await window.kiroductor.session.getMessages();
     dispatchChat({ type: 'set', messages: msgs });
     setIsProcessing(false);
+    setPromptCompletedCount((c) => c + 1);
   }
 
   /** セッション切り替えハンドラ。復元中は isRestoring を true にしてローディング UI を表示する。 */
@@ -167,6 +169,7 @@ function App() {
     <SidebarProvider>
       <SessionSidebar
         activeSessionId={activeSessionId}
+        promptCompletedCount={promptCompletedCount}
         onSwitchSession={handleSwitchSession}
         onSessionCreated={handleSessionCreated}
       />
