@@ -20,10 +20,10 @@ interface MessageBubbleProps {
 }
 
 /**
- * 一件分のメッセージをバブル形式で表示するコンポーネント。
+ * 一件分のメッセージを表示するコンポーネント。
  *
- * - ユーザー発言: 右寄せ、`bg-primary/20 border-primary/30`
- * - エージェント返答: 左寄せ、`bg-card border-border`
+ * - ユーザー発言: 右寄せ、控えめな背景バブル
+ * - エージェント返答: 左寄せ、ボーダーなしのフラットなテキスト表示
  * - エージェントのストリーミング中は新しいチャンクをフェードインで滑らかに表示する。
  * - ストリーミング完了後はメッセージ本文を Markdown としてレンダリングする。
  */
@@ -34,29 +34,28 @@ function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
   const alreadyShown = message.text.slice(0, animSplit);
   const newChunk = message.text.slice(animSplit);
 
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-[75%] rounded-2xl border px-4 py-2 text-sm break-words ${
-          isUser
-            ? 'bg-primary/20 border-primary/30 text-foreground'
-            : 'bg-card border-border text-foreground'
-        }`}
-      >
-        {isStreaming ? (
-          // ストリーミング中: plain text + チャンク単位フェードイン
-          // 部分的な Markdown をパースすると崩れるため完了後に切り替える
-          <div className="whitespace-pre-wrap">
-            {alreadyShown}
-            {newChunk && <span className="animate-stream-fade-in">{newChunk}</span>}
-          </div>
-        ) : (
-          // ストリーミング完了後: Markdown レンダリング
-          <div className="markdown-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
-          </div>
-        )}
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[75%] rounded-2xl bg-secondary px-4 py-2.5 text-sm text-foreground break-words">
+          <div className="whitespace-pre-wrap">{message.text}</div>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="text-sm text-foreground">
+      {isStreaming ? (
+        <div className="whitespace-pre-wrap">
+          {alreadyShown}
+          {newChunk && <span className="animate-stream-fade-in">{newChunk}</span>}
+        </div>
+      ) : (
+        <div className="markdown-body">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,7 +39,7 @@ export class PromptService {
       `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
     );
     this.messageRepo.addUserMessage(sessionId, text);
-    const agentMessage = this.messageRepo.addAgentMessage(sessionId, crypto.randomUUID());
+    this.messageRepo.addAgentMessage(sessionId, crypto.randomUUID());
 
     const { stopReason } = await this.connection.prompt({
       sessionId,
@@ -47,7 +47,14 @@ export class PromptService {
     });
     log.info(`send 完了 stopReason=${stopReason}`);
 
-    this.messageRepo.completeAgentMessage(sessionId, agentMessage.id);
+    // ツール呼び出し後に SessionUpdateMethod が作成したメッセージも含め、
+    // streaming 中の全エージェントメッセージを確定する
+    const messages = this.messageRepo.getAll(sessionId);
+    for (const msg of messages) {
+      if (msg.type === 'agent' && msg.status === 'streaming') {
+        this.messageRepo.completeAgentMessage(sessionId, msg.id);
+      }
+    }
 
     return stopReason;
   }
