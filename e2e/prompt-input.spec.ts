@@ -30,6 +30,7 @@ function mockKiroductorAPI() {
             repoId: 'mock-repo',
             cwd: '/mock/cwd',
             title: 'Mock Session',
+            sourceBranch: 'main',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -43,6 +44,8 @@ function mockKiroductorAPI() {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
       list: () => Promise.resolve([]),
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
+      listBranches: () => Promise.resolve([]),
+      getDiffStats: () => Promise.resolve({}),
     },
     config: {
       getSettings: () => Promise.resolve({}),
