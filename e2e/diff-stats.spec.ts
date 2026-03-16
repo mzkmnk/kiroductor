@@ -76,6 +76,58 @@ function mockKiroductorAPIWithDiffStats() {
 }
 
 /**
+ * タイトルが長いセッションの API モック。
+ *
+ * タイトルが省略（truncate）され、diff stats が被らないことを検証する。
+ */
+function mockKiroductorAPIWithLongTitle() {
+  (window as Record<string, unknown>).kiroductor = {
+    acp: {
+      start: () => Promise.resolve(),
+      stop: () => Promise.resolve(),
+      getStatus: () => Promise.resolve('disconnected'),
+      onStatusChange: () => () => {},
+    },
+    session: {
+      create: () => Promise.resolve(),
+      load: () => Promise.resolve(),
+      switch: () => Promise.resolve(),
+      prompt: () => Promise.resolve({ stopReason: 'end_turn' }),
+      cancel: () => Promise.resolve(),
+      getActive: () => Promise.resolve('session-long'),
+      getAll: () => Promise.resolve(['session-long']),
+      list: () =>
+        Promise.resolve([
+          {
+            acpSessionId: 'session-long',
+            repoId: 'repo-1',
+            cwd: '/projects/my-very-long-project-name',
+            title:
+              'Implement comprehensive user authentication system with OAuth2 and SAML support for enterprise',
+            createdAt: '2025-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:30:00.000Z',
+          },
+        ]),
+      getMessages: () => Promise.resolve([]),
+      onUpdate: () => () => {},
+      onSessionSwitched: () => () => {},
+      onSessionLoading: () => () => {},
+    },
+    repo: {
+      clone: () => Promise.resolve({ repoId: 'mock-repo' }),
+      list: () => Promise.resolve([]),
+      createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
+      listBranches: () => Promise.resolve([]),
+      getDiffStats: () => Promise.resolve({ insertions: 256, deletions: 89 }),
+    },
+    config: {
+      getSettings: () => Promise.resolve({}),
+      updateSettings: () => Promise.resolve(),
+    },
+  };
+}
+
+/**
  * diff stats が null を返すセッション（diff stats 非表示）の API モック。
  */
 function mockKiroductorAPINoDiffStats() {
@@ -156,6 +208,18 @@ test.describe('Diff Stats 表示', () => {
     // session-2 の行に +0 や -0 が表示されていないことを確認
     const session2Item = session2.locator('..').locator('..');
     await expect(session2Item.getByText(/^\+0$/)).not.toBeVisible();
+  });
+
+  test('タイトルが長い場合、タイトルが省略され diff stats は完全に表示される', async ({ page }) => {
+    await page.addInitScript(mockKiroductorAPIWithLongTitle);
+    await page.goto('http://localhost:5173');
+    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
+
+    // diff stats が完全に表示される
+    await expect(page.getByText('+256')).toBeVisible();
+    await expect(page.getByText('-89')).toBeVisible();
+
+    await expect(page).toHaveScreenshot('diff-stats-long-title.png');
   });
 
   test('diff stats が null のセッションには何も表示されない', async ({ page }) => {

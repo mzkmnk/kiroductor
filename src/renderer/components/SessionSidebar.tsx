@@ -35,24 +35,6 @@ interface SessionSidebarProps {
 }
 
 /**
- * ISO 8601 の日時文字列を相対時刻文字列（"2m ago" など）に変換する。
- *
- * @param isoString - ISO 8601 形式の日時文字列
- * @param now - 現在時刻（ミリ秒）
- * @returns 相対時刻の文字列
- */
-function formatRelativeTime(isoString: string, now: number): string {
-  const diffMs = now - new Date(isoString).getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return `${diffSec}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}h ago`;
-  return `${Math.floor(diffHour / 24)}d ago`;
-}
-
-/**
  * セッションの CWD パスからリポジトリ名を抽出する。
  *
  * @param cwd - セッションの作業ディレクトリパス
@@ -79,7 +61,6 @@ export function SessionSidebar({
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [diffStatsMap, setDiffStatsMap] = useState<Record<string, DiffStats | null>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
 
   /** 全セッションの diff stats を取得する。 */
   const refreshDiffStats = useCallback((sessionList: SessionMapping[]) => {
@@ -120,13 +101,9 @@ export function SessionSidebar({
     );
     const unsubUpdate = window.kiroductor.session.onUpdate(() => refresh());
 
-    // 1分ごとに相対タイムスタンプを更新する
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-
     return () => {
       unsubSwitched();
       unsubUpdate();
-      clearInterval(timer);
     };
   }, [refresh]);
 
@@ -202,30 +179,25 @@ export function SessionSidebar({
                             )}
                           />
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="truncate text-sm font-medium leading-none">
-                                {session.title ?? 'New Session'}
-                              </span>
-                              {(() => {
-                                const stats = diffStatsMap[session.acpSessionId];
-                                if (!stats || (stats.insertions === 0 && stats.deletions === 0))
-                                  return null;
-                                return (
-                                  <span className="shrink-0 text-[10px] font-medium leading-none">
-                                    <span className="text-green-500">+{stats.insertions}</span>{' '}
-                                    <span className="text-red-500">-{stats.deletions}</span>
-                                  </span>
-                                );
-                              })()}
-                            </div>
+                            <span className="truncate text-sm font-medium leading-none">
+                              {session.title ?? 'New Session'}
+                            </span>
                             <span className="truncate text-xs leading-none text-sidebar-foreground/50">
                               {extractRepoName(session.cwd)}
                             </span>
                           </div>
                         </SidebarMenuButton>
-                        <SidebarMenuBadge className="text-[10px] text-sidebar-foreground/40">
-                          {formatRelativeTime(session.updatedAt, now)}
-                        </SidebarMenuBadge>
+                        {(() => {
+                          const stats = diffStatsMap[session.acpSessionId];
+                          if (!stats || (stats.insertions === 0 && stats.deletions === 0))
+                            return null;
+                          return (
+                            <SidebarMenuBadge className="text-[10px] font-medium leading-none">
+                              <span className="text-green-500">+{stats.insertions}</span>{' '}
+                              <span className="text-red-500">-{stats.deletions}</span>
+                            </SidebarMenuBadge>
+                          );
+                        })()}
                       </SidebarMenuItem>
                     );
                   })
