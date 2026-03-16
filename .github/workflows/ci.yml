@@ -73,11 +73,7 @@ jobs:
       - name: Type check
         run: pnpm tsc --noEmit
 
-      # electron-forge make はパッケージ生成を伴うため、
-      # CI では型チェック + Vite バンドルのみ実施する。
-      # 実際のバイナリ生成は release ワークフローで行う。
-      - name: Build (Vite bundles only)
-        run: |
-          pnpm vite build --config vite.main.config.ts
-          pnpm vite build --config vite.preload.config.ts
-          pnpm vite build --config vite.renderer.config.ts
+      # electron-builder によるバイナリ生成は release ワークフローで行う。
+      # CI では型チェック + electron-vite バンドルのみ実施する。
+      - name: Build (electron-vite)
+        run: pnpm build

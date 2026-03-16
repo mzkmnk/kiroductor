@@ -3,7 +3,7 @@ node_modules/
 
 # Build outputs
 out/
-.vite/
+release/
 dist/
 
 # TypeScript

@@ -9,7 +9,7 @@ export default tseslint.config(
     ignores: [
       'node_modules/**',
       'out/**',
-      '.vite/**',
+      'release/**',
       'dist/**',
       'src/renderer/dist/**',
       'docs/**',

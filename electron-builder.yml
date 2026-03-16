@@ -1,0 +1,15 @@
+appId: com.kiroductor.app
+productName: Kiroductor
+directories:
+  buildResources: build
+  output: release
+asar: true
+asarUnpack:
+  - '**/*.node'
+files:
+  - out/**/*
+mac:
+  target:
+    - dmg
+    - zip
+  artifactName: '${productName}-${version}-${arch}.${ext}'
