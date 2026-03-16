@@ -151,13 +151,15 @@ export function SessionSidebar({
                 ) : (
                   sessions.map((session) => {
                     const isActive = session.acpSessionId === activeSessionId;
+                    const stats = diffStatsMap[session.acpSessionId];
+                    const hasDiff = stats && (stats.insertions > 0 || stats.deletions > 0);
 
                     return (
                       <SidebarMenuItem key={session.acpSessionId}>
                         <SidebarMenuButton
                           isActive={isActive}
                           onClick={() => onSwitchSession(session.acpSessionId, session.cwd)}
-                          className="h-auto items-start py-2"
+                          className={`h-auto items-start py-2${hasDiff ? ' pr-14' : ''}`}
                         >
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <span className="truncate text-sm font-medium leading-none">
@@ -169,9 +171,7 @@ export function SessionSidebar({
                           </div>
                         </SidebarMenuButton>
                         {(() => {
-                          const stats = diffStatsMap[session.acpSessionId];
-                          if (!stats || (stats.insertions === 0 && stats.deletions === 0))
-                            return null;
+                          if (!hasDiff) return null;
                           return (
                             <SidebarMenuBadge className="text-[10px] font-medium leading-none">
                               <span className="text-green-500">+{stats.insertions}</span>{' '}
