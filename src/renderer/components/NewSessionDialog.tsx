@@ -89,11 +89,11 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         return;
       }
 
-      const { cwd, branch } = await window.kiroductor.repo.createWorktree(
+      const { cwd, branch, sourceBranch } = await window.kiroductor.repo.createWorktree(
         repoId,
         selectedBranch || undefined,
       );
-      await window.kiroductor.session.create(cwd, branch);
+      await window.kiroductor.session.create(cwd, branch, sourceBranch);
       onSessionCreated();
       onClose();
     } catch (err: unknown) {
