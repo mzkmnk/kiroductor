@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ArrowLeft, GitBranchIcon, Loader2 } from 'lucide-react';
 import type {
   AgentMessage,
   Message,
@@ -23,6 +23,10 @@ interface ChatViewProps {
   animSplits: Record<string, number>;
   /** セッション復元中かどうか。true のときローディング表示になる。 */
   isRestoring?: boolean;
+  /** 現在の作業ブランチ名。 */
+  currentBranch?: string;
+  /** ベースブランチ名。 */
+  sourceBranch?: string;
 }
 
 /**
@@ -31,7 +35,13 @@ interface ChatViewProps {
  * - `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを提供する。
  * - 新しいメッセージが届いたら自動で最下部へスクロールする。
  */
-function ChatView({ messages, animSplits, isRestoring = false }: ChatViewProps) {
+function ChatView({
+  messages,
+  animSplits,
+  isRestoring = false,
+  currentBranch,
+  sourceBranch,
+}: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,23 +60,33 @@ function ChatView({ messages, animSplits, isRestoring = false }: ChatViewProps) 
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="space-y-4 px-6 py-6">
-        {messages.map((m) => {
-          if (m.type === 'tool_call') {
-            return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
-          }
-          return (
-            <MessageBubble
-              key={m.id}
-              message={m as UserMessage | AgentMessage}
-              animSplit={animSplits[m.id]}
-            />
-          );
-        })}
-        <div ref={bottomRef} />
+    <>
+      {currentBranch && sourceBranch && (
+        <div className="flex items-center gap-2 border-b px-6 py-2 text-sm text-muted-foreground">
+          <GitBranchIcon className="size-4" />
+          <span>{sourceBranch}</span>
+          <ArrowLeft className="size-4" />
+          <span>{currentBranch}</span>
+        </div>
+      )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="space-y-4 px-6 py-6">
+          {messages.map((m) => {
+            if (m.type === 'tool_call') {
+              return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
+            }
+            return (
+              <MessageBubble
+                key={m.id}
+                message={m as UserMessage | AgentMessage}
+                animSplit={animSplits[m.id]}
+              />
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
