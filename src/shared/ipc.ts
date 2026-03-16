@@ -35,12 +35,12 @@ export interface IpcInvokeChannels {
   'session:new': { args: [cwd: string, currentBranch: string, sourceBranch: string]; return: void };
   'session:load': { args: [sessionId: SessionId, cwd: string]; return: void };
   'session:prompt': {
-    args: [sessionId: SessionId | undefined, text: string];
+    args: [sessionId: SessionId, text: string];
     return: { stopReason: string };
   };
-  'session:cancel': { args: [sessionId?: SessionId]; return: void };
+  'session:cancel': { args: [sessionId: SessionId]; return: void };
   'session:processing-sessions': { args: []; return: SessionId[] };
-  'session:messages': { args: [sessionId?: SessionId]; return: Message[] };
+  'session:messages': { args: [sessionId: SessionId]; return: Message[] };
   'session:switch': { args: [sessionId: SessionId]; return: void };
   'session:active': { args: []; return: SessionId | null };
   'session:all': { args: []; return: SessionId[] };

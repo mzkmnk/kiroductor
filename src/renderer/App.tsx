@@ -220,8 +220,10 @@ function App() {
     const id = await window.kiroductor.session.getActive();
     setActiveSessionId(id);
     activeSessionIdRef.current = id;
-    const msgs = await window.kiroductor.session.getMessages();
-    dispatchChat({ type: 'set', messages: msgs });
+    if (id) {
+      const msgs = await window.kiroductor.session.getMessages(id);
+      dispatchChat({ type: 'set', messages: msgs });
+    }
   }
 
   return (

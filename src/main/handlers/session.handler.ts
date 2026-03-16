@@ -56,9 +56,7 @@ export class SessionHandler {
       this.sessionService.create(cwd, currentBranch, sourceBranch),
     );
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
-    handle('session:prompt', async (_event, targetSessionId, text) => {
-      const sessionId = targetSessionId ?? this.sessionRepo.getActiveSessionId();
-      if (!sessionId) throw new Error('No active session');
+    handle('session:prompt', async (_event, sessionId, text) => {
       this.sessionRepo.addProcessing(sessionId);
       try {
         const stopReason = await this.promptService.send(sessionId, text);
@@ -68,14 +66,11 @@ export class SessionHandler {
         this.notificationService.sendToRenderer('acp:prompt-completed', { sessionId });
       }
     });
-    handle('session:cancel', (_event, targetSessionId?) => {
-      const sessionId = targetSessionId ?? this.sessionRepo.getActiveSessionId();
-      if (!sessionId) return;
+    handle('session:cancel', (_event, sessionId) => {
       return this.sessionService.cancel(sessionId);
     });
-    handle('session:messages', (_event, sessionId?) => {
-      const targetSessionId = sessionId ?? this.sessionRepo.getActiveSessionId();
-      return targetSessionId ? this.messageRepo.getAll(targetSessionId) : [];
+    handle('session:messages', (_event, sessionId) => {
+      return this.messageRepo.getAll(sessionId);
     });
     handle('session:switch', (_event, sessionId) => {
       this.sessionRepo.setActiveSession(sessionId);

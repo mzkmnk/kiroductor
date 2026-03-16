@@ -66,12 +66,12 @@ export interface SessionAPI {
   create: (cwd: string, currentBranch: string, sourceBranch: string) => Promise<void>;
   /** 既存セッションを指定した作業ディレクトリで復元する。 */
   load: (sessionId: SessionId, cwd: string) => Promise<void>;
-  /** ユーザーテキストをエージェントへ送信する。セッション ID 省略時はアクティブセッション。 */
-  prompt: (text: string, sessionId?: SessionId) => Promise<{ stopReason: string }>;
-  /** 実行中のセッションをキャンセルする。セッション ID 省略時はアクティブセッション。 */
-  cancel: (sessionId?: SessionId) => Promise<void>;
+  /** ユーザーテキストをエージェントへ送信する。 */
+  prompt: (text: string, sessionId: SessionId) => Promise<{ stopReason: string }>;
+  /** 実行中のセッションをキャンセルする。 */
+  cancel: (sessionId: SessionId) => Promise<void>;
   /** メッセージ一覧を取得する。 */
-  getMessages: (sessionId?: SessionId) => Promise<Message[]>;
+  getMessages: (sessionId: SessionId) => Promise<Message[]>;
   /** 処理中の全セッション ID を取得する。 */
   getProcessingSessions: () => Promise<SessionId[]>;
   /** アクティブセッションを切り替える。 */
@@ -170,9 +170,9 @@ const kiroductorAPI: KiroductorAPI = {
     create: (cwd, currentBranch, sourceBranch) =>
       invoke('session:new', cwd, currentBranch, sourceBranch),
     load: (sessionId, cwd) => invoke('session:load', sessionId, cwd),
-    prompt: (text, sessionId?) => invoke('session:prompt', sessionId, text),
-    cancel: (sessionId?) => invoke('session:cancel', sessionId),
-    getMessages: (sessionId?) => invoke('session:messages', sessionId),
+    prompt: (text, sessionId) => invoke('session:prompt', sessionId, text),
+    cancel: (sessionId) => invoke('session:cancel', sessionId),
+    getMessages: (sessionId) => invoke('session:messages', sessionId),
     getProcessingSessions: () => invoke('session:processing-sessions'),
     switch: (sessionId) => invoke('session:switch', sessionId),
     getActive: () => invoke('session:active'),

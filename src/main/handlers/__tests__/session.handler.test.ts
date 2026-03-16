@@ -118,36 +118,19 @@ describe('SessionHandler', () => {
     });
 
     describe('session:prompt', () => {
-      it('sessionId 省略時はアクティブセッションで promptService.send() を呼ぶ', async () => {
+      it('指定した sessionId で promptService.send() を呼ぶ', async () => {
         handler.register();
         const promptHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:prompt',
         )?.[1] as (
           _event: unknown,
-          sessionId: string | undefined,
+          sessionId: string,
           text: string,
         ) => Promise<{ stopReason: string }>;
 
-        await promptHandler(null, undefined, 'hello');
+        await promptHandler(null, SESSION_ID, 'hello');
 
         expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello');
-      });
-
-      it('sessionId を指定すると、そのセッションで promptService.send() を呼ぶ', async () => {
-        const OTHER_SESSION_ID = 'other-session-id';
-        sessionRepo.addSession(OTHER_SESSION_ID);
-        handler.register();
-        const promptHandler = ipcHandle.mock.calls.find(
-          (call) => call[0] === 'session:prompt',
-        )?.[1] as (
-          _event: unknown,
-          sessionId: string | undefined,
-          text: string,
-        ) => Promise<{ stopReason: string }>;
-
-        await promptHandler(null, OTHER_SESSION_ID, 'hello');
-
-        expect(promptService.send).toHaveBeenCalledWith(OTHER_SESSION_ID, 'hello');
       });
 
       it('prompt 実行中は sessionRepo.isProcessing() が true を返す', async () => {
@@ -161,11 +144,11 @@ describe('SessionHandler', () => {
           (call) => call[0] === 'session:prompt',
         )?.[1] as (
           _event: unknown,
-          sessionId: string | undefined,
+          sessionId: string,
           text: string,
         ) => Promise<{ stopReason: string }>;
 
-        await promptHandler(null, undefined, 'hello');
+        await promptHandler(null, SESSION_ID, 'hello');
 
         expect(isProcessingDuringPrompt).toBe(true);
         expect(sessionRepo.isProcessing(SESSION_ID)).toBe(false);
@@ -177,11 +160,11 @@ describe('SessionHandler', () => {
           (call) => call[0] === 'session:prompt',
         )?.[1] as (
           _event: unknown,
-          sessionId: string | undefined,
+          sessionId: string,
           text: string,
         ) => Promise<{ stopReason: string }>;
 
-        await promptHandler(null, undefined, 'hello');
+        await promptHandler(null, SESSION_ID, 'hello');
 
         expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:prompt-completed', {
           sessionId: SESSION_ID,
@@ -190,55 +173,29 @@ describe('SessionHandler', () => {
     });
 
     describe('session:cancel', () => {
-      it('sessionId 省略時はアクティブセッションで cancel を実行する', async () => {
+      it('指定した sessionId で cancel を実行する', async () => {
         handler.register();
         const cancelHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:cancel',
-        )?.[1] as (_event: unknown, sessionId?: string) => Promise<void>;
+        )?.[1] as (_event: unknown, sessionId: string) => Promise<void>;
 
-        await cancelHandler(null);
+        await cancelHandler(null, SESSION_ID);
 
         expect(sessionService.cancel).toHaveBeenCalledWith(SESSION_ID);
-      });
-
-      it('sessionId を指定するとそのセッションで cancel を実行する', async () => {
-        const OTHER_SESSION_ID = 'other-session-id';
-        handler.register();
-        const cancelHandler = ipcHandle.mock.calls.find(
-          (call) => call[0] === 'session:cancel',
-        )?.[1] as (_event: unknown, sessionId?: string) => Promise<void>;
-
-        await cancelHandler(null, OTHER_SESSION_ID);
-
-        expect(sessionService.cancel).toHaveBeenCalledWith(OTHER_SESSION_ID);
       });
     });
 
     describe('session:messages', () => {
-      it('アクティブセッションの messageRepository.getAll(sessionId) の結果を返す', async () => {
+      it('指定した sessionId の messageRepository.getAll() の結果を返す', async () => {
         messageRepo.addUserMessage(SESSION_ID, 'test message');
         handler.register();
         const messagesHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:messages',
-        )?.[1] as (_event: unknown, sessionId?: string) => Promise<unknown>;
+        )?.[1] as (_event: unknown, sessionId: string) => Promise<unknown>;
 
-        const result = await messagesHandler(null);
+        const result = await messagesHandler(null, SESSION_ID);
 
         expect(result).toEqual([expect.objectContaining({ type: 'user', text: 'test message' })]);
-      });
-
-      it('セッション ID を指定した場合、そのセッションのメッセージを返す', async () => {
-        const OTHER_SESSION_ID = 'other-session-id';
-        sessionRepo.addSession(OTHER_SESSION_ID);
-        messageRepo.addUserMessage(OTHER_SESSION_ID, 'other message');
-        handler.register();
-        const messagesHandler = ipcHandle.mock.calls.find(
-          (call) => call[0] === 'session:messages',
-        )?.[1] as (_event: unknown, sessionId?: string) => Promise<unknown>;
-
-        const result = await messagesHandler(null, OTHER_SESSION_ID);
-
-        expect(result).toEqual([expect.objectContaining({ type: 'user', text: 'other message' })]);
       });
     });
 
