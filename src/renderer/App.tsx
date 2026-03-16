@@ -1,5 +1,6 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
+import type { SessionMapping } from '../main/repositories/config.repository';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
@@ -85,6 +86,7 @@ function App() {
   const [chatState, dispatchChat] = useReducer(chatReducer, { messages: [], animSplits: {} });
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [processingSessionIds, setProcessingSessionIds] = useState<Set<string>>(new Set());
+  const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -94,6 +96,9 @@ function App() {
   }, [activeSessionId]);
 
   useEffect(() => {
+    // 初回: セッション一覧を取得
+    window.kiroductor.session.list().then(setSessionMappings);
+
     // 初回: アクティブセッション ID とメッセージを取得
     window.kiroductor.session.getActive().then((id) => {
       setActiveSessionId(id);
@@ -123,6 +128,7 @@ function App() {
     const unsubSwitched = window.kiroductor.session.onSessionSwitched(({ sessionId }) => {
       setActiveSessionId(sessionId);
       activeSessionIdRef.current = sessionId;
+      window.kiroductor.session.list().then(setSessionMappings);
       window.kiroductor.session
         .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
@@ -220,11 +226,14 @@ function App() {
     const id = await window.kiroductor.session.getActive();
     setActiveSessionId(id);
     activeSessionIdRef.current = id;
+    window.kiroductor.session.list().then(setSessionMappings);
     if (id) {
       const msgs = await window.kiroductor.session.getMessages(id);
       dispatchChat({ type: 'set', messages: msgs });
     }
   }
+
+  const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
 
   return (
     <SidebarProvider className="h-svh">
@@ -242,6 +251,8 @@ function App() {
               messages={chatState.messages}
               animSplits={chatState.animSplits}
               isRestoring={isRestoring}
+              currentBranch={activeMapping?.currentBranch}
+              sourceBranch={activeMapping?.sourceBranch}
             />
             <PromptInput
               onSubmit={handleSubmit}

@@ -39,6 +39,8 @@ function mockKiroductorAPIWithMessages(
             repoId: 'mock-repo',
             cwd: '/mock/cwd',
             title: 'Mock Session',
+            currentBranch: 'feature/add-header',
+            sourceBranch: 'main',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -126,5 +128,16 @@ test.describe('ChatView', () => {
     await page.goto('http://localhost:5173');
     await expect(page.getByText('メッセージ 20')).toBeVisible();
     await expect(page).toHaveScreenshot('chat-view-scrolled.png');
+  });
+
+  test('ブランチヘッダーに sourceBranch と currentBranch が表示される', async ({ page }) => {
+    await page.addInitScript(mockKiroductorAPIWithMessages, [
+      { id: '1', type: 'user', text: 'Hello' },
+      { id: '2', type: 'agent', text: 'Hi there!', status: 'completed' },
+    ]);
+    await page.goto('http://localhost:5173');
+    await expect(page.getByText('main')).toBeVisible();
+    await expect(page.getByText('feature/add-header')).toBeVisible();
+    await expect(page).toHaveScreenshot('chat-view-branch-header.png');
   });
 });
