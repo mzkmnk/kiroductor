@@ -90,6 +90,7 @@ export class SessionService {
     this.messageRepo.clearSession(sessionId);
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
+    this.completeAllStreamingMessages(sessionId);
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
     this.sessionRepo.setIsLoading(false);
@@ -107,6 +108,23 @@ export class SessionService {
       this.sessionRepo.addSession(session.acpSessionId);
     }
     log.info(`restoreSessions: ${String(sessions.length)} セッションを復元`);
+  }
+
+  /**
+   * 指定セッション内でストリーミング中のエージェントメッセージをすべて確定状態にする。
+   *
+   * セッション復元時、`loadSession` 完了後に呼び出して
+   * 残留する `streaming` 状態のメッセージを `completed` へ遷移させる。
+   *
+   * @param sessionId - 対象セッション ID
+   */
+  private completeAllStreamingMessages(sessionId: SessionId): void {
+    const messages = this.messageRepo.getAll(sessionId);
+    for (const msg of messages) {
+      if (msg.type === 'agent' && msg.status === 'streaming') {
+        this.messageRepo.completeAgentMessage(sessionId, msg.id);
+      }
+    }
   }
 
   /**
