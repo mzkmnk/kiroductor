@@ -66,12 +66,14 @@ export interface SessionAPI {
   create: (cwd: string, currentBranch: string, sourceBranch: string) => Promise<void>;
   /** 既存セッションを指定した作業ディレクトリで復元する。 */
   load: (sessionId: SessionId, cwd: string) => Promise<void>;
-  /** ユーザーテキストをエージェントへ送信する。 */
-  prompt: (text: string) => Promise<{ stopReason: string }>;
-  /** 実行中のセッションをキャンセルする。 */
-  cancel: () => Promise<void>;
+  /** ユーザーテキストをエージェントへ送信する。セッション ID 省略時はアクティブセッション。 */
+  prompt: (text: string, sessionId?: SessionId) => Promise<{ stopReason: string }>;
+  /** 実行中のセッションをキャンセルする。セッション ID 省略時はアクティブセッション。 */
+  cancel: (sessionId?: SessionId) => Promise<void>;
   /** メッセージ一覧を取得する。 */
-  getMessages: () => Promise<Message[]>;
+  getMessages: (sessionId?: SessionId) => Promise<Message[]>;
+  /** 処理中の全セッション ID を取得する。 */
+  getProcessingSessions: () => Promise<SessionId[]>;
   /** アクティブセッションを切り替える。 */
   switch: (sessionId: SessionId) => Promise<void>;
   /** 現在のアクティブセッション ID を取得する。 */
@@ -101,6 +103,13 @@ export interface SessionAPI {
    * @returns 購読を解除するクリーンアップ関数
    */
   onSessionSwitched: (callback: (payload: { sessionId: SessionId }) => void) => () => void;
+  /**
+   * プロンプト完了通知を購読する。
+   *
+   * @param callback - 完了したセッション ID を含むペイロードを受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onPromptCompleted: (callback: (payload: { sessionId: SessionId }) => void) => () => void;
 }
 
 /**
@@ -161,9 +170,10 @@ const kiroductorAPI: KiroductorAPI = {
     create: (cwd, currentBranch, sourceBranch) =>
       invoke('session:new', cwd, currentBranch, sourceBranch),
     load: (sessionId, cwd) => invoke('session:load', sessionId, cwd),
-    prompt: (text) => invoke('session:prompt', text),
-    cancel: () => invoke('session:cancel'),
-    getMessages: () => invoke('session:messages'),
+    prompt: (text, sessionId?) => invoke('session:prompt', sessionId, text),
+    cancel: (sessionId?) => invoke('session:cancel', sessionId),
+    getMessages: (sessionId?) => invoke('session:messages', sessionId),
+    getProcessingSessions: () => invoke('session:processing-sessions'),
     switch: (sessionId) => invoke('session:switch', sessionId),
     getActive: () => invoke('session:active'),
     getAll: () => invoke('session:all'),
@@ -173,6 +183,8 @@ const kiroductorAPI: KiroductorAPI = {
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),
     onSessionSwitched: (callback) =>
       typedOn('acp:session-switched', (_event, payload) => callback(payload)),
+    onPromptCompleted: (callback) =>
+      typedOn('acp:prompt-completed', (_event, payload) => callback(payload)),
   },
   repo: {
     clone: (url) => invoke('repo:clone', url),

@@ -87,7 +87,7 @@ export class SessionService {
     log.info(`loadSession 開始 sessionId=${sessionId} cwd=${cwd}`);
     this.sessionRepo.setIsLoading(true);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: true });
-    this.messageRepo.clearSession(sessionId);
+    this.messageRepo.initSession(sessionId);
     await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.completeAllStreamingMessages(sessionId);
@@ -128,16 +128,11 @@ export class SessionService {
   }
 
   /**
-   * 実行中のセッションをキャンセルする。
+   * 指定セッションの実行をキャンセルする。
    *
-   * アクティブなセッションが存在しない場合は何もしない。
+   * @param sessionId - キャンセルするセッション ID
    */
-  async cancel(): Promise<void> {
-    const sessionId = this.sessionRepo.getActiveSessionId();
-    if (!sessionId) {
-      log.info('cancel: アクティブなセッションがありません');
-      return;
-    }
+  async cancel(sessionId: SessionId): Promise<void> {
     log.info(`cancel sessionId=${sessionId}`);
     await this.connection.cancel({ sessionId });
     log.info('cancel 完了');

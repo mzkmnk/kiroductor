@@ -34,8 +34,12 @@ export interface IpcInvokeChannels {
   'acp:status': { args: []; return: AcpStatus };
   'session:new': { args: [cwd: string, currentBranch: string, sourceBranch: string]; return: void };
   'session:load': { args: [sessionId: SessionId, cwd: string]; return: void };
-  'session:prompt': { args: [text: string]; return: { stopReason: string } };
-  'session:cancel': { args: []; return: void };
+  'session:prompt': {
+    args: [sessionId: SessionId | undefined, text: string];
+    return: { stopReason: string };
+  };
+  'session:cancel': { args: [sessionId?: SessionId]; return: void };
+  'session:processing-sessions': { args: []; return: SessionId[] };
   'session:messages': { args: [sessionId?: SessionId]; return: Message[] };
   'session:switch': { args: [sessionId: SessionId]; return: void };
   'session:active': { args: []; return: SessionId | null };
@@ -63,6 +67,7 @@ export interface IpcOnChannels {
   'acp:session-update': SessionNotification;
   'acp:session-loading': { loading: boolean };
   'acp:session-switched': { sessionId: SessionId };
+  'acp:prompt-completed': { sessionId: SessionId };
   'acp:request-permission': {
     sessionId: SessionId;
     toolCall: ToolCallUpdate;

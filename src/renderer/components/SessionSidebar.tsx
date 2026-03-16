@@ -22,6 +22,8 @@ interface SessionSidebarProps {
   activeSessionId: string | null;
   /** プロンプト完了回数。変化時に diff stats を再取得する。 */
   promptCompletedCount: number;
+  /** 処理中のセッション ID のセット。 */
+  processingSessionIds: Set<string>;
   /** セッションを切り替える際に呼ばれるコールバック。 */
   onSwitchSession: (sessionId: string, cwd: string) => void;
   /** 新規セッション作成後に呼ばれるコールバック。 */
@@ -48,6 +50,7 @@ function extractRepoName(cwd: string): string {
 export function SessionSidebar({
   activeSessionId,
   promptCompletedCount,
+  processingSessionIds,
   onSwitchSession,
   onSessionCreated,
 }: SessionSidebarProps) {
@@ -150,6 +153,7 @@ export function SessionSidebar({
                 ) : (
                   sessions.map((session) => {
                     const isActive = session.acpSessionId === activeSessionId;
+                    const isSessionProcessing = processingSessionIds.has(session.acpSessionId);
                     const stats = diffStatsMap[session.acpSessionId];
                     const hasDiff = stats && (stats.insertions > 0 || stats.deletions > 0);
 
@@ -161,6 +165,12 @@ export function SessionSidebar({
                           className="h-auto items-start py-2"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-1">
+                            {isSessionProcessing && (
+                              <span
+                                className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-blue-500"
+                                title="Processing"
+                              />
+                            )}
                             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                               <span className="truncate text-sm font-medium leading-none">
                                 {session.title ?? 'New Session'}

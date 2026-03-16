@@ -13,6 +13,9 @@ export class SessionRepository {
   /** 管理中の全セッション ID。 */
   private sessionIds: Set<SessionId> = new Set();
 
+  /** prompt 実行中のセッション ID。 */
+  private processingSessionIds: Set<SessionId> = new Set();
+
   private loading: boolean = false;
 
   /**
@@ -67,6 +70,43 @@ export class SessionRepository {
    */
   getAllSessionIds(): SessionId[] {
     return [...this.sessionIds];
+  }
+
+  /**
+   * セッションを処理中としてマークする。
+   *
+   * @param sessionId - 処理中にするセッション ID
+   */
+  addProcessing(sessionId: SessionId): void {
+    this.processingSessionIds.add(sessionId);
+  }
+
+  /**
+   * セッションの処理中マークを解除する。
+   *
+   * @param sessionId - 解除するセッション ID
+   */
+  removeProcessing(sessionId: SessionId): void {
+    this.processingSessionIds.delete(sessionId);
+  }
+
+  /**
+   * セッションが処理中かどうかを返す。
+   *
+   * @param sessionId - 確認するセッション ID
+   * @returns 処理中の場合は `true`
+   */
+  isProcessing(sessionId: SessionId): boolean {
+    return this.processingSessionIds.has(sessionId);
+  }
+
+  /**
+   * 処理中の全セッション ID を配列で返す。
+   *
+   * @returns 処理中セッション ID の配列
+   */
+  getProcessingSessionIds(): SessionId[] {
+    return [...this.processingSessionIds];
   }
 
   /**
