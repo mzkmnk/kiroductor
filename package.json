@@ -1,6 +1,6 @@
 {
   "name": "kiroductor",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Electron ACP client for kiro-cli",
   "main": ".vite/build/main.js",
   "packageManager": "pnpm@10.29.3",
