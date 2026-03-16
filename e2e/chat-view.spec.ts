@@ -61,6 +61,10 @@ function mockKiroductorAPIWithMessages(
 }
 
 test.describe('ChatView', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
+  });
+
   test('メッセージが空の場合は空のコンテナが表示される', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPIWithMessages, []);
     await page.goto('http://localhost:5173');

@@ -52,6 +52,7 @@ function mockKiroductorAPI() {
 
 test.describe('アプリ初期表示', () => {
   test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
     await page.addInitScript(mockKiroductorAPI);
   });
 
