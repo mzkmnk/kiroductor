@@ -44,8 +44,10 @@ function mockKiroductorAPIRestoring() {
         ]),
       getMessages: () => Promise.resolve([]),
       onUpdate: () => () => {},
+      getProcessingSessions: () => Promise.resolve([]),
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
+      onPromptCompleted: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
@@ -112,8 +114,10 @@ function mockKiroductorAPIRestored() {
           },
         ]),
       onUpdate: () => () => {},
+      getProcessingSessions: () => Promise.resolve([]),
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
+      onPromptCompleted: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),

@@ -35,8 +35,10 @@ function mockKiroductorAPI() {
         ]),
       getMessages: () => Promise.resolve([]),
       onUpdate: () => () => {},
+      getProcessingSessions: () => Promise.resolve([]),
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
+      onPromptCompleted: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
