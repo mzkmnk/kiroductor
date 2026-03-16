@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChildProcess } from 'child_process';
-import { RepoService, type SpawnFn } from '../repo.service';
+import { RepoService, type SpawnFn, parseShortstat } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
 import type { RepoMapping } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
@@ -367,6 +367,81 @@ describe('RepoService', () => {
     });
   });
 
+  describe('getDiffStats(cwd, sourceBranch)', () => {
+    it('git diff --shortstat sourceBranch...HEAD を指定した cwd で実行すること', async () => {
+      const mockProcess = createMockProcess(
+        0,
+        undefined,
+        ' 10 files changed, 111 insertions(+), 51 deletions(-)\n',
+      );
+      spawnMock.mockReturnValue(mockProcess);
+
+      await service.getDiffStats('/path/to/worktree', 'main');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--shortstat', 'main...HEAD'],
+        expect.objectContaining({ cwd: '/path/to/worktree' }),
+      );
+    });
+
+    it('挿入と削除の両方がある場合にパースして返すこと', async () => {
+      const mockProcess = createMockProcess(
+        0,
+        undefined,
+        ' 10 files changed, 111 insertions(+), 51 deletions(-)\n',
+      );
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiffStats('/path/to/worktree', 'main');
+
+      expect(result).toEqual({ insertions: 111, deletions: 51 });
+    });
+
+    it('git コマンドが失敗した場合エラーを投げること', async () => {
+      const mockProcess = createMockProcess(1, 'fatal: bad revision');
+      spawnMock.mockReturnValue(mockProcess);
+
+      await expect(service.getDiffStats('/path/to/worktree', 'main')).rejects.toThrow(
+        'fatal: bad revision',
+      );
+    });
+  });
+
+  describe('getBatchDiffStats(requests)', () => {
+    it('各セッションの結果を acpSessionId をキーとしたレコードで返すこと', async () => {
+      const mockProcess1 = createMockProcess(
+        0,
+        undefined,
+        ' 5 files changed, 20 insertions(+), 10 deletions(-)\n',
+      );
+      const mockProcess2 = createMockProcess(0, undefined, ' 3 files changed, 50 insertions(+)\n');
+      spawnMock.mockReturnValueOnce(mockProcess1).mockReturnValueOnce(mockProcess2);
+
+      const result = await service.getBatchDiffStats([
+        { acpSessionId: 'session-1', cwd: '/path/1', sourceBranch: 'main' },
+        { acpSessionId: 'session-2', cwd: '/path/2', sourceBranch: 'develop' },
+      ]);
+
+      expect(result['session-1']).toEqual({ insertions: 20, deletions: 10 });
+      expect(result['session-2']).toEqual({ insertions: 50, deletions: 0 });
+    });
+
+    it('git コマンドが失敗したセッションには null を返すこと', async () => {
+      const successProcess = createMockProcess(0, undefined, ' 1 file changed, 1 insertion(+)\n');
+      const failProcess = createMockProcess(1, 'fatal: bad revision');
+      spawnMock.mockReturnValueOnce(successProcess).mockReturnValueOnce(failProcess);
+
+      const result = await service.getBatchDiffStats([
+        { acpSessionId: 'ok', cwd: '/path/ok', sourceBranch: 'main' },
+        { acpSessionId: 'fail', cwd: '/path/fail', sourceBranch: 'main' },
+      ]);
+
+      expect(result['ok']).toEqual({ insertions: 1, deletions: 0 });
+      expect(result['fail']).toBeNull();
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [
@@ -386,6 +461,33 @@ describe('RepoService', () => {
 
       expect(result).toEqual(repos);
     });
+  });
+});
+
+describe('parseShortstat(output)', () => {
+  it('挿入と削除の両方を含む出力をパースすること', () => {
+    const result = parseShortstat(' 10 files changed, 111 insertions(+), 51 deletions(-)\n');
+    expect(result).toEqual({ insertions: 111, deletions: 51 });
+  });
+
+  it('挿入のみの出力をパースすること', () => {
+    const result = parseShortstat(' 5 files changed, 20 insertions(+)\n');
+    expect(result).toEqual({ insertions: 20, deletions: 0 });
+  });
+
+  it('削除のみの出力をパースすること', () => {
+    const result = parseShortstat(' 3 files changed, 10 deletions(-)\n');
+    expect(result).toEqual({ insertions: 0, deletions: 10 });
+  });
+
+  it('空出力の場合 insertions: 0, deletions: 0 を返すこと', () => {
+    const result = parseShortstat('');
+    expect(result).toEqual({ insertions: 0, deletions: 0 });
+  });
+
+  it('1 insertion のような単数形もパースできること', () => {
+    const result = parseShortstat(' 1 file changed, 1 insertion(+), 1 deletion(-)\n');
+    expect(result).toEqual({ insertions: 1, deletions: 1 });
   });
 });
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/repositories/config.repository';
+import type { DiffStats } from '../../shared/ipc';
 import {
   Sidebar,
   SidebarContent,
@@ -75,13 +76,25 @@ export function SessionSidebar({
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [diffStats, setDiffStats] = useState<Record<string, DiffStats | null>>({});
 
   /** セッション一覧と接続状態を最新化する。 */
   const refresh = useCallback(() => {
     Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
       ([all, list]) => {
         setConnectedIds(new Set(all));
-        setSessions([...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        setSessions(sorted);
+
+        // 差分統計をバッチ取得
+        const requests = sorted.map((s) => ({
+          acpSessionId: s.acpSessionId,
+          cwd: s.cwd,
+          sourceBranch: s.sourceBranch,
+        }));
+        if (requests.length > 0) {
+          window.kiroductor.repo.getDiffStats(requests).then(setDiffStats);
+        }
       },
     );
   }, []);
@@ -170,9 +183,23 @@ export function SessionSidebar({
                             <span className="truncate text-sm font-medium leading-none">
                               {session.title ?? 'New Session'}
                             </span>
-                            <span className="truncate text-xs leading-none text-sidebar-foreground/50">
-                              {extractRepoName(session.cwd)}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate text-xs leading-none text-sidebar-foreground/50">
+                                {extractRepoName(session.cwd)}
+                              </span>
+                              {diffStats[session.acpSessionId] &&
+                                (diffStats[session.acpSessionId]!.insertions > 0 ||
+                                  diffStats[session.acpSessionId]!.deletions > 0) && (
+                                  <span className="flex shrink-0 gap-1 text-[10px] leading-none">
+                                    <span className="text-green-500">
+                                      +{diffStats[session.acpSessionId]!.insertions}
+                                    </span>
+                                    <span className="text-red-500">
+                                      -{diffStats[session.acpSessionId]!.deletions}
+                                    </span>
+                                  </span>
+                                )}
+                            </div>
                           </div>
                         </SidebarMenuButton>
                         <SidebarMenuBadge className="text-[10px] text-sidebar-foreground/40">

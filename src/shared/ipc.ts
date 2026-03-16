@@ -12,6 +12,14 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 
+/** git diff --shortstat の統計情報。 */
+export interface DiffStats {
+  /** 追加行数。 */
+  insertions: number;
+  /** 削除行数。 */
+  deletions: number;
+}
+
 /**
  * renderer → main の invoke/handle チャネルマップ。
  *
@@ -38,6 +46,10 @@ export interface IpcInvokeChannels {
     return: { cwd: string; branch: string; sourceBranch: string };
   };
   'repo:list-branches': { args: [repoId: string]; return: string[] };
+  'repo:diff-stats': {
+    args: [requests: { acpSessionId: string; cwd: string; sourceBranch: string }[]];
+    return: Record<string, DiffStats | null>;
+  };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

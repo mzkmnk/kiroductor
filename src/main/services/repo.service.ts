@@ -6,6 +6,7 @@ import type { ConfigRepository } from '../repositories/config.repository';
 import type { RepoMapping } from '../repositories/config.repository';
 import type { FileSystem } from '../fs';
 import { generateSessionTitle } from './session-title.generator';
+import type { DiffStats } from '../../shared/ipc';
 
 const log = createDebugLogger('Repo');
 
@@ -219,6 +220,56 @@ export class RepoService {
     return branches;
   }
 
+  /**
+   * 指定ディレクトリで `sourceBranch...HEAD` の差分統計を取得する。
+   *
+   * @param cwd - worktree のパス
+   * @param sourceBranch - 比較元ブランチ名
+   * @returns 追加行数と削除行数
+   */
+  async getDiffStats(cwd: string, sourceBranch: string): Promise<DiffStats> {
+    const output = await this.execGit(['diff', '--shortstat', `${sourceBranch}...HEAD`], cwd);
+    return parseShortstat(output);
+  }
+
+  /**
+   * 複数セッションの差分統計をバッチ取得する。
+   *
+   * 各リクエストを並列実行し、失敗したものは `null` を返す。
+   *
+   * @param requests - セッション情報の配列
+   * @returns `acpSessionId` をキーとした差分統計のレコード
+   */
+  async getBatchDiffStats(
+    requests: { acpSessionId: string; cwd: string; sourceBranch: string }[],
+  ): Promise<Record<string, DiffStats | null>> {
+    const results = await Promise.allSettled(
+      requests.map(async (req) => ({
+        id: req.acpSessionId,
+        stats: await this.getDiffStats(req.cwd, req.sourceBranch),
+      })),
+    );
+
+    const record: Record<string, DiffStats | null> = {};
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        record[result.value.id] = result.value.stats;
+      } else {
+        // Promise.allSettled では rejected の場合 value がないため、
+        // requests 配列からマッピングする
+      }
+    }
+
+    // rejected 分を null で埋める
+    for (const req of requests) {
+      if (!(req.acpSessionId in record)) {
+        record[req.acpSessionId] = null;
+      }
+    }
+
+    return record;
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -257,4 +308,21 @@ export class RepoService {
       });
     });
   }
+}
+
+/**
+ * `git diff --shortstat` の出力をパースして差分統計を返す。
+ *
+ * 出力例: `"10 files changed, 111 insertions(+), 51 deletions(-)"`
+ *
+ * @param output - `git diff --shortstat` の標準出力
+ * @returns 追加行数と削除行数
+ */
+export function parseShortstat(output: string): DiffStats {
+  const insertions = output.match(/(\d+) insertion/);
+  const deletions = output.match(/(\d+) deletion/);
+  return {
+    insertions: insertions ? Number(insertions[1]) : 0,
+    deletions: deletions ? Number(deletions[1]) : 0,
+  };
 }

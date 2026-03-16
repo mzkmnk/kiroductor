@@ -15,7 +15,7 @@ export class RepoHandler {
   constructor(
     private readonly repoService: Pick<
       RepoService,
-      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches'
+      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches' | 'getBatchDiffStats'
     >,
     private readonly configRepo: Pick<ConfigRepository, 'readSettings' | 'writeSettings'>,
   ) {}
@@ -44,6 +44,8 @@ export class RepoHandler {
     );
 
     handle('repo:list-branches', (_event, repoId) => this.repoService.listBranches(repoId));
+
+    handle('repo:diff-stats', (_event, requests) => this.repoService.getBatchDiffStats(requests));
 
     handle('config:get-settings', () => this.configRepo.readSettings());
 
