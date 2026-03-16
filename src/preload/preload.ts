@@ -7,7 +7,7 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type { DiffStats, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。
@@ -118,6 +118,8 @@ export interface RepoAPI {
   ) => Promise<{ cwd: string; branch: string; sourceBranch: string }>;
   /** 指定リポジトリのリモートブランチ一覧を返す。 */
   listBranches: (repoId: string) => Promise<string[]>;
+  /** 指定セッションの git diff 統計情報を取得する。 */
+  getDiffStats: (sessionId: string) => Promise<DiffStats | null>;
 }
 
 /**
@@ -177,6 +179,7 @@ const kiroductorAPI: KiroductorAPI = {
     list: () => invoke('repo:list'),
     createWorktree: (repoId, branch) => invoke('repo:create-worktree', repoId, branch),
     listBranches: (repoId) => invoke('repo:list-branches', repoId),
+    getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

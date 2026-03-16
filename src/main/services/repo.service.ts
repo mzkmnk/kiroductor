@@ -6,6 +6,7 @@ import type { ConfigRepository } from '../repositories/config.repository';
 import type { RepoMapping } from '../repositories/config.repository';
 import type { FileSystem } from '../fs';
 import { generateSessionTitle } from './session-title.generator';
+import type { DiffStats } from '../../shared/ipc';
 
 const log = createDebugLogger('Repo');
 
@@ -219,6 +220,25 @@ export class RepoService {
     return branches;
   }
 
+  /**
+   * ワーキングツリーの差分統計を取得する。
+   *
+   * `git diff --shortstat sourceBranch...HEAD` を実行し、結果をパースして返す。
+   * git コマンドが失敗した場合は `null` を返す。
+   *
+   * @param cwd - worktree のパス
+   * @param sourceBranch - ベースブランチ名
+   * @returns {@link DiffStats} または `null`
+   */
+  async getDiffStats(cwd: string, sourceBranch: string): Promise<DiffStats | null> {
+    try {
+      const stdout = await this.execGit(['diff', '--shortstat', `${sourceBranch}...HEAD`], cwd);
+      return parseDiffShortstat(stdout);
+    } catch {
+      return null;
+    }
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -257,4 +277,30 @@ export class RepoService {
       });
     });
   }
+}
+
+/**
+ * `git diff --shortstat` の出力をパースして {@link DiffStats} を返す。
+ *
+ * 出力例: `" 3 files changed, 111 insertions(+), 51 deletions(-)\n"`
+ * 差分がない場合（空文字列）は全て 0 を返す。
+ *
+ * @param stdout - `git diff --shortstat` の標準出力
+ * @returns パース済みの {@link DiffStats}
+ */
+export function parseDiffShortstat(stdout: string): DiffStats {
+  const trimmed = stdout.trim();
+  if (trimmed === '') {
+    return { filesChanged: 0, insertions: 0, deletions: 0 };
+  }
+
+  const filesMatch = trimmed.match(/(\d+)\s+files?\s+changed/);
+  const insertionsMatch = trimmed.match(/(\d+)\s+insertions?\(\+\)/);
+  const deletionsMatch = trimmed.match(/(\d+)\s+deletions?\(-\)/);
+
+  return {
+    filesChanged: filesMatch ? Number(filesMatch[1]) : 0,
+    insertions: insertionsMatch ? Number(insertionsMatch[1]) : 0,
+    deletions: deletionsMatch ? Number(deletionsMatch[1]) : 0,
+  };
 }

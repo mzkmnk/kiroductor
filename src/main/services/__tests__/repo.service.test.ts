@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChildProcess } from 'child_process';
-import { RepoService, type SpawnFn } from '../repo.service';
+import { RepoService, parseDiffShortstat, type SpawnFn } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
 import type { RepoMapping } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
@@ -367,6 +367,35 @@ describe('RepoService', () => {
     });
   });
 
+  describe('getDiffStats(cwd, sourceBranch)', () => {
+    it('git diff --shortstat の結果をパースして DiffStats を返すこと', async () => {
+      const mockProcess = createMockProcess(
+        0,
+        undefined,
+        ' 3 files changed, 111 insertions(+), 51 deletions(-)\n',
+      );
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiffStats('/worktree/path', 'main');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--shortstat', 'main...HEAD'],
+        expect.objectContaining({ cwd: '/worktree/path' }),
+      );
+      expect(result).toEqual({ filesChanged: 3, insertions: 111, deletions: 51 });
+    });
+
+    it('git コマンドが失敗した場合 null を返すこと', async () => {
+      const mockProcess = createMockProcess(1, 'fatal: bad revision');
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiffStats('/worktree/path', 'main');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [
@@ -385,6 +414,48 @@ describe('RepoService', () => {
       const result = await service.listClonedRepos();
 
       expect(result).toEqual(repos);
+    });
+  });
+});
+
+describe('parseDiffShortstat(stdout)', () => {
+  it('標準的な出力をパースすること', () => {
+    expect(parseDiffShortstat(' 3 files changed, 111 insertions(+), 51 deletions(-)\n')).toEqual({
+      filesChanged: 3,
+      insertions: 111,
+      deletions: 51,
+    });
+  });
+
+  it('insertions のみの場合 deletions が 0 であること', () => {
+    expect(parseDiffShortstat(' 2 files changed, 10 insertions(+)\n')).toEqual({
+      filesChanged: 2,
+      insertions: 10,
+      deletions: 0,
+    });
+  });
+
+  it('deletions のみの場合 insertions が 0 であること', () => {
+    expect(parseDiffShortstat(' 1 file changed, 5 deletions(-)\n')).toEqual({
+      filesChanged: 1,
+      insertions: 0,
+      deletions: 5,
+    });
+  });
+
+  it('空文字列の場合すべて 0 を返すこと', () => {
+    expect(parseDiffShortstat('')).toEqual({
+      filesChanged: 0,
+      insertions: 0,
+      deletions: 0,
+    });
+  });
+
+  it('singular "1 file changed" を正しくパースすること', () => {
+    expect(parseDiffShortstat(' 1 file changed, 1 insertion(+), 1 deletion(-)\n')).toEqual({
+      filesChanged: 1,
+      insertions: 1,
+      deletions: 1,
     });
   });
 });

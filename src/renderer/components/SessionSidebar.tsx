@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/repositories/config.repository';
+import type { DiffStats } from '../../shared/ipc';
 import {
   Sidebar,
   SidebarContent,
@@ -73,6 +74,7 @@ export function SessionSidebar({
 }: SessionSidebarProps) {
   const [sessions, setSessions] = useState<SessionMapping[]>([]);
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+  const [diffStatsMap, setDiffStatsMap] = useState<Record<string, DiffStats | null>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
@@ -81,7 +83,18 @@ export function SessionSidebar({
     Promise.all([window.kiroductor.session.getAll(), window.kiroductor.session.list()]).then(
       ([all, list]) => {
         setConnectedIds(new Set(all));
-        setSessions([...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        const sorted = [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        setSessions(sorted);
+
+        Promise.all(
+          sorted.map((s) =>
+            window.kiroductor.repo
+              .getDiffStats(s.acpSessionId)
+              .then((stats) => [s.acpSessionId, stats] as const),
+          ),
+        ).then((entries) => {
+          setDiffStatsMap(Object.fromEntries(entries));
+        });
       },
     );
   }, []);
@@ -167,9 +180,22 @@ export function SessionSidebar({
                             )}
                           />
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <span className="truncate text-sm font-medium leading-none">
-                              {session.title ?? 'New Session'}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate text-sm font-medium leading-none">
+                                {session.title ?? 'New Session'}
+                              </span>
+                              {(() => {
+                                const stats = diffStatsMap[session.acpSessionId];
+                                if (!stats || (stats.insertions === 0 && stats.deletions === 0))
+                                  return null;
+                                return (
+                                  <span className="shrink-0 text-[10px] font-medium leading-none">
+                                    <span className="text-green-500">+{stats.insertions}</span>{' '}
+                                    <span className="text-red-500">-{stats.deletions}</span>
+                                  </span>
+                                );
+                              })()}
+                            </div>
                             <span className="truncate text-xs leading-none text-sidebar-foreground/50">
                               {extractRepoName(session.cwd)}
                             </span>

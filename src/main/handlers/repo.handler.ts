@@ -15,9 +15,12 @@ export class RepoHandler {
   constructor(
     private readonly repoService: Pick<
       RepoService,
-      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches'
+      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches' | 'getDiffStats'
     >,
-    private readonly configRepo: Pick<ConfigRepository, 'readSettings' | 'writeSettings'>,
+    private readonly configRepo: Pick<
+      ConfigRepository,
+      'readSettings' | 'writeSettings' | 'readSessions'
+    >,
   ) {}
 
   /**
@@ -28,6 +31,7 @@ export class RepoHandler {
    * - `repo:list` — クローン済みリポジトリ一覧を返す
    * - `repo:create-worktree` — bare repo から worktree を作成し `cwd` を返す
    * - `repo:list-branches` — 指定リポジトリのリモートブランチ一覧を返す
+   * - `repo:diff-stats` — 指定セッションの git diff 統計情報を返す
    * - `config:get-settings` — アプリ設定を返す
    * - `config:update-settings` — アプリ設定を部分更新する
    */
@@ -44,6 +48,13 @@ export class RepoHandler {
     );
 
     handle('repo:list-branches', (_event, repoId) => this.repoService.listBranches(repoId));
+
+    handle('repo:diff-stats', async (_event, sessionId) => {
+      const sessions = await this.configRepo.readSessions();
+      const session = sessions.find((s) => s.acpSessionId === sessionId);
+      if (!session) return null;
+      return this.repoService.getDiffStats(session.cwd, session.sourceBranch);
+    });
 
     handle('config:get-settings', () => this.configRepo.readSettings());
 
