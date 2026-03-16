@@ -30,7 +30,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm exec vite --config vite.renderer.config.ts',
+    command: 'pnpm exec vite --config e2e/vite.config.ts',
     port: 5173,
     reuseExistingServer: !process.env.CI,
   },
