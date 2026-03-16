@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
+import { GitBranchIcon, PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/repositories/config.repository';
 import type { DiffStats } from '../../shared/ipc';
 import {
@@ -199,6 +199,12 @@ export function SessionSidebar({
                                     </span>
                                   </span>
                                 )}
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] leading-none text-sidebar-foreground/40">
+                              <GitBranchIcon className="h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate">
+                                {session.sourceBranch} → {session.currentBranch}
+                              </span>
                             </div>
                           </div>
                         </SidebarMenuButton>

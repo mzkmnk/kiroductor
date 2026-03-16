@@ -37,6 +37,7 @@ function mockKiroductorAPIWithMessages(
             cwd: '/mock/cwd',
             title: 'Mock Session',
             sourceBranch: 'main',
+            currentBranch: 'kiroductor/mock-session',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
