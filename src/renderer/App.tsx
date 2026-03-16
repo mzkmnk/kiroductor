@@ -128,7 +128,6 @@ function App() {
     const unsubSwitched = window.kiroductor.session.onSessionSwitched(({ sessionId }) => {
       setActiveSessionId(sessionId);
       activeSessionIdRef.current = sessionId;
-      window.kiroductor.session.list().then(setSessionMappings);
       window.kiroductor.session
         .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
