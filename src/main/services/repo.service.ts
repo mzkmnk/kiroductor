@@ -228,8 +228,11 @@ export class RepoService {
    * @returns 追加行数と削除行数
    */
   async getDiffStats(cwd: string, sourceBranch: string): Promise<DiffStats> {
+    log.info('getDiffStats: cwd=%s, sourceBranch=%s', cwd, sourceBranch);
     const output = await this.execGit(['diff', '--shortstat', `${sourceBranch}...HEAD`], cwd);
-    return parseShortstat(output);
+    const stats = parseShortstat(output);
+    log.info('getDiffStats: result=%o (raw=%s)', stats, output.trim());
+    return stats;
   }
 
   /**
@@ -243,6 +246,7 @@ export class RepoService {
   async getBatchDiffStats(
     requests: { acpSessionId: string; cwd: string; sourceBranch: string }[],
   ): Promise<Record<string, DiffStats | null>> {
+    log.info('getBatchDiffStats: %d requests', requests.length);
     const results = await Promise.allSettled(
       requests.map(async (req) => ({
         id: req.acpSessionId,
@@ -255,8 +259,7 @@ export class RepoService {
       if (result.status === 'fulfilled') {
         record[result.value.id] = result.value.stats;
       } else {
-        // Promise.allSettled では rejected の場合 value がないため、
-        // requests 配列からマッピングする
+        log.info('getBatchDiffStats: rejected reason=%s', String(result.reason));
       }
     }
 
@@ -267,6 +270,7 @@ export class RepoService {
       }
     }
 
+    log.info('getBatchDiffStats: result=%o', record);
     return record;
   }
 
