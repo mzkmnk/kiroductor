@@ -5,6 +5,9 @@ import type { SessionRepository } from '../repositories/session.repository';
 import type { ConfigRepository } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 import { handle } from '../ipc';
+import { createDebugLogger } from '../debug-logger';
+
+const log = createDebugLogger('SessionHandler');
 
 /**
  * セッション操作を IPC 経由で受け付けるハンドラー。
@@ -98,11 +101,14 @@ export class SessionHandler {
       return this.sessionRepo.isAcpConnected(sessionId);
     });
     handle('session:get-models', (_event, sessionId) => {
+      log.info(`session:get-models sessionId=${sessionId}`);
       return this.sessionRepo.getModelState(sessionId);
     });
     handle('session:set-model', async (_event, sessionId, modelId) => {
+      log.info(`session:set-model sessionId=${sessionId} modelId=${modelId}`);
       await this.sessionService.setModel(sessionId, modelId);
       this.notificationService.sendToRenderer('acp:model-changed', { sessionId, modelId });
+      log.info(`session:set-model 完了 → acp:model-changed 通知済み`);
     });
   }
 }

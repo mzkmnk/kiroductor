@@ -169,7 +169,13 @@ export class SessionService {
     sessionId: SessionId,
     models: { currentModelId: string; availableModels: Array<ModelInfo> } | null | undefined,
   ): void {
-    if (!models) return;
+    if (!models) {
+      log.info(`saveModelState: models なし sessionId=${sessionId}`);
+      return;
+    }
+    log.info(
+      `saveModelState: sessionId=${sessionId} currentModelId=${models.currentModelId} availableModels=${String(models.availableModels.length)}`,
+    );
     this.sessionRepo.setModelState(sessionId, {
       currentModelId: models.currentModelId,
       availableModels: models.availableModels.map((m) => ({
