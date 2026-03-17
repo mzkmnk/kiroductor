@@ -110,6 +110,7 @@ export class RepoService {
 
     log.info(`bare clone: ${url} → ${repoPath}`);
     await this.execGit(['clone', '--bare', url, repoPath]);
+    await this.execGit(['config', 'remote.origin.fetch', '+refs/heads/*:refs/heads/*'], repoPath);
 
     const repoId = nanoid();
     const mapping: RepoMapping = {
