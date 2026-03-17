@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionService } from '../session.service';
 
@@ -9,7 +8,6 @@ vi.mock('../session-title.generator', () => ({
 }));
 import { SessionRepository } from '../../repositories/session.repository';
 import { MessageRepository } from '../../repositories/message.repository';
-import type { ConfigRepository } from '../../repositories/config.repository';
 import type { SessionMapping } from '../../repositories/config.repository';
 import type { NotificationService } from '../../interfaces/notification.service';
 
@@ -68,12 +66,9 @@ describe('SessionService', () => {
     service = new SessionService(
       sessionRepo,
       messageRepo,
-      connection as unknown as Pick<
-        ClientSideConnection,
-        'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel'
-      >,
-      notificationService as unknown as NotificationService,
-      configRepo as unknown as Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
+      connection,
+      notificationService,
+      configRepo,
     );
   });
 

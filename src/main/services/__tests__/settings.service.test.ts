@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { SettingsService } from '../settings.service';
-import type { ConfigRepository, KiroductorSettings } from '../../repositories/config.repository';
+import type { KiroductorSettings } from '../../repositories/config.repository';
 
 describe('SettingsService', () => {
   let configRepo: {
@@ -15,9 +15,7 @@ describe('SettingsService', () => {
       readSettings: vi.fn().mockResolvedValue({}),
       writeSettings: vi.fn().mockResolvedValue(undefined),
     };
-    service = new SettingsService(
-      configRepo as unknown as Pick<ConfigRepository, 'readSettings' | 'writeSettings'>,
-    );
+    service = new SettingsService(configRepo);
   });
 
   describe('getSettings()', () => {
