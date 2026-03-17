@@ -1,8 +1,8 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import { createDebugLogger } from './debug-logger';
+import { createDebugLogger } from './shared/debug-logger';
 import { buildContainer } from './container';
-import { registerHandlers } from './handlers/index';
+import { registerHandlers } from './handlers';
 
 const log = createDebugLogger('Main');
 

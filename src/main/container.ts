@@ -2,24 +2,27 @@ import fs from 'fs';
 import { spawn } from 'child_process';
 import type { BrowserWindow } from 'electron';
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
-import { ConnectionRepository } from './repositories/connection.repository';
-import { SessionRepository } from './repositories/session.repository';
-import { MessageRepository } from './repositories/message.repository';
-import { ConfigRepository } from './repositories/config.repository';
-import { ElectronNotificationService } from './services/notification.service';
-import { AcpConnectionService, type ClientHandlerFactory } from './services/acp-connection.service';
-import { SessionService } from './services/session.service';
-import { PromptService } from './services/prompt.service';
-import { RepoService } from './services/repo.service';
-import { SettingsService } from './services/settings.service';
-import { KiroductorClientHandler } from './acp/client-handler';
-import { ReadTextFileMethod } from './acp/methods/read-text-file.method';
-import { WriteTextFileMethod } from './acp/methods/write-text-file.method';
-import { RequestPermissionMethod } from './acp/methods/request-permission.method';
-import { SessionUpdateMethod } from './acp/methods/session-update.method';
-import { AcpHandler } from './handlers/acp.handler';
-import { SessionHandler } from './handlers/session.handler';
-import { RepoHandler } from './handlers/repo.handler';
+import { ConnectionRepository } from './features/acp-connection/connection.repository';
+import { SessionRepository } from './features/session/session.repository';
+import { MessageRepository } from './features/session/message.repository';
+import { ConfigRepository } from './features/config/config.repository';
+import { ElectronNotificationService } from './shared/notification.service';
+import {
+  AcpConnectionService,
+  type ClientHandlerFactory,
+} from './features/acp-connection/acp-connection.service';
+import { SessionService } from './features/session/session.service';
+import { PromptService } from './features/session/prompt.service';
+import { RepoService } from './features/repo/repo.service';
+import { SettingsService } from './features/config/settings.service';
+import { KiroductorClientHandler } from './features/acp-client/client-handler';
+import { ReadTextFileMethod } from './features/acp-client/methods/read-text-file.method';
+import { WriteTextFileMethod } from './features/acp-client/methods/write-text-file.method';
+import { RequestPermissionMethod } from './features/acp-client/methods/request-permission.method';
+import { SessionUpdateMethod } from './features/acp-client/methods/session-update.method';
+import { AcpHandler } from './features/acp-connection/acp.handler';
+import { SessionHandler } from './features/session/session.handler';
+import { RepoHandler } from './features/repo/repo.handler';
 
 /** {@link buildContainer} の戻り値。IPCハンドラ登録と自動初期化に必要なオブジェクト。 */
 export interface AppContainer {

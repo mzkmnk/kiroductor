@@ -1,5 +1,5 @@
-import type { AcpStatus } from '../main/repositories/connection.repository';
-import type { Message } from '../main/repositories/message.repository';
+import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
+import type { Message } from '../main/features/session/message.repository';
 import type {
   SessionNotification,
   SessionId,
@@ -11,7 +11,7 @@ import type {
   RepoMapping,
   KiroductorSettings,
   SessionMapping,
-} from '../main/repositories/config.repository';
+} from '../main/features/config/config.repository';
 
 /** `git diff --shortstat` の解析結果。 */
 export interface DiffStats {

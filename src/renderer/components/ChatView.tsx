@@ -7,7 +7,7 @@ import type {
   Message,
   ToolCallMessage,
   UserMessage,
-} from '../../main/repositories/message.repository';
+} from '../../main/features/session/message.repository';
 import { MessageBubble } from './MessageBubble';
 import { ToolCallCard } from './ToolCallCard';
 

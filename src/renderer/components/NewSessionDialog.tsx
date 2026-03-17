@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { RepoMapping } from '../../main/repositories/config.repository';
+import type { RepoMapping } from '../../main/features/config/config.repository';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AcpStatus } from '../main/repositories/connection.repository';
-import type { Message } from '../main/repositories/message.repository';
+import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
+import type { Message } from '../main/features/session/message.repository';
 import type {
   RepoMapping,
   KiroductorSettings,
   SessionMapping,
-} from '../main/repositories/config.repository';
+} from '../main/features/config/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
