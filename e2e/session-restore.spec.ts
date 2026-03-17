@@ -49,6 +49,9 @@ function mockKiroductorAPIRestoring() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () => Promise.resolve(null),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
@@ -121,6 +124,9 @@ function mockKiroductorAPIRestored() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () => Promise.resolve(null),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),

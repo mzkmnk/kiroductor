@@ -63,6 +63,9 @@ function mockKiroductorAPIWithDiffStats() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () => Promise.resolve(null),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
@@ -119,6 +122,9 @@ function mockKiroductorAPIWithLongTitle() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () => Promise.resolve(null),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
@@ -172,6 +178,9 @@ function mockKiroductorAPINoDiffStats() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () => Promise.resolve(null),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
