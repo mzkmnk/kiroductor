@@ -439,6 +439,42 @@ describe('RepoService', () => {
     });
   });
 
+  describe('getDiff(cwd, sourceBranch)', () => {
+    it('git diff sourceBranch の stdout をそのまま返すこと', async () => {
+      const diffOutput =
+        'diff --git a/src/main.ts b/src/main.ts\n--- a/src/main.ts\n+++ b/src/main.ts\n@@ -1,3 +1,4 @@\n import { app } from "electron";\n+import { something } from "somewhere";\n';
+      const mockProcess = createMockProcess(0, undefined, diffOutput);
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['diff', 'main'],
+        expect.objectContaining({ cwd: '/worktree/path' }),
+      );
+      expect(result).toBe(diffOutput);
+    });
+
+    it('差分がない場合（stdout が空文字列）は null を返すこと', async () => {
+      const mockProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toBeNull();
+    });
+
+    it('git コマンドが失敗した場合 null を返すこと', async () => {
+      const mockProcess = createMockProcess(1, 'fatal: bad revision');
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [

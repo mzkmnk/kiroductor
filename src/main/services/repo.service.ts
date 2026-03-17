@@ -271,6 +271,25 @@ export class RepoService {
     }
   }
 
+  /**
+   * ワーキングツリーの差分本文（unified diff）を取得する。
+   *
+   * `git diff sourceBranch` を実行し、unified diff 文字列を返す。
+   * 差分がない場合や git コマンドが失敗した場合は `null` を返す。
+   *
+   * @param cwd - worktree のパス
+   * @param sourceBranch - ベースブランチ名
+   * @returns unified diff 文字列または `null`
+   */
+  async getDiff(cwd: string, sourceBranch: string): Promise<string | null> {
+    try {
+      const stdout = await this.execGit(['diff', sourceBranch], cwd);
+      return stdout || null;
+    } catch {
+      return null;
+    }
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {

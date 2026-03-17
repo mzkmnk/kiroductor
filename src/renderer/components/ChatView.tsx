@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ArrowLeft, GitBranchIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, GitBranchIcon, GitCompareArrows, Loader2 } from 'lucide-react';
+import { Button } from './ui/button';
 import type {
   AgentMessage,
   Message,
@@ -27,6 +28,8 @@ interface ChatViewProps {
   currentBranch?: string;
   /** ベースブランチ名。 */
   sourceBranch?: string;
+  /** diff ボタンクリック時のコールバック。 */
+  onDiffClick?: () => void;
 }
 
 /**
@@ -41,6 +44,7 @@ function ChatView({
   isRestoring = false,
   currentBranch,
   sourceBranch,
+  onDiffClick,
 }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +71,17 @@ function ChatView({
           <span>{sourceBranch}</span>
           <ArrowLeft className="size-4" />
           <span>{currentBranch}</span>
+          {onDiffClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              onClick={onDiffClick}
+              aria-label="Show diff"
+            >
+              <GitCompareArrows className="size-4" />
+            </Button>
+          )}
         </div>
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">

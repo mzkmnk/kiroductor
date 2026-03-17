@@ -70,6 +70,7 @@ function mockKiroductorAPIWithDiffStats() {
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
       getDiffStats: (sessionId: string) => Promise.resolve(diffStatsData[sessionId] ?? null),
+      getDiff: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
@@ -125,6 +126,7 @@ function mockKiroductorAPIWithLongTitle() {
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
       getDiffStats: () => Promise.resolve({ insertions: 256, deletions: 89 }),
+      getDiff: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
@@ -177,6 +179,7 @@ function mockKiroductorAPINoDiffStats() {
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
       getDiffStats: () => Promise.resolve(null),
+      getDiff: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),

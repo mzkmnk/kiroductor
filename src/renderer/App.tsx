@@ -5,6 +5,7 @@ import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { DiffDialog } from './components/DiffDialog';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
@@ -87,6 +88,8 @@ function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [processingSessionIds, setProcessingSessionIds] = useState<Set<string>>(new Set());
   const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
+  const [diffDialogOpen, setDiffDialogOpen] = useState(false);
+  const [diffData, setDiffData] = useState<string | null>(null);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -196,6 +199,14 @@ function App() {
     // - processingSessionIds は onPromptCompleted で削除済み
   }
 
+  /** diff ダイアログを開き、差分データを取得する。 */
+  async function handleDiffClick() {
+    if (!activeSessionId) return;
+    setDiffDialogOpen(true);
+    const diff = await window.kiroductor.repo.getDiff(activeSessionId);
+    setDiffData(diff);
+  }
+
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, _cwd: string) {
     if (sessionId === activeSessionId) return;
@@ -253,6 +264,7 @@ function App() {
               isRestoring={isRestoring}
               currentBranch={activeMapping?.currentBranch}
               sourceBranch={activeMapping?.sourceBranch}
+              onDiffClick={handleDiffClick}
             />
             <PromptInput
               onSubmit={handleSubmit}
@@ -265,6 +277,7 @@ function App() {
           <WelcomeScreen onSessionCreated={handleSessionCreated} />
         )}
       </SidebarInset>
+      <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
     </SidebarProvider>
   );
 }

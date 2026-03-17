@@ -56,6 +56,7 @@ function mockKiroductorAPIRestoring() {
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
       getDiffStats: () => Promise.resolve(null),
+      getDiff: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
@@ -127,6 +128,7 @@ function mockKiroductorAPIRestored() {
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
       getDiffStats: () => Promise.resolve(null),
+      getDiff: () => Promise.resolve(null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
