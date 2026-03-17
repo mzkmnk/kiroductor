@@ -59,8 +59,9 @@ describe('RepoService', () => {
 
   describe('clone(url)', () => {
     it('未クローンの場合 git clone --bare が実行されること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const cloneProcess = createMockProcess(0);
+      const configProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(cloneProcess).mockReturnValueOnce(configProcess);
 
       await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
@@ -73,6 +74,20 @@ describe('RepoService', () => {
           expect.stringContaining('kiroductor.git'),
         ],
         expect.any(Object),
+      );
+    });
+
+    it('bare clone 後に fetch refspec が設定されること', async () => {
+      const cloneProcess = createMockProcess(0);
+      const configProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(cloneProcess).mockReturnValueOnce(configProcess);
+
+      await service.clone('https://github.com/mzkmnk/kiroductor.git');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['config', 'remote.origin.fetch', '+refs/heads/*:refs/heads/*'],
+        expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
       );
     });
 
@@ -109,8 +124,9 @@ describe('RepoService', () => {
     });
 
     it('クローン先ディレクトリの親が存在しなければ作成すること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const cloneProcess = createMockProcess(0);
+      const configProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(cloneProcess).mockReturnValueOnce(configProcess);
 
       await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
@@ -129,8 +145,9 @@ describe('RepoService', () => {
     });
 
     it('clone が成功した場合 nanoid の repoId を返すこと', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const cloneProcess = createMockProcess(0);
+      const configProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(cloneProcess).mockReturnValueOnce(configProcess);
 
       const result = await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
@@ -139,8 +156,9 @@ describe('RepoService', () => {
     });
 
     it('clone 後に repos.json にエントリが書き込まれること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const cloneProcess = createMockProcess(0);
+      const configProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(cloneProcess).mockReturnValueOnce(configProcess);
 
       const repoId = await service.clone('https://github.com/mzkmnk/kiroductor.git');
 
