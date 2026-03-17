@@ -86,7 +86,7 @@ describe('RepoHandler', () => {
         handler.register();
         const diffStatsHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'repo:diff-stats',
-        )?.[1] as (_event: unknown, sessionId: string) => Promise<unknown>;
+        )?.[1] as (_event: unknown, sessionId: string) => Promise<DiffStats | null>;
 
         const result = await diffStatsHandler(null, 'session-1');
 
