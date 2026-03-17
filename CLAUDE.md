@@ -34,10 +34,12 @@ src/
 │   ├── container.ts         # Composition Root（DI設定）
 │   ├── handlers.ts          # registerHandlers()（全handler登録）
 │   ├── features/            # 機能単位のモジュール
-│   │   ├── acp/             # ACP 接続管理
+│   │   ├── acp-connection/  # ACP 接続管理（kiro-cli 起動・終了・状態管理）
 │   │   │   ├── acp.handler.ts
 │   │   │   ├── acp-connection.service.ts
 │   │   │   ├── connection.repository.ts
+│   │   │   └── __tests__/
+│   │   ├── acp-client/      # ACP リクエストハンドリング（エージェントからの要求処理）
 │   │   │   ├── client-handler.ts
 │   │   │   ├── methods/     # 各ACPメソッド（1ファイル1メソッド）
 │   │   │   └── __tests__/

@@ -4,7 +4,7 @@ import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclie
 import { createDebugLogger } from '../../shared/debug-logger';
 import type { ConnectionRepository, AcpStatus } from './connection.repository';
 import type { NotificationService } from '../../shared/interfaces/notification.service';
-import type { KiroductorClientHandler } from './client-handler';
+import type { KiroductorClientHandler } from '../acp-client/client-handler';
 
 const log = createDebugLogger('ACP');
 

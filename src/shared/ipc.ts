@@ -1,4 +1,4 @@
-import type { AcpStatus } from '../main/features/acp/connection.repository';
+import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
 import type { Message } from '../main/features/session/message.repository';
 import type {
   SessionNotification,

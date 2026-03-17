@@ -1,8 +1,8 @@
-import { AcpHandler } from './features/acp/acp.handler';
+import { AcpHandler } from './features/acp-connection/acp.handler';
 import { SessionHandler } from './features/session/session.handler';
 import { RepoHandler } from './features/repo/repo.handler';
 
-export { AcpHandler } from './features/acp/acp.handler';
+export { AcpHandler } from './features/acp-connection/acp.handler';
 export { SessionHandler } from './features/session/session.handler';
 export { RepoHandler } from './features/repo/repo.handler';
 
