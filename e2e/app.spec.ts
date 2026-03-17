@@ -1,81 +1,17 @@
 import { test, expect } from '@playwright/test';
 
-/**
- * Electron の preload スクリプトが注入する window.kiroductor API のモック。
- *
- * Vite 単独起動時は preload が動作しないため、
- * {@link https://playwright.dev/docs/mock-browser-apis addInitScript} で注入する。
- */
-function mockKiroductorAPI() {
-  (window as Record<string, unknown>).kiroductor = {
-    acp: {
-      start: () => Promise.resolve(),
-      stop: () => Promise.resolve(),
-      getStatus: () => Promise.resolve('disconnected'),
-      onStatusChange: () => () => {},
-    },
-    session: {
-      create: () => Promise.resolve(),
-      load: () => Promise.resolve(),
-      switch: () => Promise.resolve(),
-      prompt: () => Promise.resolve({ stopReason: 'end_turn' }),
-      cancel: () => Promise.resolve(),
-      getActive: () => Promise.resolve('mock-session-id'),
-      getAll: () => Promise.resolve(['mock-session-id']),
-      list: () =>
-        Promise.resolve([
-          {
-            acpSessionId: 'mock-session-id',
-            repoId: 'mock-repo',
-            cwd: '/mock/cwd',
-            title: 'Mock Session',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]),
-      getMessages: () => Promise.resolve([]),
-      isAcpConnected: () => Promise.resolve(true),
-      onUpdate: () => () => {},
-      getProcessingSessions: () => Promise.resolve([]),
-      onSessionSwitched: () => () => {},
-      onSessionLoading: () => () => {},
-      onPromptCompleted: () => () => {},
-      getModels: () =>
-        Promise.resolve({
-          currentModelId: 'claude-sonnet-4.5',
-          availableModels: [
-            { modelId: 'auto', name: 'auto', description: 'Auto select' },
-            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
-            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
-          ],
-        }),
-      setModel: () => Promise.resolve(),
-      onModelChanged: () => () => {},
-    },
-    repo: {
-      clone: () => Promise.resolve({ repoId: 'mock-repo' }),
-      list: () => Promise.resolve([]),
-      createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
-      listBranches: () => Promise.resolve([]),
-      getDiffStats: () => Promise.resolve(null),
-      getDiff: () => Promise.resolve(null),
-    },
-    config: {
-      getSettings: () => Promise.resolve({}),
-      updateSettings: () => Promise.resolve(),
-    },
-  };
-}
+import { AppPage } from './pages/app.page';
 
 test.describe('アプリ初期表示', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.install({ time: new Date('2025-01-01T00:00:00.000Z') });
-    await page.addInitScript(mockKiroductorAPI);
   });
 
   test('PromptInput が表示される', async ({ page }) => {
-    await page.goto('http://localhost:5173');
-    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
+    const app = new AppPage(page);
+    await app.setup();
+    await app.goto();
+    await expect(app.promptInput).toBeVisible();
+    await expect(app.sendButton).toBeVisible();
   });
 });

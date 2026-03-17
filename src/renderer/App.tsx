@@ -334,7 +334,10 @@ function App() {
             />
           </div>
         ) : (
-          <WelcomeScreen onSessionCreated={handleSessionCreated} />
+          <>
+            <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
+            <WelcomeScreen onSessionCreated={handleSessionCreated} />
+          </>
         )}
       </SidebarInset>
       <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
