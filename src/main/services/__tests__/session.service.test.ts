@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionService } from '../session.service';
 
 vi.mock('../session-title.generator', () => ({
@@ -225,7 +226,7 @@ describe('SessionService', () => {
   });
 
   describe('create() のモデル保存', () => {
-    const MODELS = {
+    const MODELS: SessionModelState = {
       currentModelId: 'claude-haiku-4.5',
       availableModels: [
         { modelId: 'auto', name: 'auto', description: 'Auto' },
@@ -248,7 +249,7 @@ describe('SessionService', () => {
   });
 
   describe('load() のモデル保存', () => {
-    const MODELS = {
+    const MODELS: SessionModelState = {
       currentModelId: 'claude-sonnet-4.5',
       availableModels: [
         { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },

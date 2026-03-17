@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionRepository } from '../session.repository';
 
 describe('SessionRepository', () => {
@@ -139,7 +140,7 @@ describe('SessionRepository', () => {
   });
 
   describe('modelState', () => {
-    const MODEL_STATE = {
+    const MODEL_STATE: SessionModelState = {
       currentModelId: 'claude-haiku-4.5',
       availableModels: [
         { modelId: 'auto', name: 'auto', description: 'Auto select' },

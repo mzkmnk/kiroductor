@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../interfaces/notification.service';
 import { SessionService } from '../../services/session.service';
@@ -300,7 +301,7 @@ describe('SessionHandler', () => {
 
     describe('session:get-models', () => {
       it('sessionService.getModelState() の結果を返す', () => {
-        const modelState = {
+        const modelState: SessionModelState = {
           currentModelId: 'claude-haiku-4.5',
           availableModels: [
             { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
