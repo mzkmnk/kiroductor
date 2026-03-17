@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+import { AppPage } from './pages/app.page';
+import { SESSION_WITH_BRANCHES } from './fixtures/mock-api';
+
 /** テスト用のサンプル unified diff 文字列。 */
 const SAMPLE_DIFF = [
   'diff --git a/src/main.ts b/src/main.ts',
@@ -27,78 +30,10 @@ const SAMPLE_DIFF = [
   '+}',
 ].join('\n');
 
-/**
- * Electron の preload スクリプトが注入する window.kiroductor API のモック。
- *
- * @param diffResponse - getDiff が返す unified diff 文字列（null = 変更なし）
- */
-function mockKiroductorAPI(diffResponse: string | null) {
-  const hasChanges = diffResponse !== null;
-  (window as Record<string, unknown>).kiroductor = {
-    acp: {
-      start: () => Promise.resolve(),
-      stop: () => Promise.resolve(),
-      getStatus: () => Promise.resolve('disconnected'),
-      onStatusChange: () => () => {},
-    },
-    session: {
-      create: () => Promise.resolve(),
-      load: () => Promise.resolve(),
-      switch: () => Promise.resolve(),
-      prompt: () => Promise.resolve({ stopReason: 'end_turn' }),
-      cancel: () => Promise.resolve(),
-      getActive: () => Promise.resolve('mock-session-id'),
-      getAll: () => Promise.resolve(['mock-session-id']),
-      list: () =>
-        Promise.resolve([
-          {
-            acpSessionId: 'mock-session-id',
-            repoId: 'mock-repo',
-            cwd: '/mock/cwd',
-            title: 'Mock Session',
-            currentBranch: 'feature/add-header',
-            sourceBranch: 'main',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]),
-      getMessages: () =>
-        Promise.resolve([
-          { id: '1', type: 'user', text: 'Hello' },
-          { id: '2', type: 'agent', text: 'Hi there!', status: 'completed' },
-        ]),
-      onUpdate: () => () => {},
-      getProcessingSessions: () => Promise.resolve([]),
-      onSessionSwitched: () => () => {},
-      onSessionLoading: () => () => {},
-      onPromptCompleted: () => () => {},
-      getModels: () =>
-        Promise.resolve({
-          currentModelId: 'claude-sonnet-4.5',
-          availableModels: [
-            { modelId: 'auto', name: 'auto', description: 'Auto select' },
-            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
-            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
-          ],
-        }),
-      setModel: () => Promise.resolve(),
-      onModelChanged: () => () => {},
-    },
-    repo: {
-      clone: () => Promise.resolve({ repoId: 'mock-repo' }),
-      list: () => Promise.resolve([]),
-      createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
-      listBranches: () => Promise.resolve([]),
-      getDiffStats: () =>
-        Promise.resolve(hasChanges ? { filesChanged: 2, insertions: 5, deletions: 1 } : null),
-      getDiff: () => Promise.resolve(diffResponse),
-    },
-    config: {
-      getSettings: () => Promise.resolve({}),
-      updateSettings: () => Promise.resolve(),
-    },
-  };
-}
+const DIFF_DIALOG_MESSAGES = [
+  { id: '1', type: 'user' as const, text: 'Hello' },
+  { id: '2', type: 'agent' as const, text: 'Hi there!', status: 'completed' },
+];
 
 test.describe('DiffDialog', () => {
   test.beforeEach(async ({ page }) => {
@@ -106,24 +41,38 @@ test.describe('DiffDialog', () => {
   });
 
   test('diff ボタンが ChatView ヘッダーに表示されること', async ({ page }) => {
-    await page.addInitScript(mockKiroductorAPI, null);
-    await page.goto('http://localhost:5173');
-    await expect(page.getByLabel('Show diff')).toBeVisible();
+    const app = new AppPage(page);
+    await app.setup({
+      sessions: [SESSION_WITH_BRANCHES],
+      messages: DIFF_DIALOG_MESSAGES,
+    });
+    await app.goto();
+    await expect(app.showDiffButton).toBeVisible();
     await expect(page).toHaveScreenshot('diff-button-in-header.png');
   });
 
   test('diff ボタンクリックで split diff ビューが表示されること', async ({ page }) => {
-    await page.addInitScript(mockKiroductorAPI, SAMPLE_DIFF);
-    await page.goto('http://localhost:5173');
-    await page.getByLabel('Show diff').click();
-    await expect(page.getByText('src/main.ts')).toBeVisible();
-    await expect(page.getByText('src/utils.ts')).toBeVisible();
+    const app = new AppPage(page);
+    await app.setup({
+      sessions: [SESSION_WITH_BRANCHES],
+      messages: DIFF_DIALOG_MESSAGES,
+      diff: SAMPLE_DIFF,
+      diffStats: { filesChanged: 2, insertions: 5, deletions: 1 },
+    });
+    await app.goto();
+    await app.showDiffButton.click();
+    await expect(app.message('src/main.ts')).toBeVisible();
+    await expect(app.message('src/utils.ts')).toBeVisible();
     await expect(page).toHaveScreenshot('diff-dialog-with-changes.png');
   });
 
   test('diff データが空の場合ボタンが無効化されること', async ({ page }) => {
-    await page.addInitScript(mockKiroductorAPI, null);
-    await page.goto('http://localhost:5173');
-    await expect(page.getByLabel('Show diff')).toBeDisabled();
+    const app = new AppPage(page);
+    await app.setup({
+      sessions: [SESSION_WITH_BRANCHES],
+      messages: DIFF_DIALOG_MESSAGES,
+    });
+    await app.goto();
+    await expect(app.showDiffButton).toBeDisabled();
   });
 });
