@@ -27,7 +27,7 @@ function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] max-w-6xl flex-col">
+      <DialogContent className="flex h-[90vh] max-w-[95vw] flex-col">
         <DialogHeader>
           <DialogTitle>Diff</DialogTitle>
         </DialogHeader>
@@ -41,12 +41,12 @@ function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
                   <div className="rounded-t-md border bg-muted px-4 py-2 text-sm font-medium">
                     {file.newFileName === '/dev/null' ? file.oldFileName : file.newFileName}
                   </div>
-                  <div className="overflow-x-auto border border-t-0 rounded-b-md">
+                  <div className="overflow-x-auto rounded-b-md border border-t-0">
                     <DiffView
                       data={{
                         oldFile: { fileName: file.oldFileName },
                         newFile: { fileName: file.newFileName },
-                        hunks: file.hunks,
+                        hunks: [file.rawBlock],
                       }}
                       diffViewMode={DiffModeEnum.Split}
                       diffViewTheme={isDark ? 'dark' : 'light'}

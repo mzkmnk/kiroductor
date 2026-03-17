@@ -96,4 +96,47 @@ describe('parseUnifiedDiff', () => {
     expect(result[0].hunks[0]).toContain('@@ -1,3 +1,4 @@');
     expect(result[0].hunks[1]).toContain('@@ -10,3 +11,4 @@');
   });
+
+  it('rawBlock にファイルの完全な diff ブロックが含まれること', () => {
+    const diff = [
+      'diff --git a/src/main.ts b/src/main.ts',
+      'index abc1234..def5678 100644',
+      '--- a/src/main.ts',
+      '+++ b/src/main.ts',
+      '@@ -1,3 +1,4 @@',
+      ' import { app } from "electron";',
+      '+import { something } from "somewhere";',
+      ' ',
+      ' app.start();',
+    ].join('\n');
+
+    const result = parseUnifiedDiff(diff);
+
+    expect(result[0].rawBlock).toBe(diff);
+  });
+
+  it('複数ファイルの rawBlock がそれぞれの diff ブロックを含むこと', () => {
+    const block1 = [
+      'diff --git a/file1.ts b/file1.ts',
+      '--- a/file1.ts',
+      '+++ b/file1.ts',
+      '@@ -1,2 +1,3 @@',
+      ' line1',
+      '+line2',
+    ].join('\n');
+
+    const block2 = [
+      'diff --git a/file2.ts b/file2.ts',
+      '--- a/file2.ts',
+      '+++ b/file2.ts',
+      '@@ -1,3 +1,2 @@',
+      ' line1',
+      '-line2',
+    ].join('\n');
+
+    const result = parseUnifiedDiff(block1 + '\n' + block2);
+
+    expect(result[0].rawBlock).toBe(block1);
+    expect(result[1].rawBlock).toBe(block2);
+  });
 });

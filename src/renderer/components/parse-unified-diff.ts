@@ -10,6 +10,8 @@ export interface FileDiffData {
   newFileName: string;
   /** unified diff 形式のハンク文字列の配列。 */
   hunks: string[];
+  /** `diff --git` から始まるファイルの完全な diff ブロック。DiffView の hunks prop に渡す。 */
+  rawBlock: string;
 }
 
 /**
@@ -58,7 +60,7 @@ export function parseUnifiedDiff(diffText: string): FileDiffData[] {
     // diff --git 行はあるが --- / +++ が無い場合（バイナリ等）はスキップ
     if (!oldFileName && !newFileName) continue;
 
-    files.push({ oldFileName, newFileName, hunks });
+    files.push({ oldFileName, newFileName, hunks, rawBlock: block.trimEnd() });
   }
 
   return files;
