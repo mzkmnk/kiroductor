@@ -85,11 +85,6 @@ function PromptInput({
                 {availableModels.map((model) => (
                   <SelectItem key={model.modelId} value={model.modelId}>
                     <span className="text-xs">{model.name}</span>
-                    {model.description && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        — {model.description}
-                      </span>
-                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
