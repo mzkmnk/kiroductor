@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 import { createDebugLogger } from '../debug-logger';
-import type { ConnectionRepository } from '../repositories/connection.repository';
+import type { ConnectionRepository, AcpStatus } from '../repositories/connection.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 import type { KiroductorClientHandler } from '../acp/client-handler';
 
@@ -114,6 +114,15 @@ export class AcpConnectionService {
     this.connectionRepo.setStatus('connected');
 
     this.notificationService.sendToRenderer('acp:status-change', { status: 'connected' });
+  }
+
+  /**
+   * 現在の ACP 接続ステータスを返す。
+   *
+   * @returns 現在の {@link AcpStatus}
+   */
+  getStatus(): AcpStatus {
+    return this.connectionRepo.getStatus();
   }
 
   /**

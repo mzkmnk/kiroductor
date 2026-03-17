@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { AcpHandler } from '../acp.handler';
-import { AcpConnectionService } from '../../services/acp-connection.service';
-import { ConnectionRepository } from '../../repositories/connection.repository';
+import type { AcpConnectionService } from '../../services/acp-connection.service';
+import type { AcpStatus } from '../../repositories/connection.repository';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -13,24 +13,21 @@ vi.mock('electron', () => ({
 }));
 
 describe('AcpHandler', () => {
-  let connectionRepo: ConnectionRepository;
   let acpConnectionService: {
     start: MockedFunction<() => Promise<void>>;
     stop: MockedFunction<() => Promise<void>>;
+    getStatus: MockedFunction<() => AcpStatus>;
   };
   let handler: AcpHandler;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    connectionRepo = new ConnectionRepository();
     acpConnectionService = {
       start: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn().mockResolvedValue(undefined),
+      getStatus: vi.fn().mockReturnValue('disconnected'),
     };
-    handler = new AcpHandler(
-      acpConnectionService as unknown as AcpConnectionService,
-      connectionRepo,
-    );
+    handler = new AcpHandler(acpConnectionService as unknown as AcpConnectionService);
   });
 
   describe('register()', () => {
@@ -70,16 +67,17 @@ describe('AcpHandler', () => {
     });
 
     describe('acp:status', () => {
-      it('connectionRepository.getStatus() の結果を返す', async () => {
-        connectionRepo.setStatus('connected');
+      it('acpConnectionService.getStatus() の結果を返す', () => {
+        acpConnectionService.getStatus.mockReturnValue('connected');
         handler.register();
         const statusHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'acp:status',
-        )?.[1] as () => Promise<string>;
+        )?.[1] as () => AcpStatus;
 
-        const result = await statusHandler();
+        const result = statusHandler();
 
         expect(result).toBe('connected');
+        expect(acpConnectionService.getStatus).toHaveBeenCalledOnce();
       });
     });
   });

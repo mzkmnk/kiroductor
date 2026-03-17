@@ -3,8 +3,8 @@ import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
-import type { MessageRepository } from '../repositories/message.repository';
-import type { ConfigRepository } from '../repositories/config.repository';
+import type { MessageRepository, Message } from '../repositories/message.repository';
+import type { ConfigRepository, SessionMapping } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 import { generateSessionTitle } from './session-title.generator';
 
@@ -167,6 +167,89 @@ export class SessionService {
    */
   getModelState(sessionId: SessionId): SessionModelState {
     return this.sessionRepo.getModelState(sessionId);
+  }
+
+  /**
+   * 指定セッションのメッセージ一覧を返す。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns メッセージ配列
+   */
+  getMessages(sessionId: SessionId): Message[] {
+    return this.messageRepo.getAll(sessionId);
+  }
+
+  /**
+   * アクティブセッションを切り替える。
+   *
+   * @param sessionId - 切り替え先のセッション ID
+   */
+  switchSession(sessionId: SessionId): void {
+    this.sessionRepo.setActiveSession(sessionId);
+  }
+
+  /**
+   * 現在のアクティブセッション ID を返す。
+   *
+   * @returns アクティブセッション ID。未設定の場合は `null`。
+   */
+  getActiveSessionId(): SessionId | null {
+    return this.sessionRepo.getActiveSessionId();
+  }
+
+  /**
+   * 管理中の全セッション ID を配列で返す。
+   *
+   * @returns セッション ID の配列
+   */
+  getAllSessionIds(): SessionId[] {
+    return this.sessionRepo.getAllSessionIds();
+  }
+
+  /**
+   * 永続化済みの全セッション一覧を返す。
+   *
+   * @returns {@link SessionMapping} の配列
+   */
+  async listSessions(): Promise<SessionMapping[]> {
+    return this.configRepo.readSessions();
+  }
+
+  /**
+   * 処理中の全セッション ID を返す。
+   *
+   * @returns 処理中セッション ID の配列
+   */
+  getProcessingSessionIds(): SessionId[] {
+    return this.sessionRepo.getProcessingSessionIds();
+  }
+
+  /**
+   * 指定セッションが ACP 接続済みかどうかを返す。
+   *
+   * @param sessionId - 確認するセッション ID
+   * @returns ACP 接続済みの場合は `true`
+   */
+  isAcpConnected(sessionId: SessionId): boolean {
+    return this.sessionRepo.isAcpConnected(sessionId);
+  }
+
+  /**
+   * セッションを処理中としてマークする。
+   *
+   * @param sessionId - 処理中にするセッション ID
+   */
+  addProcessing(sessionId: SessionId): void {
+    this.sessionRepo.addProcessing(sessionId);
+  }
+
+  /**
+   * セッションの処理中マークを解除する。
+   *
+   * @param sessionId - 解除するセッション ID
+   */
+  removeProcessing(sessionId: SessionId): void {
+    this.sessionRepo.removeProcessing(sessionId);
   }
 
   /**

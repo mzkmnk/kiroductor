@@ -307,6 +307,108 @@ describe('SessionService', () => {
     });
   });
 
+  describe('getMessages(sessionId)', () => {
+    it('指定セッションのメッセージ一覧を返す', async () => {
+      await service.create('/path', 'branch', 'main');
+      messageRepo.addUserMessage('test-session-id', 'hello');
+
+      const messages = service.getMessages('test-session-id');
+
+      expect(messages).toEqual([expect.objectContaining({ type: 'user', text: 'hello' })]);
+    });
+  });
+
+  describe('switchSession(sessionId)', () => {
+    it('アクティブセッションを切り替える', async () => {
+      await service.create('/path', 'branch', 'main');
+      sessionRepo.addSession('other-session');
+      service.switchSession('other-session');
+
+      expect(sessionRepo.getActiveSessionId()).toBe('other-session');
+    });
+  });
+
+  describe('getActiveSessionId()', () => {
+    it('アクティブセッション ID を返す', async () => {
+      await service.create('/path', 'branch', 'main');
+
+      expect(service.getActiveSessionId()).toBe('test-session-id');
+    });
+
+    it('未設定の場合 null を返す', () => {
+      expect(service.getActiveSessionId()).toBeNull();
+    });
+  });
+
+  describe('getAllSessionIds()', () => {
+    it('管理中の全セッション ID を返す', async () => {
+      await service.create('/path', 'branch', 'main');
+
+      expect(service.getAllSessionIds()).toEqual(['test-session-id']);
+    });
+  });
+
+  describe('listSessions()', () => {
+    it('configRepo.readSessions() の結果を返す', async () => {
+      const sessions: SessionMapping[] = [
+        {
+          acpSessionId: 'session-1',
+          repoId: 'repo-1',
+          cwd: '/path/1',
+          title: null,
+          currentBranch: 'branch',
+          sourceBranch: 'main',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ];
+      configRepo.readSessions.mockResolvedValue(sessions);
+
+      const result = await service.listSessions();
+
+      expect(result).toEqual(sessions);
+    });
+  });
+
+  describe('getProcessingSessionIds()', () => {
+    it('処理中のセッション ID を返す', async () => {
+      await service.create('/path', 'branch', 'main');
+      sessionRepo.addProcessing('test-session-id');
+
+      expect(service.getProcessingSessionIds()).toEqual(['test-session-id']);
+    });
+
+    it('処理中のセッションがない場合、空配列を返す', () => {
+      expect(service.getProcessingSessionIds()).toEqual([]);
+    });
+  });
+
+  describe('isAcpConnected(sessionId)', () => {
+    it('ACP 接続済みセッションに対して true を返す', async () => {
+      await service.create('/path', 'branch', 'main');
+
+      expect(service.isAcpConnected('test-session-id')).toBe(true);
+    });
+
+    it('ACP 未接続セッションに対して false を返す', () => {
+      sessionRepo.addSession('unconnected');
+
+      expect(service.isAcpConnected('unconnected')).toBe(false);
+    });
+  });
+
+  describe('addProcessing(sessionId) / removeProcessing(sessionId)', () => {
+    it('addProcessing() でセッションが処理中になり、removeProcessing() で解除される', async () => {
+      await service.create('/path', 'branch', 'main');
+
+      service.addProcessing('test-session-id');
+      expect(sessionRepo.isProcessing('test-session-id')).toBe(true);
+
+      service.removeProcessing('test-session-id');
+      expect(sessionRepo.isProcessing('test-session-id')).toBe(false);
+    });
+  });
+
   describe('restoreSessions()', () => {
     it('configRepo.readSessions() で取得したセッションが sessionRepo に復元されること', async () => {
       const sessions: SessionMapping[] = [

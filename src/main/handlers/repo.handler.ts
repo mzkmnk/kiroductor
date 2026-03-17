@@ -1,5 +1,5 @@
 import type { RepoService } from '../services/repo.service';
-import type { ConfigRepository } from '../repositories/config.repository';
+import type { SettingsService } from '../services/settings.service';
 import { handle } from '../ipc';
 
 /**
@@ -10,17 +10,19 @@ import { handle } from '../ipc';
 export class RepoHandler {
   /**
    * @param repoService - リポジトリのクローンと worktree 管理を行うサービス（依存注入）
-   * @param configRepo - 設定ファイルの読み書きを行うリポジトリ（依存注入）
+   * @param settingsService - アプリ設定の読み書きを行うサービス（依存注入）
    */
   constructor(
     private readonly repoService: Pick<
       RepoService,
-      'clone' | 'createWorktree' | 'listClonedRepos' | 'listBranches' | 'getDiffStats' | 'getDiff'
+      | 'clone'
+      | 'createWorktree'
+      | 'listClonedRepos'
+      | 'listBranches'
+      | 'getDiffStatsBySession'
+      | 'getDiffBySession'
     >,
-    private readonly configRepo: Pick<
-      ConfigRepository,
-      'readSettings' | 'writeSettings' | 'readSessions'
-    >,
+    private readonly settingsService: Pick<SettingsService, 'getSettings' | 'updateSettings'>,
   ) {}
 
   /**
@@ -50,25 +52,16 @@ export class RepoHandler {
 
     handle('repo:list-branches', (_event, repoId) => this.repoService.listBranches(repoId));
 
-    handle('repo:diff-stats', async (_event, sessionId) => {
-      const sessions = await this.configRepo.readSessions();
-      const session = sessions.find((s) => s.acpSessionId === sessionId);
-      if (!session) return null;
-      return this.repoService.getDiffStats(session.cwd, session.sourceBranch);
-    });
+    handle('repo:diff-stats', (_event, sessionId) =>
+      this.repoService.getDiffStatsBySession(sessionId),
+    );
 
-    handle('repo:diff', async (_event, sessionId) => {
-      const sessions = await this.configRepo.readSessions();
-      const session = sessions.find((s) => s.acpSessionId === sessionId);
-      if (!session) return null;
-      return this.repoService.getDiff(session.cwd, session.sourceBranch);
-    });
+    handle('repo:diff', (_event, sessionId) => this.repoService.getDiffBySession(sessionId));
 
-    handle('config:get-settings', () => this.configRepo.readSettings());
+    handle('config:get-settings', () => this.settingsService.getSettings());
 
-    handle('config:update-settings', async (_event, partial) => {
-      const current = await this.configRepo.readSettings();
-      await this.configRepo.writeSettings({ ...current, ...partial });
-    });
+    handle('config:update-settings', (_event, partial) =>
+      this.settingsService.updateSettings(partial),
+    );
   }
 }
