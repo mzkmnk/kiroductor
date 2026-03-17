@@ -3,7 +3,7 @@ import { ArrowUp, Square } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { ModelInfo } from '../../shared/ipc';
+import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
 
 /**
  * PromptInput コンポーネントの props。

@@ -5,7 +5,6 @@ import type {
   SessionId,
   ToolCallUpdate,
   PermissionOptionId,
-  ModelInfo,
   SessionModelState,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import type {
@@ -13,8 +12,6 @@ import type {
   KiroductorSettings,
   SessionMapping,
 } from '../main/repositories/config.repository';
-
-export type { ModelInfo, SessionModelState };
 
 /** `git diff --shortstat` の解析結果。 */
 export interface DiffStats {

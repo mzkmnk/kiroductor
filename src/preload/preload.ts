@@ -7,7 +7,8 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats, SessionModelState, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { DiffStats, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。

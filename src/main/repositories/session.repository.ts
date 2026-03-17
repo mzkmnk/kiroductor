@@ -1,5 +1,5 @@
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { SessionModelState } from '../../shared/ipc';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 
 /**
  * セッションに関するインメモリ状態を管理するリポジトリ。
