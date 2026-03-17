@@ -39,7 +39,7 @@ export class RepoService {
   constructor(
     private readonly configRepo: Pick<
       ConfigRepository,
-      'getBaseDir' | 'getReposRoot' | 'readRepos' | 'upsertRepo' | 'findRepoByPath'
+      'getBaseDir' | 'getReposRoot' | 'readRepos' | 'upsertRepo' | 'findRepoByPath' | 'readSessions'
     >,
     private readonly fs: FileSystem,
     private readonly spawnFn: SpawnFn,
@@ -312,6 +312,36 @@ export class RepoService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * セッション ID から作業ディレクトリとベースブランチを解決し、diff 統計情報を返す。
+   *
+   * セッションが見つからない場合は `null` を返す。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns {@link DiffStats} または `null`
+   */
+  async getDiffStatsBySession(sessionId: string): Promise<DiffStats | null> {
+    const sessions = await this.configRepo.readSessions();
+    const session = sessions.find((s) => s.acpSessionId === sessionId);
+    if (!session) return null;
+    return this.getDiffStats(session.cwd, session.sourceBranch);
+  }
+
+  /**
+   * セッション ID から作業ディレクトリとベースブランチを解決し、unified diff を返す。
+   *
+   * セッションが見つからない場合は `null` を返す。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns unified diff 文字列または `null`
+   */
+  async getDiffBySession(sessionId: string): Promise<string | null> {
+    const sessions = await this.configRepo.readSessions();
+    const session = sessions.find((s) => s.acpSessionId === sessionId);
+    if (!session) return null;
+    return this.getDiff(session.cwd, session.sourceBranch);
   }
 
   /** パスが存在するか確認する。 */

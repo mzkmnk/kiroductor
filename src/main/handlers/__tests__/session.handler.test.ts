@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type {
+  SessionId,
+  SessionModelState,
+  StopReason,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../interfaces/notification.service';
-import { SessionService } from '../../services/session.service';
-import { PromptService } from '../../services/prompt.service';
-import { MessageRepository } from '../../repositories/message.repository';
-import { SessionRepository } from '../../repositories/session.repository';
+import type { SessionMapping } from '../../repositories/config.repository';
+import type { Message } from '../../repositories/message.repository';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -19,40 +21,49 @@ vi.mock('electron', () => ({
 describe('SessionHandler', () => {
   const SESSION_ID = 'test-session-id';
 
-  let messageRepo: MessageRepository;
-  let sessionRepo: SessionRepository;
   let sessionService: {
     create: MockedFunction<
       (cwd: string, currentBranch: string, sourceBranch: string) => Promise<void>
     >;
-    cancel: MockedFunction<(sessionId: string) => Promise<void>>;
-    load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
-    setModel: MockedFunction<(sessionId: string, modelId: string) => Promise<void>>;
-    getModelState: MockedFunction<(sessionId: string) => unknown>;
+    cancel: MockedFunction<(sessionId: SessionId) => Promise<void>>;
+    load: MockedFunction<(sessionId: SessionId, cwd: string) => Promise<void>>;
+    setModel: MockedFunction<(sessionId: SessionId, modelId: string) => Promise<void>>;
+    getModelState: MockedFunction<(sessionId: SessionId) => SessionModelState>;
+    getMessages: MockedFunction<(sessionId: SessionId) => Message[]>;
+    switchSession: MockedFunction<(sessionId: SessionId) => void>;
+    getActiveSessionId: MockedFunction<() => SessionId | null>;
+    getAllSessionIds: MockedFunction<() => SessionId[]>;
+    listSessions: MockedFunction<() => Promise<SessionMapping[]>>;
+    getProcessingSessionIds: MockedFunction<() => SessionId[]>;
+    isAcpConnected: MockedFunction<(sessionId: SessionId) => boolean>;
+    addProcessing: MockedFunction<(sessionId: SessionId) => void>;
+    removeProcessing: MockedFunction<(sessionId: SessionId) => void>;
   };
   let promptService: {
-    send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
+    send: MockedFunction<(sessionId: SessionId, text: string) => Promise<StopReason>>;
   };
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
-  };
-  let configRepo: {
-    readSessions: MockedFunction<() => Promise<[]>>;
   };
   let handler: SessionHandler;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    messageRepo = new MessageRepository();
-    sessionRepo = new SessionRepository();
-    sessionRepo.addSession(SESSION_ID);
-    sessionRepo.setActiveSession(SESSION_ID);
     sessionService = {
       create: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn().mockResolvedValue(undefined),
       load: vi.fn().mockResolvedValue(undefined),
       setModel: vi.fn().mockResolvedValue(undefined),
       getModelState: vi.fn(),
+      getMessages: vi.fn().mockReturnValue([]),
+      switchSession: vi.fn(),
+      getActiveSessionId: vi.fn().mockReturnValue(SESSION_ID),
+      getAllSessionIds: vi.fn().mockReturnValue([SESSION_ID]),
+      listSessions: vi.fn().mockResolvedValue([]),
+      getProcessingSessionIds: vi.fn().mockReturnValue([]),
+      isAcpConnected: vi.fn().mockReturnValue(false),
+      addProcessing: vi.fn(),
+      removeProcessing: vi.fn(),
     };
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
@@ -60,17 +71,7 @@ describe('SessionHandler', () => {
     notificationService = {
       sendToRenderer: vi.fn(),
     };
-    configRepo = {
-      readSessions: vi.fn().mockResolvedValue([]),
-    };
-    handler = new SessionHandler(
-      sessionService as unknown as SessionService,
-      promptService as unknown as PromptService,
-      messageRepo,
-      sessionRepo,
-      notificationService,
-      configRepo,
-    );
+    handler = new SessionHandler(sessionService, promptService, notificationService);
   });
 
   describe('register()', () => {
@@ -141,10 +142,10 @@ describe('SessionHandler', () => {
         expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello');
       });
 
-      it('prompt 実行中は sessionRepo.isProcessing() が true を返す', async () => {
-        let isProcessingDuringPrompt = false;
+      it('prompt 実行前に sessionService.addProcessing() が呼ばれ、完了後に removeProcessing() が呼ばれる', async () => {
+        let addedBeforeSend = false;
         promptService.send.mockImplementation(async () => {
-          isProcessingDuringPrompt = sessionRepo.isProcessing(SESSION_ID);
+          addedBeforeSend = sessionService.addProcessing.mock.calls.length > 0;
           return 'end_turn';
         });
         handler.register();
@@ -158,8 +159,9 @@ describe('SessionHandler', () => {
 
         await promptHandler(null, SESSION_ID, 'hello');
 
-        expect(isProcessingDuringPrompt).toBe(true);
-        expect(sessionRepo.isProcessing(SESSION_ID)).toBe(false);
+        expect(addedBeforeSend).toBe(true);
+        expect(sessionService.addProcessing).toHaveBeenCalledWith(SESSION_ID);
+        expect(sessionService.removeProcessing).toHaveBeenCalledWith(SESSION_ID);
       });
 
       it('prompt 完了後に acp:prompt-completed 通知を送信する', async () => {
@@ -194,23 +196,24 @@ describe('SessionHandler', () => {
     });
 
     describe('session:messages', () => {
-      it('指定した sessionId の messageRepository.getAll() の結果を返す', async () => {
-        messageRepo.addUserMessage(SESSION_ID, 'test message');
+      it('sessionService.getMessages() の結果を返す', () => {
+        const messages: Message[] = [{ id: 'msg-1', type: 'user', text: 'test message' }];
+        sessionService.getMessages.mockReturnValue(messages);
         handler.register();
         const messagesHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:messages',
-        )?.[1] as (_event: unknown, sessionId: string) => Promise<unknown>;
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
 
-        const result = await messagesHandler(null, SESSION_ID);
+        const result = messagesHandler(null, SESSION_ID);
 
-        expect(result).toEqual([expect.objectContaining({ type: 'user', text: 'test message' })]);
+        expect(result).toEqual(messages);
+        expect(sessionService.getMessages).toHaveBeenCalledWith(SESSION_ID);
       });
     });
 
     describe('session:switch', () => {
-      it('sessionRepo.setActiveSession() を呼び、レンダラーに通知を送る', () => {
+      it('sessionService.switchSession() を呼び、レンダラーに通知を送る', () => {
         const OTHER_SESSION_ID = 'other-session-id';
-        sessionRepo.addSession(OTHER_SESSION_ID);
         handler.register();
         const switchHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:switch',
@@ -218,24 +221,15 @@ describe('SessionHandler', () => {
 
         switchHandler(null, OTHER_SESSION_ID);
 
-        expect(sessionRepo.getActiveSessionId()).toBe(OTHER_SESSION_ID);
+        expect(sessionService.switchSession).toHaveBeenCalledWith(OTHER_SESSION_ID);
         expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-switched', {
           sessionId: OTHER_SESSION_ID,
         });
       });
-
-      it('存在しないセッション ID を指定した場合、エラーが投げられる', () => {
-        handler.register();
-        const switchHandler = ipcHandle.mock.calls.find(
-          (call) => call[0] === 'session:switch',
-        )?.[1] as (_event: unknown, sessionId: string) => void;
-
-        expect(() => switchHandler(null, 'nonexistent')).toThrow();
-      });
     });
 
     describe('session:active', () => {
-      it('現在のアクティブセッション ID を返す', () => {
+      it('sessionService.getActiveSessionId() の結果を返す', () => {
         handler.register();
         const activeHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:active',
@@ -244,10 +238,11 @@ describe('SessionHandler', () => {
         const result = activeHandler();
 
         expect(result).toBe(SESSION_ID);
+        expect(sessionService.getActiveSessionId).toHaveBeenCalledOnce();
       });
 
       it('アクティブセッションがない場合、null を返す', () => {
-        sessionRepo.removeSession(SESSION_ID);
+        sessionService.getActiveSessionId.mockReturnValue(null);
         handler.register();
         const activeHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:active',
@@ -260,9 +255,9 @@ describe('SessionHandler', () => {
     });
 
     describe('session:all', () => {
-      it('管理中の全セッション ID を返す', () => {
+      it('sessionService.getAllSessionIds() の結果を返す', () => {
         const OTHER_SESSION_ID = 'other-session-id';
-        sessionRepo.addSession(OTHER_SESSION_ID);
+        sessionService.getAllSessionIds.mockReturnValue([SESSION_ID, OTHER_SESSION_ID]);
         handler.register();
         const allHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:all',
@@ -276,7 +271,7 @@ describe('SessionHandler', () => {
 
     describe('session:is-acp-connected', () => {
       it('ACP 接続済みセッションに対して true を返す', () => {
-        sessionRepo.markAcpConnected(SESSION_ID);
+        sessionService.isAcpConnected.mockReturnValue(true);
         handler.register();
         const isAcpConnectedHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:is-acp-connected',
@@ -285,9 +280,11 @@ describe('SessionHandler', () => {
         const result = isAcpConnectedHandler(null, SESSION_ID);
 
         expect(result).toBe(true);
+        expect(sessionService.isAcpConnected).toHaveBeenCalledWith(SESSION_ID);
       });
 
       it('ACP 未接続セッションに対して false を返す', () => {
+        sessionService.isAcpConnected.mockReturnValue(false);
         handler.register();
         const isAcpConnectedHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:is-acp-connected',
@@ -350,15 +347,29 @@ describe('SessionHandler', () => {
     });
 
     describe('session:list', () => {
-      it('configRepo.readSessions() の結果を返す', async () => {
+      it('sessionService.listSessions() の結果を返す', async () => {
+        const sessions: SessionMapping[] = [
+          {
+            acpSessionId: SESSION_ID,
+            repoId: 'repo-1',
+            cwd: '/workspace',
+            title: 'Test',
+            currentBranch: 'kiroductor/test',
+            sourceBranch: 'main',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ];
+        sessionService.listSessions.mockResolvedValue(sessions);
         handler.register();
         const listHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:list',
-        )?.[1] as () => Promise<unknown>;
+        )?.[1] as () => Promise<SessionMapping[]>;
 
-        await listHandler();
+        const result = await listHandler();
 
-        expect(configRepo.readSessions).toHaveBeenCalledOnce();
+        expect(result).toEqual(sessions);
+        expect(sessionService.listSessions).toHaveBeenCalledOnce();
       });
     });
   });

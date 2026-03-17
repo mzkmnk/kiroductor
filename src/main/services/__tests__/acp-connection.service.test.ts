@@ -130,6 +130,17 @@ describe('AcpConnectionService', () => {
     });
   });
 
+  describe('getStatus()', () => {
+    it('初期状態で "disconnected" を返す', () => {
+      expect(service.getStatus()).toBe('disconnected');
+    });
+
+    it('start() 完了後に "connected" を返す', async () => {
+      await service.start();
+      expect(service.getStatus()).toBe('connected');
+    });
+  });
+
   describe('プロセス異常終了のハンドリング', () => {
     it('プロセスが exit イベントを発行したとき、Repository の status が "error" になること', async () => {
       await service.start();

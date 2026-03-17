@@ -11,6 +11,7 @@ import { AcpConnectionService, type ClientHandlerFactory } from './services/acp-
 import { SessionService } from './services/session.service';
 import { PromptService } from './services/prompt.service';
 import { RepoService } from './services/repo.service';
+import { SettingsService } from './services/settings.service';
 import { KiroductorClientHandler } from './acp/client-handler';
 import { ReadTextFileMethod } from './acp/methods/read-text-file.method';
 import { WriteTextFileMethod } from './acp/methods/write-text-file.method';
@@ -133,16 +134,10 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const promptService = new PromptService(messageRepo, connectionProxy);
 
   // Handlers
-  const acpHandler = new AcpHandler(acpConnectionService, connectionRepo);
-  const sessionHandler = new SessionHandler(
-    sessionService,
-    promptService,
-    messageRepo,
-    sessionRepo,
-    notificationService,
-    configRepo,
-  );
-  const repoHandler = new RepoHandler(repoService, configRepo);
+  const acpHandler = new AcpHandler(acpConnectionService);
+  const sessionHandler = new SessionHandler(sessionService, promptService, notificationService);
+  const settingsService = new SettingsService(configRepo);
+  const repoHandler = new RepoHandler(repoService, settingsService);
 
   return { acpHandler, sessionHandler, repoHandler, acpConnectionService, sessionService };
 }

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChildProcess } from 'child_process';
 import { RepoService, parseDiffShortstat, buildNewFileDiff, type SpawnFn } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
-import type { RepoMapping } from '../../repositories/config.repository';
+import type { RepoMapping, SessionMapping } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
 
 describe('RepoService', () => {
@@ -536,6 +536,79 @@ describe('RepoService', () => {
 
       expect(result).not.toContain('image.png');
       expect(result).toContain('diff --git a/text.ts b/text.ts');
+    });
+  });
+
+  describe('getDiffStatsBySession(sessionId)', () => {
+    const SESSION: SessionMapping = {
+      acpSessionId: 'session-1',
+      repoId: 'repo-1',
+      cwd: '/worktree/path',
+      title: 'Test',
+      currentBranch: 'kiroductor/test',
+      sourceBranch: 'main',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    it('セッションが見つかった場合、getDiffStats() に委譲する', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ sessions: [SESSION] }),
+      );
+      const diffProcess = createMockProcess(0, undefined, ' 2 files changed, 10 insertions(+)\n');
+      const lsFilesProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+
+      const result = await service.getDiffStatsBySession('session-1');
+
+      expect(result).toEqual({ filesChanged: 2, insertions: 10, deletions: 0 });
+    });
+
+    it('セッションが見つからない場合、null を返す', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ sessions: [] }));
+
+      const result = await service.getDiffStatsBySession('nonexistent');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getDiffBySession(sessionId)', () => {
+    const SESSION: SessionMapping = {
+      acpSessionId: 'session-1',
+      repoId: 'repo-1',
+      cwd: '/worktree/path',
+      title: 'Test',
+      currentBranch: 'kiroductor/test',
+      sourceBranch: 'main',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    it('セッションが見つかった場合、getDiff() に委譲する', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ sessions: [SESSION] }),
+      );
+      const trackedDiff = 'diff --git a/file.ts b/file.ts\n+new line';
+      const diffProcess = createMockProcess(0, undefined, trackedDiff);
+      const lsFilesProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+
+      const result = await service.getDiffBySession('session-1');
+
+      expect(result).toContain('diff --git a/file.ts b/file.ts');
+    });
+
+    it('セッションが見つからない場合、null を返す', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ sessions: [] }));
+
+      const result = await service.getDiffBySession('nonexistent');
+
+      expect(result).toBeNull();
     });
   });
 

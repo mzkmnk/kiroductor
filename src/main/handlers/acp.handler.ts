@@ -1,5 +1,4 @@
 import type { AcpConnectionService } from '../services/acp-connection.service';
-import type { ConnectionRepository } from '../repositories/connection.repository';
 import { handle } from '../ipc';
 
 /**
@@ -10,11 +9,12 @@ import { handle } from '../ipc';
 export class AcpHandler {
   /**
    * @param acpConnectionService - ACP 接続のライフサイクルを管理するサービス（依存注入）
-   * @param connectionRepo - 接続状態を保持するリポジトリ（依存注入）
    */
   constructor(
-    private readonly acpConnectionService: Pick<AcpConnectionService, 'start' | 'stop'>,
-    private readonly connectionRepo: Pick<ConnectionRepository, 'getStatus'>,
+    private readonly acpConnectionService: Pick<
+      AcpConnectionService,
+      'start' | 'stop' | 'getStatus'
+    >,
   ) {}
 
   /**
@@ -28,6 +28,6 @@ export class AcpHandler {
   register(): void {
     handle('acp:start', () => this.acpConnectionService.start());
     handle('acp:stop', () => this.acpConnectionService.stop());
-    handle('acp:status', () => this.connectionRepo.getStatus());
+    handle('acp:status', () => this.acpConnectionService.getStatus());
   }
 }

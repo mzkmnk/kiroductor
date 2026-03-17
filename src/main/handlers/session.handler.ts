@@ -1,8 +1,5 @@
 import type { SessionService } from '../services/session.service';
 import type { PromptService } from '../services/prompt.service';
-import type { MessageRepository } from '../repositories/message.repository';
-import type { SessionRepository } from '../repositories/session.repository';
-import type { ConfigRepository } from '../repositories/config.repository';
 import type { NotificationService } from '../interfaces/notification.service';
 import { handle } from '../ipc';
 import { createDebugLogger } from '../debug-logger';
@@ -18,30 +15,28 @@ export class SessionHandler {
   /**
    * @param sessionService - セッションのライフサイクルを管理するサービス（依存注入）
    * @param promptService - ユーザー入力をエージェントへ送るサービス（依存注入）
-   * @param messageRepo - メッセージ一覧を管理するリポジトリ（依存注入）
-   * @param sessionRepo - セッション状態を管理するリポジトリ（依存注入）
    * @param notificationService - レンダラーへ通知を送るサービス（依存注入）
-   * @param configRepo - 設定・セッションマッピングを永続化するリポジトリ（依存注入）
    */
   constructor(
     private readonly sessionService: Pick<
       SessionService,
-      'create' | 'cancel' | 'load' | 'setModel' | 'getModelState'
-    >,
-    private readonly promptService: Pick<PromptService, 'send'>,
-    private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
-    private readonly sessionRepo: Pick<
-      SessionRepository,
+      | 'create'
+      | 'cancel'
+      | 'load'
+      | 'setModel'
+      | 'getModelState'
+      | 'getMessages'
+      | 'switchSession'
       | 'getActiveSessionId'
-      | 'setActiveSession'
       | 'getAllSessionIds'
-      | 'addProcessing'
-      | 'removeProcessing'
+      | 'listSessions'
       | 'getProcessingSessionIds'
       | 'isAcpConnected'
+      | 'addProcessing'
+      | 'removeProcessing'
     >,
+    private readonly promptService: Pick<PromptService, 'send'>,
     private readonly notificationService: NotificationService,
-    private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
   ) {}
 
   /**
@@ -65,12 +60,12 @@ export class SessionHandler {
     );
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
     handle('session:prompt', async (_event, sessionId, text) => {
-      this.sessionRepo.addProcessing(sessionId);
+      this.sessionService.addProcessing(sessionId);
       try {
         const stopReason = await this.promptService.send(sessionId, text);
         return { stopReason };
       } finally {
-        this.sessionRepo.removeProcessing(sessionId);
+        this.sessionService.removeProcessing(sessionId);
         this.notificationService.sendToRenderer('acp:prompt-completed', { sessionId });
       }
     });
@@ -78,26 +73,26 @@ export class SessionHandler {
       return this.sessionService.cancel(sessionId);
     });
     handle('session:messages', (_event, sessionId) => {
-      return this.messageRepo.getAll(sessionId);
+      return this.sessionService.getMessages(sessionId);
     });
     handle('session:switch', (_event, sessionId) => {
-      this.sessionRepo.setActiveSession(sessionId);
+      this.sessionService.switchSession(sessionId);
       this.notificationService.sendToRenderer('acp:session-switched', { sessionId });
     });
     handle('session:active', () => {
-      return this.sessionRepo.getActiveSessionId();
+      return this.sessionService.getActiveSessionId();
     });
     handle('session:all', () => {
-      return this.sessionRepo.getAllSessionIds();
+      return this.sessionService.getAllSessionIds();
     });
     handle('session:list', () => {
-      return this.configRepo.readSessions();
+      return this.sessionService.listSessions();
     });
     handle('session:processing-sessions', () => {
-      return this.sessionRepo.getProcessingSessionIds();
+      return this.sessionService.getProcessingSessionIds();
     });
     handle('session:is-acp-connected', (_event, sessionId) => {
-      return this.sessionRepo.isAcpConnected(sessionId);
+      return this.sessionService.isAcpConnected(sessionId);
     });
     handle('session:get-models', (_event, sessionId) => {
       log.info(`session:get-models sessionId=${sessionId}`);
