@@ -63,7 +63,14 @@ function mockKiroductorAPIWithDiffStats() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
-      getModels: () => Promise.resolve(null),
+      getModels: () =>
+        Promise.resolve({
+          currentModelId: 'claude-sonnet-4-20250514',
+          availableModels: [
+            { modelId: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
+            { modelId: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
+          ],
+        }),
       setModel: () => Promise.resolve(),
       onModelChanged: () => () => {},
     },
@@ -122,7 +129,14 @@ function mockKiroductorAPIWithLongTitle() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
-      getModels: () => Promise.resolve(null),
+      getModels: () =>
+        Promise.resolve({
+          currentModelId: 'claude-sonnet-4-20250514',
+          availableModels: [
+            { modelId: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
+            { modelId: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
+          ],
+        }),
       setModel: () => Promise.resolve(),
       onModelChanged: () => () => {},
     },
@@ -178,7 +192,14 @@ function mockKiroductorAPINoDiffStats() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
-      getModels: () => Promise.resolve(null),
+      getModels: () =>
+        Promise.resolve({
+          currentModelId: 'claude-sonnet-4-20250514',
+          availableModels: [
+            { modelId: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
+            { modelId: 'claude-opus-4-20250514', name: 'Claude Opus 4' },
+          ],
+        }),
       setModel: () => Promise.resolve(),
       onModelChanged: () => () => {},
     },
