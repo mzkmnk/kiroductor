@@ -27,6 +27,7 @@ describe('SessionHandler', () => {
     cancel: MockedFunction<(sessionId: string) => Promise<void>>;
     load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
     setModel: MockedFunction<(sessionId: string, modelId: string) => Promise<void>>;
+    getModelState: MockedFunction<(sessionId: string) => unknown>;
   };
   let promptService: {
     send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
@@ -50,6 +51,7 @@ describe('SessionHandler', () => {
       cancel: vi.fn().mockResolvedValue(undefined),
       load: vi.fn().mockResolvedValue(undefined),
       setModel: vi.fn().mockResolvedValue(undefined),
+      getModelState: vi.fn(),
     };
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
@@ -297,14 +299,14 @@ describe('SessionHandler', () => {
     });
 
     describe('session:get-models', () => {
-      it('sessionRepo.getModelState() の結果を返す', () => {
+      it('sessionService.getModelState() の結果を返す', () => {
         const modelState = {
           currentModelId: 'claude-haiku-4.5',
           availableModels: [
             { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
           ],
         };
-        sessionRepo.setModelState(SESSION_ID, modelState);
+        sessionService.getModelState.mockReturnValue(modelState);
         handler.register();
         const getModelsHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:get-models',
@@ -313,9 +315,13 @@ describe('SessionHandler', () => {
         const result = getModelsHandler(null, SESSION_ID);
 
         expect(result).toEqual(modelState);
+        expect(sessionService.getModelState).toHaveBeenCalledWith(SESSION_ID);
       });
 
       it('モデル状態未設定の場合エラーを投げる', () => {
+        sessionService.getModelState.mockImplementation(() => {
+          throw new Error('Model state not set');
+        });
         handler.register();
         const getModelsHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:get-models',

@@ -26,7 +26,7 @@ export class SessionHandler {
   constructor(
     private readonly sessionService: Pick<
       SessionService,
-      'create' | 'cancel' | 'load' | 'setModel'
+      'create' | 'cancel' | 'load' | 'setModel' | 'getModelState'
     >,
     private readonly promptService: Pick<PromptService, 'send'>,
     private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
@@ -39,7 +39,6 @@ export class SessionHandler {
       | 'removeProcessing'
       | 'getProcessingSessionIds'
       | 'isAcpConnected'
-      | 'getModelState'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
@@ -102,7 +101,7 @@ export class SessionHandler {
     });
     handle('session:get-models', (_event, sessionId) => {
       log.info(`session:get-models sessionId=${sessionId}`);
-      return this.sessionRepo.getModelState(sessionId);
+      return this.sessionService.getModelState(sessionId);
     });
     handle('session:set-model', async (_event, sessionId, modelId) => {
       log.info(`session:set-model sessionId=${sessionId} modelId=${modelId}`);

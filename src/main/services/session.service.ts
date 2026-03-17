@@ -160,6 +160,16 @@ export class SessionService {
   }
 
   /**
+   * 指定セッションのモデル状態を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns モデル状態
+   */
+  getModelState(sessionId: SessionId): SessionModelState {
+    return this.sessionRepo.getModelState(sessionId);
+  }
+
+  /**
    * ACP レスポンスの models フィールドをリポジトリに保存する。
    *
    * @param sessionId - 対象セッション ID
