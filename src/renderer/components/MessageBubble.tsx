@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-import type { AgentMessage, UserMessage } from '../../main/repositories/message.repository';
+import type { AgentMessage, UserMessage } from '../../main/features/session/message.repository';
 
 /**
  * MessageBubble コンポーネントの props。

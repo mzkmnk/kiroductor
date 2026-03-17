@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
-import type { SessionMapping } from '../../main/repositories/config.repository';
+import type { SessionMapping } from '../../main/features/config/config.repository';
 import type { DiffStats } from '../../shared/ipc';
 import {
   Sidebar,

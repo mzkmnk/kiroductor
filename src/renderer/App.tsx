@@ -1,6 +1,10 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
-import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
-import type { SessionMapping } from '../main/repositories/config.repository';
+import type {
+  AgentMessage,
+  Message,
+  UserMessage,
+} from '../main/features/session/message.repository';
+import type { SessionMapping } from '../main/features/config/config.repository';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
