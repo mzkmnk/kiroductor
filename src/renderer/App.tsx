@@ -143,6 +143,7 @@ function App() {
       window.kiroductor.session
         .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+      fetchDiffStats(sessionId);
     });
 
     // プロンプト完了通知 — processing 状態を解除
@@ -223,6 +224,7 @@ function App() {
     setActiveSessionId(sessionId);
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
+    setDiffStats(null);
     fetchDiffStats(sessionId);
 
     // 切り替え先セッションが処理中かどうかで isProcessing を更新
@@ -248,10 +250,12 @@ function App() {
     const id = await window.kiroductor.session.getActive();
     setActiveSessionId(id);
     activeSessionIdRef.current = id;
+    setDiffStats(null);
     window.kiroductor.session.list().then(setSessionMappings);
     if (id) {
       const msgs = await window.kiroductor.session.getMessages(id);
       dispatchChat({ type: 'set', messages: msgs });
+      fetchDiffStats(id);
     }
   }
 
