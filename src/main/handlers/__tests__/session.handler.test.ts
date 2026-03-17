@@ -318,7 +318,7 @@ describe('SessionHandler', () => {
         expect(sessionService.getModelState).toHaveBeenCalledWith(SESSION_ID);
       });
 
-      it('モデル状態未設定の場合エラーを投げる', () => {
+      it('session:new / session:load 完了前に呼ぶとエラーを投げる', () => {
         sessionService.getModelState.mockImplementation(() => {
           throw new Error('Model state not set');
         });
