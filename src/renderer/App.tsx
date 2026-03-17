@@ -1,6 +1,7 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
 import type { SessionMapping } from '../main/repositories/config.repository';
+import type { DiffStats } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
@@ -90,9 +91,16 @@ function App() {
   const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
   const [diffDialogOpen, setDiffDialogOpen] = useState(false);
   const [diffData, setDiffData] = useState<string | null>(null);
+  const [diffStats, setDiffStats] = useState<DiffStats | null>(null);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
+
+  /** アクティブセッションの diff stats を取得する。 */
+  async function fetchDiffStats(sessionId: string) {
+    const stats = await window.kiroductor.repo.getDiffStats(sessionId);
+    setDiffStats(stats);
+  }
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
@@ -110,6 +118,7 @@ function App() {
         window.kiroductor.session
           .getMessages(id)
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        fetchDiffStats(id);
       }
     });
 
@@ -148,6 +157,7 @@ function App() {
         window.kiroductor.session
           .getMessages(sessionId)
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        fetchDiffStats(sessionId);
       }
       setPromptCompletedCount((c) => c + 1);
     });
@@ -213,6 +223,7 @@ function App() {
     setActiveSessionId(sessionId);
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
+    fetchDiffStats(sessionId);
 
     // 切り替え先セッションが処理中かどうかで isProcessing を更新
     setIsProcessing(processingSessionIds.has(sessionId));
@@ -265,6 +276,9 @@ function App() {
               currentBranch={activeMapping?.currentBranch}
               sourceBranch={activeMapping?.sourceBranch}
               onDiffClick={handleDiffClick}
+              hasDiffChanges={
+                diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
+              }
             />
             <PromptInput
               onSubmit={handleSubmit}

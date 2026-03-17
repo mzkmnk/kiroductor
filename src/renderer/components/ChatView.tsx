@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ArrowLeft, GitBranchIcon, GitCompareArrows, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import type {
   AgentMessage,
   Message,
@@ -30,6 +31,8 @@ interface ChatViewProps {
   sourceBranch?: string;
   /** diff ボタンクリック時のコールバック。 */
   onDiffClick?: () => void;
+  /** 差分が存在するかどうか。false の場合ボタンを無効化する。 */
+  hasDiffChanges?: boolean;
 }
 
 /**
@@ -45,6 +48,7 @@ function ChatView({
   currentBranch,
   sourceBranch,
   onDiffClick,
+  hasDiffChanges = false,
 }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -72,15 +76,24 @@ function ChatView({
           <ArrowLeft className="size-4" />
           <span>{currentBranch}</span>
           {onDiffClick && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              onClick={onDiffClick}
-              aria-label="Show diff"
-            >
-              <GitCompareArrows className="size-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="ml-auto">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onDiffClick}
+                      disabled={!hasDiffChanges}
+                      aria-label="Show diff"
+                    >
+                      <GitCompareArrows className="size-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!hasDiffChanges && <TooltipContent>No changes</TooltipContent>}
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       )}
