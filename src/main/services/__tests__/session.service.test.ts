@@ -243,7 +243,7 @@ describe('SessionService', () => {
     it('newSession レスポンスに models がない場合、モデル状態が保存されないこと', async () => {
       connection.newSession.mockResolvedValue({ sessionId: 'test-session-id' });
       await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
-      expect(sessionRepo.getModelState('test-session-id')).toBeNull();
+      expect(() => sessionRepo.getModelState('test-session-id')).toThrow();
     });
   });
 
@@ -265,7 +265,7 @@ describe('SessionService', () => {
     it('loadSession レスポンスに models がない場合、モデル状態が保存されないこと', async () => {
       connection.loadSession.mockResolvedValue({ sessionId: 'session-abc' });
       await service.load('session-abc', '/path/to/project');
-      expect(sessionRepo.getModelState('session-abc')).toBeNull();
+      expect(() => sessionRepo.getModelState('session-abc')).toThrow();
     });
   });
 
@@ -302,9 +302,7 @@ describe('SessionService', () => {
       });
       await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
       await service.setModel('test-session-id', 'claude-sonnet-4.5');
-      expect(sessionRepo.getModelState('test-session-id')?.currentModelId).toBe(
-        'claude-sonnet-4.5',
-      );
+      expect(sessionRepo.getModelState('test-session-id').currentModelId).toBe('claude-sonnet-4.5');
     });
   });
 

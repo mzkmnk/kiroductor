@@ -64,7 +64,7 @@ export interface IpcInvokeChannels {
   'session:active': { args: []; return: SessionId | null };
   'session:all': { args: []; return: SessionId[] };
   'session:list': { args: []; return: SessionMapping[] };
-  'session:get-models': { args: [sessionId: SessionId]; return: ModelState | null };
+  'session:get-models': { args: [sessionId: SessionId]; return: ModelState };
   'session:set-model': { args: [sessionId: SessionId, modelId: string]; return: void };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };

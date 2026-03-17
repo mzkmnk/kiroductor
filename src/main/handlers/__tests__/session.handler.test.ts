@@ -315,15 +315,13 @@ describe('SessionHandler', () => {
         expect(result).toEqual(modelState);
       });
 
-      it('モデル状態未設定の場合 null を返す', () => {
+      it('モデル状態未設定の場合エラーを投げる', () => {
         handler.register();
         const getModelsHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:get-models',
         )?.[1] as (_event: unknown, sessionId: string) => unknown;
 
-        const result = getModelsHandler(null, SESSION_ID);
-
-        expect(result).toBeNull();
+        expect(() => getModelsHandler(null, SESSION_ID)).toThrow();
       });
     });
 

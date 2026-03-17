@@ -148,8 +148,8 @@ describe('SessionRepository', () => {
       ],
     };
 
-    it('初期状態で getModelState() は null を返す', () => {
-      expect(repo.getModelState('session-1')).toBeNull();
+    it('初期状態で getModelState() はエラーを投げる', () => {
+      expect(() => repo.getModelState('session-1')).toThrow();
     });
 
     it('setModelState() で設定したモデル状態を getModelState() で取得できる', () => {
@@ -160,7 +160,7 @@ describe('SessionRepository', () => {
     it('updateCurrentModelId() で currentModelId を更新できる', () => {
       repo.setModelState('session-1', MODEL_STATE);
       repo.updateCurrentModelId('session-1', 'claude-sonnet-4.5');
-      expect(repo.getModelState('session-1')?.currentModelId).toBe('claude-sonnet-4.5');
+      expect(repo.getModelState('session-1').currentModelId).toBe('claude-sonnet-4.5');
     });
 
     it('updateCurrentModelId() はモデル状態未設定の場合エラーを投げる', () => {
@@ -173,8 +173,8 @@ describe('SessionRepository', () => {
         currentModelId: 'claude-sonnet-4.5',
         availableModels: MODEL_STATE.availableModels,
       });
-      expect(repo.getModelState('session-1')?.currentModelId).toBe('claude-haiku-4.5');
-      expect(repo.getModelState('session-2')?.currentModelId).toBe('claude-sonnet-4.5');
+      expect(repo.getModelState('session-1').currentModelId).toBe('claude-haiku-4.5');
+      expect(repo.getModelState('session-2').currentModelId).toBe('claude-sonnet-4.5');
     });
   });
 

@@ -170,10 +170,15 @@ export class SessionRepository {
    * セッションのモデル状態を取得する。
    *
    * @param sessionId - 対象セッション ID
-   * @returns モデル状態。未設定の場合は `null`。
+   * @returns モデル状態
+   * @throws モデル状態が未設定の場合
    */
-  getModelState(sessionId: SessionId): ModelState | null {
-    return this.modelStates.get(sessionId) ?? null;
+  getModelState(sessionId: SessionId): ModelState {
+    const state = this.modelStates.get(sessionId);
+    if (!state) {
+      throw new Error(`Model state for session "${sessionId}" is not set.`);
+    }
+    return state;
   }
 
   /**
