@@ -364,7 +364,7 @@ describe('SessionHandler', () => {
         handler.register();
         const listHandler = ipcHandle.mock.calls.find(
           (call) => call[0] === 'session:list',
-        )?.[1] as () => Promise<unknown>;
+        )?.[1] as () => Promise<SessionMapping[]>;
 
         const result = await listHandler();
 
