@@ -24,6 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.16.0",
+    "@git-diff-view/react": "^0.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
@@ -44,8 +45,6 @@
     ]
   },
   "devDependencies": {
-    "electron-builder": "^26.8.1",
-    "electron-vite": "^5.0.0",
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
@@ -53,6 +52,8 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",

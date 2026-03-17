@@ -271,6 +271,48 @@ export class RepoService {
     }
   }
 
+  /**
+   * ワーキングツリーの差分本文（unified diff）を取得する。
+   *
+   * `git diff sourceBranch` を実行し、tracked ファイルの差分を取得する。
+   * さらに untracked ファイルについても unified diff 形式で差分を生成し結合する。
+   * 差分がない場合や git コマンドが失敗した場合は `null` を返す。
+   *
+   * @param cwd - worktree のパス
+   * @param sourceBranch - ベースブランチ名
+   * @returns unified diff 文字列または `null`
+   */
+  async getDiff(cwd: string, sourceBranch: string): Promise<string | null> {
+    try {
+      const trackedDiff = await this.execGit(['diff', sourceBranch], cwd);
+
+      // untracked ファイルの差分を生成
+      const untrackedStdout = await this.execGit(
+        ['ls-files', '--others', '--exclude-standard'],
+        cwd,
+      );
+      const untrackedFiles = untrackedStdout
+        .trim()
+        .split('\n')
+        .filter((f) => f.length > 0);
+
+      let untrackedDiff = '';
+      for (const file of untrackedFiles) {
+        try {
+          const content = await this.fs.readFile(path.join(cwd, file), 'utf-8');
+          untrackedDiff += buildNewFileDiff(file, content);
+        } catch {
+          // バイナリファイル等はスキップ
+        }
+      }
+
+      const combined = (trackedDiff + untrackedDiff).trimEnd();
+      return combined || null;
+    } catch {
+      return null;
+    }
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -309,6 +351,29 @@ export class RepoService {
       });
     });
   }
+}
+
+/**
+ * 新規ファイルの unified diff 文字列を生成する。
+ *
+ * `git diff --no-index` と同等の出力を手動で構築する。
+ *
+ * @param filePath - ファイルのパス（worktree ルートからの相対パス）
+ * @param content - ファイルの内容
+ * @returns unified diff 形式の文字列
+ */
+export function buildNewFileDiff(filePath: string, content: string): string {
+  const lines = content.split('\n');
+  const plusLines = lines.map((line) => `+${line}`).join('\n');
+  return [
+    `diff --git a/${filePath} b/${filePath}`,
+    'new file mode 100644',
+    '--- /dev/null',
+    `+++ b/${filePath}`,
+    `@@ -0,0 +1,${lines.length} @@`,
+    plusLines,
+    '',
+  ].join('\n');
 }
 
 /**

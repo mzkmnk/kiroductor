@@ -54,6 +54,7 @@ export interface IpcInvokeChannels {
   };
   'repo:list-branches': { args: [repoId: string]; return: string[] };
   'repo:diff-stats': { args: [sessionId: string]; return: DiffStats | null };
+  'repo:diff': { args: [sessionId: string]; return: string | null };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

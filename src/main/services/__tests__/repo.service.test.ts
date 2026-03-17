@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChildProcess } from 'child_process';
-import { RepoService, parseDiffShortstat, type SpawnFn } from '../repo.service';
+import { RepoService, parseDiffShortstat, buildNewFileDiff, type SpawnFn } from '../repo.service';
 import { ConfigRepository } from '../../repositories/config.repository';
 import type { RepoMapping } from '../../repositories/config.repository';
 import type { FileSystem } from '../../fs';
@@ -439,6 +439,88 @@ describe('RepoService', () => {
     });
   });
 
+  describe('getDiff(cwd, sourceBranch)', () => {
+    it('tracked な変更のみの場合 git diff の結果を返すこと', async () => {
+      const diffOutput =
+        'diff --git a/src/main.ts b/src/main.ts\n--- a/src/main.ts\n+++ b/src/main.ts\n@@ -1,3 +1,4 @@\n import { app } from "electron";\n+import { something } from "somewhere";';
+      const diffProcess = createMockProcess(0, undefined, diffOutput);
+      const lsFilesProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(spawnMock).toHaveBeenCalledWith(
+        'git',
+        ['diff', 'main'],
+        expect.objectContaining({ cwd: '/worktree/path' }),
+      );
+      expect(result).toBe(diffOutput);
+    });
+
+    it('untracked ファイルの diff が含まれること', async () => {
+      const diffProcess = createMockProcess(0, undefined, '');
+      const lsFilesProcess = createMockProcess(0, undefined, 'newfile.ts\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        'const x = 1;\nexport { x };',
+      );
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toContain('diff --git a/newfile.ts b/newfile.ts');
+      expect(result).toContain('--- /dev/null');
+      expect(result).toContain('+++ b/newfile.ts');
+      expect(result).toContain('+const x = 1;');
+    });
+
+    it('tracked と untracked の両方の diff が結合されること', async () => {
+      const trackedDiff =
+        'diff --git a/src/main.ts b/src/main.ts\n--- a/src/main.ts\n+++ b/src/main.ts\n@@ -1,3 +1,4 @@\n line1\n+line2';
+      const diffProcess = createMockProcess(0, undefined, trackedDiff);
+      const lsFilesProcess = createMockProcess(0, undefined, 'new.ts\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce('hello');
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toContain('diff --git a/src/main.ts b/src/main.ts');
+      expect(result).toContain('diff --git a/new.ts b/new.ts');
+    });
+
+    it('差分がない場合（tracked も untracked もなし）は null を返すこと', async () => {
+      const diffProcess = createMockProcess(0, undefined, '');
+      const lsFilesProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toBeNull();
+    });
+
+    it('git コマンドが失敗した場合 null を返すこと', async () => {
+      const mockProcess = createMockProcess(1, 'fatal: bad revision');
+      spawnMock.mockReturnValue(mockProcess);
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).toBeNull();
+    });
+
+    it('バイナリの untracked ファイルはスキップされること', async () => {
+      const diffProcess = createMockProcess(0, undefined, '');
+      const lsFilesProcess = createMockProcess(0, undefined, 'image.png\ntext.ts\n');
+      spawnMock.mockReturnValueOnce(diffProcess).mockReturnValueOnce(lsFilesProcess);
+      (fs.readFile as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(new Error('binary'))
+        .mockResolvedValueOnce('hello');
+
+      const result = await service.getDiff('/worktree/path', 'main');
+
+      expect(result).not.toContain('image.png');
+      expect(result).toContain('diff --git a/text.ts b/text.ts');
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [
@@ -458,6 +540,27 @@ describe('RepoService', () => {
 
       expect(result).toEqual(repos);
     });
+  });
+});
+
+describe('buildNewFileDiff(filePath, content)', () => {
+  it('新規ファイルの unified diff を生成すること', () => {
+    const result = buildNewFileDiff('src/new.ts', 'const x = 1;\nexport { x };');
+
+    expect(result).toContain('diff --git a/src/new.ts b/src/new.ts');
+    expect(result).toContain('new file mode 100644');
+    expect(result).toContain('--- /dev/null');
+    expect(result).toContain('+++ b/src/new.ts');
+    expect(result).toContain('@@ -0,0 +1,2 @@');
+    expect(result).toContain('+const x = 1;');
+    expect(result).toContain('+export { x };');
+  });
+
+  it('単一行ファイルのハンクヘッダーが正しいこと', () => {
+    const result = buildNewFileDiff('readme.md', 'hello');
+
+    expect(result).toContain('@@ -0,0 +1,1 @@');
+    expect(result).toContain('+hello');
   });
 });
 

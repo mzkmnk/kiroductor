@@ -1,10 +1,12 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
 import type { SessionMapping } from '../main/repositories/config.repository';
+import type { DiffStats } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { DiffDialog } from './components/DiffDialog';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
@@ -87,9 +89,18 @@ function App() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [processingSessionIds, setProcessingSessionIds] = useState<Set<string>>(new Set());
   const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
+  const [diffDialogOpen, setDiffDialogOpen] = useState(false);
+  const [diffData, setDiffData] = useState<string | null>(null);
+  const [diffStats, setDiffStats] = useState<DiffStats | null>(null);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
+
+  /** アクティブセッションの diff stats を取得する。 */
+  async function fetchDiffStats(sessionId: string) {
+    const stats = await window.kiroductor.repo.getDiffStats(sessionId);
+    setDiffStats(stats);
+  }
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
@@ -107,6 +118,7 @@ function App() {
         window.kiroductor.session
           .getMessages(id)
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        fetchDiffStats(id);
       }
     });
 
@@ -131,6 +143,7 @@ function App() {
       window.kiroductor.session
         .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+      fetchDiffStats(sessionId);
     });
 
     // プロンプト完了通知 — processing 状態を解除
@@ -145,6 +158,7 @@ function App() {
         window.kiroductor.session
           .getMessages(sessionId)
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        fetchDiffStats(sessionId);
       }
       setPromptCompletedCount((c) => c + 1);
     });
@@ -196,12 +210,22 @@ function App() {
     // - processingSessionIds は onPromptCompleted で削除済み
   }
 
+  /** diff ダイアログを開き、差分データを取得する。 */
+  async function handleDiffClick() {
+    if (!activeSessionId) return;
+    setDiffDialogOpen(true);
+    const diff = await window.kiroductor.repo.getDiff(activeSessionId);
+    setDiffData(diff);
+  }
+
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, _cwd: string) {
     if (sessionId === activeSessionId) return;
     setActiveSessionId(sessionId);
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
+    setDiffStats(null);
+    fetchDiffStats(sessionId);
 
     // 切り替え先セッションが処理中かどうかで isProcessing を更新
     setIsProcessing(processingSessionIds.has(sessionId));
@@ -226,10 +250,12 @@ function App() {
     const id = await window.kiroductor.session.getActive();
     setActiveSessionId(id);
     activeSessionIdRef.current = id;
+    setDiffStats(null);
     window.kiroductor.session.list().then(setSessionMappings);
     if (id) {
       const msgs = await window.kiroductor.session.getMessages(id);
       dispatchChat({ type: 'set', messages: msgs });
+      fetchDiffStats(id);
     }
   }
 
@@ -253,6 +279,10 @@ function App() {
               isRestoring={isRestoring}
               currentBranch={activeMapping?.currentBranch}
               sourceBranch={activeMapping?.sourceBranch}
+              onDiffClick={handleDiffClick}
+              hasDiffChanges={
+                diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
+              }
             />
             <PromptInput
               onSubmit={handleSubmit}
@@ -265,6 +295,7 @@ function App() {
           <WelcomeScreen onSessionCreated={handleSessionCreated} />
         )}
       </SidebarInset>
+      <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
     </SidebarProvider>
   );
 }

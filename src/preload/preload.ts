@@ -131,6 +131,8 @@ export interface RepoAPI {
   listBranches: (repoId: string) => Promise<string[]>;
   /** 指定セッションの git diff 統計情報を取得する。 */
   getDiffStats: (sessionId: string) => Promise<DiffStats | null>;
+  /** 指定セッションの unified diff 本文を取得する。 */
+  getDiff: (sessionId: string) => Promise<string | null>;
 }
 
 /**
@@ -195,6 +197,7 @@ const kiroductorAPI: KiroductorAPI = {
     createWorktree: (repoId, branch) => invoke('repo:create-worktree', repoId, branch),
     listBranches: (repoId) => invoke('repo:list-branches', repoId),
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
+    getDiff: (sessionId) => invoke('repo:diff', sessionId),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),
