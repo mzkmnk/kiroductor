@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, Settings2Icon, TerminalIcon } from 'lucide-react';
+import { PlusIcon, Settings2Icon } from 'lucide-react';
 import type { SessionMapping } from '../../main/features/config/config.repository';
 import type { DiffStats } from '../../shared/ipc';
 import {
@@ -9,7 +9,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -115,37 +114,24 @@ export function SessionSidebar({
   return (
     <>
       <Sidebar>
-        {/* ヘッダー */}
-        <SidebarHeader>
-          {/* macOS トラフィックライト用のドラッグ領域 */}
-          <div className="h-3 [-webkit-app-region:drag]" />
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div className="flex items-center justify-between px-1 py-0.5">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                    <TerminalIcon className="h-3.5 w-3.5" />
-                  </div>
-                  <span className="text-sm font-semibold tracking-tight">Kiroductor</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                  onClick={() => setIsDialogOpen(true)}
-                  title="New Session"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
+        {/* macOS トラフィックライト用のドラッグ領域 */}
+        <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
 
         {/* セッションリスト */}
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Sessions</SidebarGroupLabel>
+            <div className="flex items-center justify-between pr-1">
+              <SidebarGroupLabel>Sessions</SidebarGroupLabel>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                onClick={() => setIsDialogOpen(true)}
+                title="New Session"
+              >
+                <PlusIcon className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <SidebarGroupContent>
               <SidebarMenu>
                 {sessions.length === 0 ? (

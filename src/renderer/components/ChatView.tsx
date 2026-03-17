@@ -69,8 +69,8 @@ function ChatView({
 
   return (
     <>
-      {currentBranch && sourceBranch && (
-        <div className="flex items-center gap-2 border-b px-6 py-2 text-sm text-muted-foreground">
+      {currentBranch && sourceBranch ? (
+        <div className="flex h-10 shrink-0 items-center gap-2 border-b px-6 text-sm text-muted-foreground [-webkit-app-region:drag]">
           <GitBranchIcon className="size-4" />
           <span>{sourceBranch}</span>
           <ArrowLeft className="size-4" />
@@ -79,7 +79,7 @@ function ChatView({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="ml-auto">
+                  <span className="ml-auto [-webkit-app-region:no-drag]">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -96,6 +96,8 @@ function ChatView({
             </TooltipProvider>
           )}
         </div>
+      ) : (
+        <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-6 py-6">
