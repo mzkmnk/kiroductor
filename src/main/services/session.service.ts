@@ -165,7 +165,7 @@ export class SessionService {
    * @param sessionId - 対象セッション ID
    * @param models - ACP レスポンスの models フィールド（undefined の場合は何もしない）
    */
-  private saveModelState(sessionId: SessionId, models: SessionModelState | null | undefined): void {
+  private saveModelState(sessionId: SessionId, models?: SessionModelState | null): void {
     if (!models) {
       log.info(`saveModelState: models なし sessionId=${sessionId}`);
       return;
