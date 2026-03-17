@@ -88,7 +88,7 @@ test.describe('ChatView', () => {
     await page.addInitScript(mockKiroductorAPIWithMessages, []);
     await page.goto('http://localhost:5173');
     // getActive() が resolve してチャット画面に切り替わるまで待機する
-    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Ask to make changes/)).toBeVisible();
     await expect(page).toHaveScreenshot('chat-view-empty.png');
   });
 

@@ -76,21 +76,21 @@ test.describe('PromptInput', () => {
   });
 
   test('matches screenshot in default state', async ({ page }) => {
-    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Ask to make changes/)).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-default.png');
   });
 
   test('matches screenshot with text filled', async ({ page }) => {
-    await page.getByPlaceholder(/Type a message/).fill('Hello, agent!');
+    await page.getByPlaceholder(/Ask to make changes/).fill('Hello, agent!');
     await expect(page).toHaveScreenshot('prompt-input-filled.png');
   });
 
   test('matches screenshot while processing (disabled)', async ({ page }) => {
     // Fill text and click Send to trigger the processing state
-    await page.getByPlaceholder(/Type a message/).fill('processing test');
+    await page.getByPlaceholder(/Ask to make changes/).fill('processing test');
     await page.getByRole('button', { name: 'Send' }).click();
     // prompt() resolves after 500ms, so the textarea is disabled during that time
-    await expect(page.getByPlaceholder(/Type a message/)).toBeDisabled();
+    await expect(page.getByPlaceholder(/Ask to make changes/)).toBeDisabled();
     await expect(page).toHaveScreenshot('prompt-input-disabled.png');
   });
 });

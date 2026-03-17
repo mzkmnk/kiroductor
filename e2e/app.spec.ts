@@ -75,7 +75,7 @@ test.describe('アプリ初期表示', () => {
 
   test('PromptInput が表示される', async ({ page }) => {
     await page.goto('http://localhost:5173');
-    await expect(page.getByPlaceholder(/Type a message/)).toBeVisible();
+    await expect(page.getByPlaceholder(/Ask to make changes/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
   });
 });
