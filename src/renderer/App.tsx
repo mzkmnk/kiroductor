@@ -310,6 +310,8 @@ function App() {
         onSessionCreated={handleSessionCreated}
       />
       <SidebarInset>
+        {/* macOS タイトルバー非表示時のドラッグ領域 */}
+        <div className="h-3 shrink-0 [-webkit-app-region:drag]" />
         {activeSessionId ? (
           <div className="flex h-full flex-col">
             <ChatView

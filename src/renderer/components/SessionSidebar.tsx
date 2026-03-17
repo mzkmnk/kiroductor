@@ -117,6 +117,8 @@ export function SessionSidebar({
       <Sidebar>
         {/* ヘッダー */}
         <SidebarHeader>
+          {/* macOS トラフィックライト用のドラッグ領域 */}
+          <div className="h-3 [-webkit-app-region:drag]" />
           <SidebarMenu>
             <SidebarMenuItem>
               <div className="flex items-center justify-between px-1 py-0.5">

@@ -25,6 +25,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
