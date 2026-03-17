@@ -21,7 +21,10 @@ export class SessionHandler {
    * @param configRepo - 設定・セッションマッピングを永続化するリポジトリ（依存注入）
    */
   constructor(
-    private readonly sessionService: Pick<SessionService, 'create' | 'cancel' | 'load'>,
+    private readonly sessionService: Pick<
+      SessionService,
+      'create' | 'cancel' | 'load' | 'setModel'
+    >,
     private readonly promptService: Pick<PromptService, 'send'>,
     private readonly messageRepo: Pick<MessageRepository, 'getAll'>,
     private readonly sessionRepo: Pick<
@@ -33,6 +36,7 @@ export class SessionHandler {
       | 'removeProcessing'
       | 'getProcessingSessionIds'
       | 'isAcpConnected'
+      | 'getModelState'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
@@ -92,6 +96,13 @@ export class SessionHandler {
     });
     handle('session:is-acp-connected', (_event, sessionId) => {
       return this.sessionRepo.isAcpConnected(sessionId);
+    });
+    handle('session:get-models', (_event, sessionId) => {
+      return this.sessionRepo.getModelState(sessionId);
+    });
+    handle('session:set-model', async (_event, sessionId, modelId) => {
+      await this.sessionService.setModel(sessionId, modelId);
+      this.notificationService.sendToRenderer('acp:model-changed', { sessionId, modelId });
     });
   }
 }

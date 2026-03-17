@@ -1,4 +1,5 @@
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ModelState } from '../../shared/ipc';
 
 /**
  * セッションに関するインメモリ状態を管理するリポジトリ。
@@ -20,6 +21,9 @@ export class SessionRepository {
   private acpConnectedIds: Set<SessionId> = new Set();
 
   private loading: boolean = false;
+
+  /** セッションごとのモデル状態。 */
+  private modelStates: Map<SessionId, ModelState> = new Map();
 
   /**
    * セッションを追加する。
@@ -147,5 +151,43 @@ export class SessionRepository {
    */
   setIsLoading(loading: boolean): void {
     this.loading = loading;
+  }
+
+  /**
+   * セッションのモデル状態を設定する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param state - モデル状態
+   */
+  setModelState(sessionId: SessionId, state: ModelState): void {
+    this.modelStates.set(sessionId, {
+      currentModelId: state.currentModelId,
+      availableModels: [...state.availableModels],
+    });
+  }
+
+  /**
+   * セッションのモデル状態を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns モデル状態。未設定の場合は `null`。
+   */
+  getModelState(sessionId: SessionId): ModelState | null {
+    return this.modelStates.get(sessionId) ?? null;
+  }
+
+  /**
+   * セッションの現在のモデル ID を更新する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param modelId - 新しいモデル ID
+   * @throws モデル状態が未設定の場合
+   */
+  updateCurrentModelId(sessionId: SessionId, modelId: string): void {
+    const state = this.modelStates.get(sessionId);
+    if (!state) {
+      throw new Error(`Model state for session "${sessionId}" is not set.`);
+    }
+    state.currentModelId = modelId;
   }
 }

@@ -1,7 +1,7 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../main/repositories/message.repository';
 import type { SessionMapping } from '../main/repositories/config.repository';
-import type { DiffStats } from '../shared/ipc';
+import type { DiffStats, ModelInfo } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
@@ -92,6 +92,8 @@ function App() {
   const [diffDialogOpen, setDiffDialogOpen] = useState(false);
   const [diffData, setDiffData] = useState<string | null>(null);
   const [diffStats, setDiffStats] = useState<DiffStats | null>(null);
+  const [currentModelId, setCurrentModelId] = useState<string | null>(null);
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -106,6 +108,19 @@ function App() {
     activeSessionIdRef.current = activeSessionId;
   }, [activeSessionId]);
 
+  /** 指定セッションのモデル情報を取得して state に反映する。 */
+  function fetchModels(sessionId: string) {
+    window.kiroductor.session.getModels(sessionId).then((state) => {
+      if (state) {
+        setCurrentModelId(state.currentModelId);
+        setAvailableModels(state.availableModels);
+      } else {
+        setCurrentModelId(null);
+        setAvailableModels([]);
+      }
+    });
+  }
+
   useEffect(() => {
     // 初回: セッション一覧を取得
     window.kiroductor.session.list().then(setSessionMappings);
@@ -119,6 +134,7 @@ function App() {
           .getMessages(id)
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
         fetchDiffStats(id);
+        fetchModels(id);
       }
     });
 
@@ -144,6 +160,14 @@ function App() {
         .getMessages(sessionId)
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
       fetchDiffStats(sessionId);
+      fetchModels(sessionId);
+    });
+
+    // モデル変更通知
+    const unsubModelChanged = window.kiroductor.session.onModelChanged(({ sessionId, modelId }) => {
+      if (sessionId === activeSessionIdRef.current) {
+        setCurrentModelId(modelId);
+      }
     });
 
     // プロンプト完了通知 — processing 状態を解除
@@ -167,6 +191,7 @@ function App() {
       unsubUpdate();
       unsubSwitched();
       unsubCompleted();
+      unsubModelChanged();
     };
   }, []);
 
@@ -243,6 +268,8 @@ function App() {
       dispatchChat({ type: 'set', messages: loadedMsgs });
       setIsRestoring(false);
     }
+    // load 完了後にモデル情報を取得（load パスでは loadSession がモデル状態を保存した後に呼ぶ必要がある）
+    fetchModels(sessionId);
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
@@ -256,7 +283,14 @@ function App() {
       const msgs = await window.kiroductor.session.getMessages(id);
       dispatchChat({ type: 'set', messages: msgs });
       fetchDiffStats(id);
+      fetchModels(id);
     }
+  }
+
+  /** モデルを切り替える。 */
+  async function handleSetModel(modelId: string) {
+    if (!activeSessionId) return;
+    await window.kiroductor.session.setModel(activeSessionId, modelId);
   }
 
   const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
@@ -289,6 +323,9 @@ function App() {
               onCancel={handleCancel}
               isProcessing={isProcessing}
               disabled={isProcessing || isRestoring}
+              currentModelId={currentModelId}
+              availableModels={availableModels}
+              onModelChange={handleSetModel}
             />
           </div>
         ) : (

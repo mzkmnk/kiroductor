@@ -17,11 +17,26 @@ describe('SessionService', () => {
   let messageRepo: MessageRepository;
   let connection: {
     newSession: MockedFunction<
-      (params: { cwd: string; mcpServers: [] }) => Promise<{ sessionId: string }>
+      (params: { cwd: string; mcpServers: [] }) => Promise<{
+        sessionId: string;
+        models?: {
+          currentModelId: string;
+          availableModels: Array<{ modelId: string; name: string; description?: string | null }>;
+        } | null;
+      }>
     >;
     cancel: MockedFunction<(params: { sessionId: string }) => Promise<void>>;
     loadSession: MockedFunction<
-      (params: { sessionId: string; cwd: string; mcpServers: [] }) => Promise<{ sessionId: string }>
+      (params: { sessionId: string; cwd: string; mcpServers: [] }) => Promise<{
+        sessionId: string;
+        models?: {
+          currentModelId: string;
+          availableModels: Array<{ modelId: string; name: string; description?: string | null }>;
+        } | null;
+      }>
+    >;
+    unstable_setSessionModel: MockedFunction<
+      (params: { sessionId: string; modelId: string }) => Promise<Record<string, never>>
     >;
   };
   let notificationService: {
@@ -40,6 +55,7 @@ describe('SessionService', () => {
       newSession: vi.fn().mockResolvedValue({ sessionId: 'test-session-id' }),
       cancel: vi.fn().mockResolvedValue(undefined),
       loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
+      unstable_setSessionModel: vi.fn().mockResolvedValue({}),
     };
     notificationService = {
       sendToRenderer: vi.fn(),
@@ -51,7 +67,10 @@ describe('SessionService', () => {
     service = new SessionService(
       sessionRepo,
       messageRepo,
-      connection as unknown as Pick<ClientSideConnection, 'newSession' | 'cancel' | 'loadSession'>,
+      connection as unknown as Pick<
+        ClientSideConnection,
+        'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel'
+      >,
       notificationService as unknown as NotificationService,
       configRepo as unknown as Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
     );
@@ -202,6 +221,90 @@ describe('SessionService', () => {
     it('load() 後に sessionRepo.isAcpConnected() が true を返すこと', async () => {
       await service.load('session-abc', '/path/to/project');
       expect(sessionRepo.isAcpConnected('session-abc')).toBe(true);
+    });
+  });
+
+  describe('create() のモデル保存', () => {
+    const MODELS = {
+      currentModelId: 'claude-haiku-4.5',
+      availableModels: [
+        { modelId: 'auto', name: 'auto', description: 'Auto' },
+        { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+      ],
+    };
+
+    it('newSession レスポンスに models がある場合、sessionRepo にモデル状態が保存されること', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id', models: MODELS });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      const state = sessionRepo.getModelState('test-session-id');
+      expect(state).toEqual(MODELS);
+    });
+
+    it('newSession レスポンスに models がない場合、モデル状態が保存されないこと', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id' });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      expect(sessionRepo.getModelState('test-session-id')).toBeNull();
+    });
+  });
+
+  describe('load() のモデル保存', () => {
+    const MODELS = {
+      currentModelId: 'claude-sonnet-4.5',
+      availableModels: [
+        { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+      ],
+    };
+
+    it('loadSession レスポンスに models がある場合、sessionRepo にモデル状態が保存されること', async () => {
+      connection.loadSession.mockResolvedValue({ sessionId: 'session-abc', models: MODELS });
+      await service.load('session-abc', '/path/to/project');
+      const state = sessionRepo.getModelState('session-abc');
+      expect(state).toEqual(MODELS);
+    });
+
+    it('loadSession レスポンスに models がない場合、モデル状態が保存されないこと', async () => {
+      connection.loadSession.mockResolvedValue({ sessionId: 'session-abc' });
+      await service.load('session-abc', '/path/to/project');
+      expect(sessionRepo.getModelState('session-abc')).toBeNull();
+    });
+  });
+
+  describe('setModel(sessionId, modelId)', () => {
+    it('connection.unstable_setSessionModel() が正しいパラメータで呼ばれること', async () => {
+      connection.newSession.mockResolvedValue({
+        sessionId: 'test-session-id',
+        models: {
+          currentModelId: 'claude-haiku-4.5',
+          availableModels: [
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+          ],
+        },
+      });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      await service.setModel('test-session-id', 'claude-sonnet-4.5');
+      expect(connection.unstable_setSessionModel).toHaveBeenCalledWith({
+        sessionId: 'test-session-id',
+        modelId: 'claude-sonnet-4.5',
+      });
+    });
+
+    it('setModel() 後に sessionRepo.getModelState() の currentModelId が更新されること', async () => {
+      connection.newSession.mockResolvedValue({
+        sessionId: 'test-session-id',
+        models: {
+          currentModelId: 'claude-haiku-4.5',
+          availableModels: [
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+          ],
+        },
+      });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      await service.setModel('test-session-id', 'claude-sonnet-4.5');
+      expect(sessionRepo.getModelState('test-session-id')?.currentModelId).toBe(
+        'claude-sonnet-4.5',
+      );
     });
   });
 

@@ -7,7 +7,7 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type { DiffStats, ModelState, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。
@@ -84,6 +84,19 @@ export interface SessionAPI {
   list: () => Promise<SessionMapping[]>;
   /** 指定セッションが ACP 接続済みかどうかを返す。 */
   isAcpConnected: (sessionId: SessionId) => Promise<boolean>;
+  /** セッションのモデル状態を取得する。 */
+  getModels: (sessionId: SessionId) => Promise<ModelState | null>;
+  /** セッションのモデルを切り替える。 */
+  setModel: (sessionId: SessionId, modelId: string) => Promise<void>;
+  /**
+   * モデル変更通知を購読する。
+   *
+   * @param callback - 変更されたセッション ID とモデル ID を受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onModelChanged: (
+    callback: (payload: { sessionId: SessionId; modelId: string }) => void,
+  ) => () => void;
   /**
    * セッション更新通知を購読する。
    *
@@ -183,6 +196,10 @@ const kiroductorAPI: KiroductorAPI = {
     getAll: () => invoke('session:all'),
     list: () => invoke('session:list'),
     isAcpConnected: (sessionId) => invoke('session:is-acp-connected', sessionId),
+    getModels: (sessionId) => invoke('session:get-models', sessionId),
+    setModel: (sessionId, modelId) => invoke('session:set-model', sessionId, modelId),
+    onModelChanged: (callback) =>
+      typedOn('acp:model-changed', (_event, payload) => callback(payload)),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
     onSessionLoading: (callback) =>
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),

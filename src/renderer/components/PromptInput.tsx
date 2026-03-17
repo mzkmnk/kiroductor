@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ArrowUp, Square } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import type { ModelInfo } from '../../shared/ipc';
 
 /**
  * PromptInput コンポーネントの props。
@@ -15,6 +17,12 @@ interface PromptInputProps {
   onSubmit: (text: string) => void;
   /** ユーザーがキャンセルを要求したときに呼ばれるコールバック。 */
   onCancel?: () => void;
+  /** 現在選択中のモデル ID。 */
+  currentModelId?: string | null;
+  /** 利用可能なモデル一覧。 */
+  availableModels?: ModelInfo[];
+  /** モデル変更時のコールバック。 */
+  onModelChange?: (modelId: string) => void;
 }
 
 /**
@@ -28,6 +36,9 @@ function PromptInput({
   isProcessing = false,
   onSubmit,
   onCancel,
+  currentModelId,
+  availableModels = [],
+  onModelChange,
 }: PromptInputProps) {
   const [text, setText] = useState('');
 
@@ -57,26 +68,56 @@ function PromptInput({
           className="min-h-[72px] w-full resize-none rounded-2xl border-border bg-secondary pb-12 shadow-sm focus-visible:ring-1 focus-visible:ring-ring"
           rows={3}
         />
-        {isProcessing ? (
-          <Button
-            onClick={onCancel}
-            size="icon"
-            className="absolute bottom-2 right-2 size-9 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-            aria-label="Stop"
-          >
-            <Square className="size-4" />
-          </Button>
-        ) : (
-          <Button
-            onClick={handleSubmit}
-            disabled={disabled || !text.trim()}
-            size="icon"
-            className="absolute bottom-2 right-2 size-9 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
-            aria-label="Send"
-          >
-            <ArrowUp className="size-4" />
-          </Button>
-        )}
+        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+          {availableModels.length > 0 && currentModelId ? (
+            <Select
+              value={currentModelId}
+              onValueChange={(value) => onModelChange?.(value)}
+              disabled={isProcessing}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-7 w-auto max-w-[200px] gap-1 rounded-lg border-none bg-transparent px-2 text-xs text-muted-foreground shadow-none hover:bg-muted/50 focus:ring-0 disabled:opacity-40"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels.map((model) => (
+                  <SelectItem key={model.modelId} value={model.modelId}>
+                    <span className="text-xs">{model.name}</span>
+                    {model.description && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        — {model.description}
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div />
+          )}
+          {isProcessing ? (
+            <Button
+              onClick={onCancel}
+              size="icon"
+              className="size-9 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              aria-label="Stop"
+            >
+              <Square className="size-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={disabled || !text.trim()}
+              size="icon"
+              className="size-9 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+              aria-label="Send"
+            >
+              <ArrowUp className="size-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

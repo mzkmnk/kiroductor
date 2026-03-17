@@ -26,6 +26,7 @@ describe('SessionHandler', () => {
     >;
     cancel: MockedFunction<(sessionId: string) => Promise<void>>;
     load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
+    setModel: MockedFunction<(sessionId: string, modelId: string) => Promise<void>>;
   };
   let promptService: {
     send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
@@ -48,6 +49,7 @@ describe('SessionHandler', () => {
       create: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn().mockResolvedValue(undefined),
       load: vi.fn().mockResolvedValue(undefined),
+      setModel: vi.fn().mockResolvedValue(undefined),
     };
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
@@ -83,6 +85,8 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:all');
       expect(channels).toContain('session:processing-sessions');
       expect(channels).toContain('session:is-acp-connected');
+      expect(channels).toContain('session:get-models');
+      expect(channels).toContain('session:set-model');
     });
 
     describe('session:new', () => {
@@ -289,6 +293,54 @@ describe('SessionHandler', () => {
         const result = isAcpConnectedHandler(null, SESSION_ID);
 
         expect(result).toBe(false);
+      });
+    });
+
+    describe('session:get-models', () => {
+      it('sessionRepo.getModelState() の結果を返す', () => {
+        const modelState = {
+          currentModelId: 'claude-haiku-4.5',
+          availableModels: [
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+          ],
+        };
+        sessionRepo.setModelState(SESSION_ID, modelState);
+        handler.register();
+        const getModelsHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-models',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        const result = getModelsHandler(null, SESSION_ID);
+
+        expect(result).toEqual(modelState);
+      });
+
+      it('モデル状態未設定の場合 null を返す', () => {
+        handler.register();
+        const getModelsHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-models',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        const result = getModelsHandler(null, SESSION_ID);
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('session:set-model', () => {
+      it('sessionService.setModel() を呼び、レンダラーに通知を送る', async () => {
+        handler.register();
+        const setModelHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:set-model',
+        )?.[1] as (_event: unknown, sessionId: string, modelId: string) => Promise<void>;
+
+        await setModelHandler(null, SESSION_ID, 'claude-sonnet-4.5');
+
+        expect(sessionService.setModel).toHaveBeenCalledWith(SESSION_ID, 'claude-sonnet-4.5');
+        expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:model-changed', {
+          sessionId: SESSION_ID,
+          modelId: 'claude-sonnet-4.5',
+        });
       });
     });
 
