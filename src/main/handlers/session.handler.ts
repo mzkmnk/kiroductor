@@ -32,6 +32,7 @@ export class SessionHandler {
       | 'addProcessing'
       | 'removeProcessing'
       | 'getProcessingSessionIds'
+      | 'isAcpConnected'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'readSessions'>,
@@ -50,6 +51,7 @@ export class SessionHandler {
    * - `session:active` — 現在のアクティブセッション ID を返す
    * - `session:all` — 管理中の全セッション ID を返す
    * - `session:list` — 永続化済みの全セッションマッピングを返す
+   * - `session:is-acp-connected` — 指定セッションが ACP 接続済みかどうかを返す
    */
   register(): void {
     handle('session:new', (_event, cwd, currentBranch, sourceBranch) =>
@@ -87,6 +89,9 @@ export class SessionHandler {
     });
     handle('session:processing-sessions', () => {
       return this.sessionRepo.getProcessingSessionIds();
+    });
+    handle('session:is-acp-connected', (_event, sessionId) => {
+      return this.sessionRepo.isAcpConnected(sessionId);
     });
   }
 }

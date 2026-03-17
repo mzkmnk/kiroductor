@@ -16,6 +16,9 @@ export class SessionRepository {
   /** prompt 実行中のセッション ID。 */
   private processingSessionIds: Set<SessionId> = new Set();
 
+  /** ACP 接続が確立済みのセッション ID。アプリ終了まで保持される。 */
+  private acpConnectedIds: Set<SessionId> = new Set();
+
   private loading: boolean = false;
 
   /**
@@ -107,6 +110,25 @@ export class SessionRepository {
    */
   getProcessingSessionIds(): SessionId[] {
     return [...this.processingSessionIds];
+  }
+
+  /**
+   * セッションを ACP 接続済みとしてマークする。
+   *
+   * @param sessionId - マークするセッション ID
+   */
+  markAcpConnected(sessionId: SessionId): void {
+    this.acpConnectedIds.add(sessionId);
+  }
+
+  /**
+   * セッションが ACP 接続済みかどうかを返す。
+   *
+   * @param sessionId - 確認するセッション ID
+   * @returns ACP 接続済みの場合は `true`
+   */
+  isAcpConnected(sessionId: SessionId): boolean {
+    return this.acpConnectedIds.has(sessionId);
   }
 
   /**

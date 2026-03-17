@@ -40,6 +40,7 @@ export interface IpcInvokeChannels {
   };
   'session:cancel': { args: [sessionId: SessionId]; return: void };
   'session:processing-sessions': { args: []; return: SessionId[] };
+  'session:is-acp-connected': { args: [sessionId: SessionId]; return: boolean };
   'session:messages': { args: [sessionId: SessionId]; return: Message[] };
   'session:switch': { args: [sessionId: SessionId]; return: void };
   'session:active': { args: []; return: SessionId | null };

@@ -82,6 +82,8 @@ export interface SessionAPI {
   getAll: () => Promise<SessionId[]>;
   /** 永続化済みの全セッションマッピングを取得する。 */
   list: () => Promise<SessionMapping[]>;
+  /** 指定セッションが ACP 接続済みかどうかを返す。 */
+  isAcpConnected: (sessionId: SessionId) => Promise<boolean>;
   /**
    * セッション更新通知を購読する。
    *
@@ -178,6 +180,7 @@ const kiroductorAPI: KiroductorAPI = {
     getActive: () => invoke('session:active'),
     getAll: () => invoke('session:all'),
     list: () => invoke('session:list'),
+    isAcpConnected: (sessionId) => invoke('session:is-acp-connected', sessionId),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
     onSessionLoading: (callback) =>
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),

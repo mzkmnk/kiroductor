@@ -82,6 +82,7 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:active');
       expect(channels).toContain('session:all');
       expect(channels).toContain('session:processing-sessions');
+      expect(channels).toContain('session:is-acp-connected');
     });
 
     describe('session:new', () => {
@@ -263,6 +264,31 @@ describe('SessionHandler', () => {
         const result = allHandler();
 
         expect(result).toEqual([SESSION_ID, OTHER_SESSION_ID]);
+      });
+    });
+
+    describe('session:is-acp-connected', () => {
+      it('ACP 接続済みセッションに対して true を返す', () => {
+        sessionRepo.markAcpConnected(SESSION_ID);
+        handler.register();
+        const isAcpConnectedHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:is-acp-connected',
+        )?.[1] as (_event: unknown, sessionId: string) => boolean;
+
+        const result = isAcpConnectedHandler(null, SESSION_ID);
+
+        expect(result).toBe(true);
+      });
+
+      it('ACP 未接続セッションに対して false を返す', () => {
+        handler.register();
+        const isAcpConnectedHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:is-acp-connected',
+        )?.[1] as (_event: unknown, sessionId: string) => boolean;
+
+        const result = isAcpConnectedHandler(null, SESSION_ID);
+
+        expect(result).toBe(false);
       });
     });
 

@@ -206,12 +206,13 @@ function App() {
     // 切り替え先セッションが処理中かどうかで isProcessing を更新
     setIsProcessing(processingSessionIds.has(sessionId));
 
-    // メッセージがメモリ上にある場合はそのまま表示する
-    const msgs = await window.kiroductor.session.getMessages(sessionId);
-    if (msgs.length > 0) {
+    // ACP 接続済みセッションはメモリ上のメッセージをそのまま表示する
+    const isConnected = await window.kiroductor.session.isAcpConnected(sessionId);
+    if (isConnected) {
+      const msgs = await window.kiroductor.session.getMessages(sessionId);
       dispatchChat({ type: 'set', messages: msgs });
     } else {
-      // メモリにメッセージがない場合（初回ロード）は load で復元する
+      // ACP 未接続（sessions.json から復元されたセッション）は load で復元する
       setIsRestoring(true);
       await window.kiroductor.session.load(sessionId, _cwd);
       const loadedMsgs = await window.kiroductor.session.getMessages(sessionId);
