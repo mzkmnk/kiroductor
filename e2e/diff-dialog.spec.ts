@@ -29,8 +29,11 @@ const SAMPLE_DIFF = [
 
 /**
  * Electron の preload スクリプトが注入する window.kiroductor API のモック。
+ *
+ * @param diffResponse - getDiff が返す unified diff 文字列（null = 変更なし）
  */
 function mockKiroductorAPI(diffResponse: string | null) {
+  const hasChanges = diffResponse !== null;
   (window as Record<string, unknown>).kiroductor = {
     acp: {
       start: () => Promise.resolve(),
@@ -75,7 +78,8 @@ function mockKiroductorAPI(diffResponse: string | null) {
       list: () => Promise.resolve([]),
       createWorktree: () => Promise.resolve({ cwd: '/mock/cwd' }),
       listBranches: () => Promise.resolve([]),
-      getDiffStats: () => Promise.resolve(null),
+      getDiffStats: () =>
+        Promise.resolve(hasChanges ? { filesChanged: 2, insertions: 5, deletions: 1 } : null),
       getDiff: () => Promise.resolve(diffResponse),
     },
     config: {
@@ -106,11 +110,9 @@ test.describe('DiffDialog', () => {
     await expect(page).toHaveScreenshot('diff-dialog-with-changes.png');
   });
 
-  test('diff データが空の場合 No changes が表示されること', async ({ page }) => {
+  test('diff データが空の場合ボタンが無効化されること', async ({ page }) => {
     await page.addInitScript(mockKiroductorAPI, null);
     await page.goto('http://localhost:5173');
-    await page.getByLabel('Show diff').click();
-    await expect(page.getByText('No changes')).toBeVisible();
-    await expect(page).toHaveScreenshot('diff-dialog-no-changes.png');
+    await expect(page.getByLabel('Show diff')).toBeDisabled();
   });
 });
