@@ -49,6 +49,17 @@ function mockKiroductorAPIRestoring() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () =>
+        Promise.resolve({
+          currentModelId: 'claude-sonnet-4.5',
+          availableModels: [
+            { modelId: 'auto', name: 'auto', description: 'Auto select' },
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+          ],
+        }),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),
@@ -121,6 +132,17 @@ function mockKiroductorAPIRestored() {
       onSessionSwitched: () => () => {},
       onSessionLoading: () => () => {},
       onPromptCompleted: () => () => {},
+      getModels: () =>
+        Promise.resolve({
+          currentModelId: 'claude-sonnet-4.5',
+          availableModels: [
+            { modelId: 'auto', name: 'auto', description: 'Auto select' },
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+            { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+          ],
+        }),
+      setModel: () => Promise.resolve(),
+      onModelChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../interfaces/notification.service';
 import { SessionService } from '../../services/session.service';
@@ -26,6 +27,8 @@ describe('SessionHandler', () => {
     >;
     cancel: MockedFunction<(sessionId: string) => Promise<void>>;
     load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
+    setModel: MockedFunction<(sessionId: string, modelId: string) => Promise<void>>;
+    getModelState: MockedFunction<(sessionId: string) => unknown>;
   };
   let promptService: {
     send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
@@ -48,6 +51,8 @@ describe('SessionHandler', () => {
       create: vi.fn().mockResolvedValue(undefined),
       cancel: vi.fn().mockResolvedValue(undefined),
       load: vi.fn().mockResolvedValue(undefined),
+      setModel: vi.fn().mockResolvedValue(undefined),
+      getModelState: vi.fn(),
     };
     promptService = {
       send: vi.fn().mockResolvedValue('end_turn'),
@@ -83,6 +88,8 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:all');
       expect(channels).toContain('session:processing-sessions');
       expect(channels).toContain('session:is-acp-connected');
+      expect(channels).toContain('session:get-models');
+      expect(channels).toContain('session:set-model');
     });
 
     describe('session:new', () => {
@@ -289,6 +296,56 @@ describe('SessionHandler', () => {
         const result = isAcpConnectedHandler(null, SESSION_ID);
 
         expect(result).toBe(false);
+      });
+    });
+
+    describe('session:get-models', () => {
+      it('sessionService.getModelState() の結果を返す', () => {
+        const modelState: SessionModelState = {
+          currentModelId: 'claude-haiku-4.5',
+          availableModels: [
+            { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+          ],
+        };
+        sessionService.getModelState.mockReturnValue(modelState);
+        handler.register();
+        const getModelsHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-models',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        const result = getModelsHandler(null, SESSION_ID);
+
+        expect(result).toEqual(modelState);
+        expect(sessionService.getModelState).toHaveBeenCalledWith(SESSION_ID);
+      });
+
+      it('session:new / session:load 完了前に呼ぶとエラーを投げる', () => {
+        sessionService.getModelState.mockImplementation(() => {
+          throw new Error('Model state not set');
+        });
+        handler.register();
+        const getModelsHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-models',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        expect(() => getModelsHandler(null, SESSION_ID)).toThrow();
+      });
+    });
+
+    describe('session:set-model', () => {
+      it('sessionService.setModel() を呼び、レンダラーに通知を送る', async () => {
+        handler.register();
+        const setModelHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:set-model',
+        )?.[1] as (_event: unknown, sessionId: string, modelId: string) => Promise<void>;
+
+        await setModelHandler(null, SESSION_ID, 'claude-sonnet-4.5');
+
+        expect(sessionService.setModel).toHaveBeenCalledWith(SESSION_ID, 'claude-sonnet-4.5');
+        expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:model-changed', {
+          sessionId: SESSION_ID,
+          modelId: 'claude-sonnet-4.5',
+        });
       });
     });
 

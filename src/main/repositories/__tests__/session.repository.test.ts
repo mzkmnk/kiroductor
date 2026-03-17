@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionRepository } from '../session.repository';
 
 describe('SessionRepository', () => {
@@ -135,6 +136,46 @@ describe('SessionRepository', () => {
     it('markAcpConnected していないセッション ID は false を返す', () => {
       repo.markAcpConnected('session-1');
       expect(repo.isAcpConnected('session-2')).toBe(false);
+    });
+  });
+
+  describe('modelState', () => {
+    const MODEL_STATE: SessionModelState = {
+      currentModelId: 'claude-haiku-4.5',
+      availableModels: [
+        { modelId: 'auto', name: 'auto', description: 'Auto select' },
+        { modelId: 'claude-haiku-4.5', name: 'claude-haiku-4.5', description: 'Haiku' },
+        { modelId: 'claude-sonnet-4.5', name: 'claude-sonnet-4.5', description: 'Sonnet' },
+      ],
+    };
+
+    it('初期状態で getModelState() はエラーを投げる', () => {
+      expect(() => repo.getModelState('session-1')).toThrow();
+    });
+
+    it('setModelState() で設定したモデル状態を getModelState() で取得できる', () => {
+      repo.setModelState('session-1', MODEL_STATE);
+      expect(repo.getModelState('session-1')).toEqual(MODEL_STATE);
+    });
+
+    it('updateCurrentModelId() で currentModelId を更新できる', () => {
+      repo.setModelState('session-1', MODEL_STATE);
+      repo.updateCurrentModelId('session-1', 'claude-sonnet-4.5');
+      expect(repo.getModelState('session-1').currentModelId).toBe('claude-sonnet-4.5');
+    });
+
+    it('updateCurrentModelId() はモデル状態未設定の場合エラーを投げる', () => {
+      expect(() => repo.updateCurrentModelId('nonexistent', 'claude-sonnet-4.5')).toThrow();
+    });
+
+    it('異なるセッションのモデル状態は独立して管理される', () => {
+      repo.setModelState('session-1', MODEL_STATE);
+      repo.setModelState('session-2', {
+        currentModelId: 'claude-sonnet-4.5',
+        availableModels: MODEL_STATE.availableModels,
+      });
+      expect(repo.getModelState('session-1').currentModelId).toBe('claude-haiku-4.5');
+      expect(repo.getModelState('session-2').currentModelId).toBe('claude-sonnet-4.5');
     });
   });
 

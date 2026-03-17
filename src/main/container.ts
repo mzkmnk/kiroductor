@@ -94,7 +94,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
    */
   const connectionProxy: Pick<
     ClientSideConnection,
-    'newSession' | 'cancel' | 'prompt' | 'loadSession'
+    'newSession' | 'cancel' | 'prompt' | 'loadSession' | 'unstable_setSessionModel'
   > = {
     newSession: (params) => {
       const conn = connectionRepo.getConnection();
@@ -115,6 +115,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       const conn = connectionRepo.getConnection();
       if (!conn) throw new Error('ACP not connected');
       return conn.loadSession(params);
+    },
+    unstable_setSessionModel: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.unstable_setSessionModel(params);
     },
   };
 

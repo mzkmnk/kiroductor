@@ -1,5 +1,6 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
@@ -28,7 +29,7 @@ export class SessionService {
     private readonly messageRepo: MessageRepository,
     private readonly connection: Pick<
       ClientSideConnection,
-      'newSession' | 'cancel' | 'loadSession'
+      'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
@@ -55,12 +56,14 @@ export class SessionService {
   ): Promise<void> {
     log.info(`newSession 開始 cwd=${cwd}`);
     // TODO: mcpServers に対応する
-    const { sessionId } = await this.connection.newSession({ cwd, mcpServers: [] });
+    const response = await this.connection.newSession({ cwd, mcpServers: [] });
+    const { sessionId } = response;
     log.info(`newSession 完了 sessionId=${sessionId}`);
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.markAcpConnected(sessionId);
     this.messageRepo.initSession(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
+    this.saveModelState(sessionId, response.models);
     const now = new Date().toISOString();
     await this.configRepo.upsertSession({
       acpSessionId: sessionId,
@@ -89,8 +92,9 @@ export class SessionService {
     this.sessionRepo.setIsLoading(true);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: true });
     this.messageRepo.initSession(sessionId);
-    await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
+    const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
+    this.saveModelState(sessionId, response.models);
     this.completeAllStreamingMessages(sessionId);
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.markAcpConnected(sessionId);
@@ -138,5 +142,47 @@ export class SessionService {
     log.info(`cancel sessionId=${sessionId}`);
     await this.connection.cancel({ sessionId });
     log.info('cancel 完了');
+  }
+
+  /**
+   * 指定セッションのモデルを切り替える。
+   *
+   * ACP の `unstable_setSessionModel` を呼び出し、成功したらリポジトリを更新する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param modelId - 切り替え先のモデル ID
+   */
+  async setModel(sessionId: SessionId, modelId: string): Promise<void> {
+    log.info(`setModel sessionId=${sessionId} modelId=${modelId}`);
+    await this.connection.unstable_setSessionModel({ sessionId, modelId });
+    this.sessionRepo.updateCurrentModelId(sessionId, modelId);
+    log.info('setModel 完了');
+  }
+
+  /**
+   * 指定セッションのモデル状態を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns モデル状態
+   */
+  getModelState(sessionId: SessionId): SessionModelState {
+    return this.sessionRepo.getModelState(sessionId);
+  }
+
+  /**
+   * ACP レスポンスの models フィールドをリポジトリに保存する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param models - ACP レスポンスの models フィールド（undefined の場合は何もしない）
+   */
+  private saveModelState(sessionId: SessionId, models?: SessionModelState | null): void {
+    if (!models) {
+      log.info(`saveModelState: models なし sessionId=${sessionId}`);
+      return;
+    }
+    log.info(
+      `saveModelState: sessionId=${sessionId} currentModelId=${models.currentModelId} availableModels=${String(models.availableModels.length)}`,
+    );
+    this.sessionRepo.setModelState(sessionId, models);
   }
 }

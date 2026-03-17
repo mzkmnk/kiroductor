@@ -5,6 +5,7 @@ import type {
   SessionId,
   ToolCallUpdate,
   PermissionOptionId,
+  SessionModelState,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import type {
   RepoMapping,
@@ -46,6 +47,8 @@ export interface IpcInvokeChannels {
   'session:active': { args: []; return: SessionId | null };
   'session:all': { args: []; return: SessionId[] };
   'session:list': { args: []; return: SessionMapping[] };
+  'session:get-models': { args: [sessionId: SessionId]; return: SessionModelState };
+  'session:set-model': { args: [sessionId: SessionId, modelId: string]; return: void };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': {
@@ -70,6 +73,7 @@ export interface IpcOnChannels {
   'acp:session-loading': { loading: boolean };
   'acp:session-switched': { sessionId: SessionId };
   'acp:prompt-completed': { sessionId: SessionId };
+  'acp:model-changed': { sessionId: SessionId; modelId: string };
   'acp:request-permission': {
     sessionId: SessionId;
     toolCall: ToolCallUpdate;
