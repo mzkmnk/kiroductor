@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { AcpHandler } from '../acp.handler';
-import type { AcpConnectionService } from '../../services/acp-connection.service';
 import type { AcpStatus } from '../../repositories/connection.repository';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
@@ -27,7 +26,7 @@ describe('AcpHandler', () => {
       stop: vi.fn().mockResolvedValue(undefined),
       getStatus: vi.fn().mockReturnValue('disconnected'),
     };
-    handler = new AcpHandler(acpConnectionService as unknown as AcpConnectionService);
+    handler = new AcpHandler(acpConnectionService);
   });
 
   describe('register()', () => {

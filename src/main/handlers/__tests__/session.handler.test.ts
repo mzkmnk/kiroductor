@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type {
+  SessionId,
+  SessionModelState,
+  StopReason,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../interfaces/notification.service';
-import type { SessionService } from '../../services/session.service';
-import type { PromptService } from '../../services/prompt.service';
+import type { SessionMapping } from '../../repositories/config.repository';
+import type { Message } from '../../repositories/message.repository';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -21,22 +25,22 @@ describe('SessionHandler', () => {
     create: MockedFunction<
       (cwd: string, currentBranch: string, sourceBranch: string) => Promise<void>
     >;
-    cancel: MockedFunction<(sessionId: string) => Promise<void>>;
-    load: MockedFunction<(sessionId: string, cwd: string) => Promise<void>>;
-    setModel: MockedFunction<(sessionId: string, modelId: string) => Promise<void>>;
-    getModelState: MockedFunction<(sessionId: string) => unknown>;
-    getMessages: MockedFunction<(sessionId: string) => unknown[]>;
-    switchSession: MockedFunction<(sessionId: string) => void>;
-    getActiveSessionId: MockedFunction<() => string | null>;
-    getAllSessionIds: MockedFunction<() => string[]>;
-    listSessions: MockedFunction<() => Promise<unknown[]>>;
-    getProcessingSessionIds: MockedFunction<() => string[]>;
-    isAcpConnected: MockedFunction<(sessionId: string) => boolean>;
-    addProcessing: MockedFunction<(sessionId: string) => void>;
-    removeProcessing: MockedFunction<(sessionId: string) => void>;
+    cancel: MockedFunction<(sessionId: SessionId) => Promise<void>>;
+    load: MockedFunction<(sessionId: SessionId, cwd: string) => Promise<void>>;
+    setModel: MockedFunction<(sessionId: SessionId, modelId: string) => Promise<void>>;
+    getModelState: MockedFunction<(sessionId: SessionId) => SessionModelState>;
+    getMessages: MockedFunction<(sessionId: SessionId) => Message[]>;
+    switchSession: MockedFunction<(sessionId: SessionId) => void>;
+    getActiveSessionId: MockedFunction<() => SessionId | null>;
+    getAllSessionIds: MockedFunction<() => SessionId[]>;
+    listSessions: MockedFunction<() => Promise<SessionMapping[]>>;
+    getProcessingSessionIds: MockedFunction<() => SessionId[]>;
+    isAcpConnected: MockedFunction<(sessionId: SessionId) => boolean>;
+    addProcessing: MockedFunction<(sessionId: SessionId) => void>;
+    removeProcessing: MockedFunction<(sessionId: SessionId) => void>;
   };
   let promptService: {
-    send: MockedFunction<(sessionId: string, text: string) => Promise<string>>;
+    send: MockedFunction<(sessionId: SessionId, text: string) => Promise<StopReason>>;
   };
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
@@ -67,11 +71,7 @@ describe('SessionHandler', () => {
     notificationService = {
       sendToRenderer: vi.fn(),
     };
-    handler = new SessionHandler(
-      sessionService as unknown as SessionService,
-      promptService as unknown as PromptService,
-      notificationService,
-    );
+    handler = new SessionHandler(sessionService, promptService, notificationService);
   });
 
   describe('register()', () => {
@@ -197,7 +197,7 @@ describe('SessionHandler', () => {
 
     describe('session:messages', () => {
       it('sessionService.getMessages() の結果を返す', () => {
-        const messages = [{ type: 'user', text: 'test message' }];
+        const messages: Message[] = [{ id: 'msg-1', type: 'user', text: 'test message' }];
         sessionService.getMessages.mockReturnValue(messages);
         handler.register();
         const messagesHandler = ipcHandle.mock.calls.find(
@@ -348,7 +348,18 @@ describe('SessionHandler', () => {
 
     describe('session:list', () => {
       it('sessionService.listSessions() の結果を返す', async () => {
-        const sessions = [{ acpSessionId: SESSION_ID, cwd: '/workspace' }];
+        const sessions: SessionMapping[] = [
+          {
+            acpSessionId: SESSION_ID,
+            repoId: 'repo-1',
+            cwd: '/workspace',
+            title: 'Test',
+            currentBranch: 'kiroductor/test',
+            sourceBranch: 'main',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ];
         sessionService.listSessions.mockResolvedValue(sessions);
         handler.register();
         const listHandler = ipcHandle.mock.calls.find(

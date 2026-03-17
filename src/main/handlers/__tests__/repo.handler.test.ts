@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { RepoHandler } from '../repo.handler';
-import type { RepoService } from '../../services/repo.service';
-import type { SettingsService } from '../../services/settings.service';
-import type { KiroductorSettings } from '../../repositories/config.repository';
+import type { KiroductorSettings, RepoMapping } from '../../repositories/config.repository';
+import type { DiffStats } from '../../../shared/ipc';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -16,7 +15,7 @@ vi.mock('electron', () => ({
 describe('RepoHandler', () => {
   let repoService: {
     clone: MockedFunction<(url: string) => Promise<string>>;
-    listClonedRepos: MockedFunction<() => Promise<unknown[]>>;
+    listClonedRepos: MockedFunction<() => Promise<RepoMapping[]>>;
     createWorktree: MockedFunction<
       (
         repoId: string,
@@ -24,7 +23,7 @@ describe('RepoHandler', () => {
       ) => Promise<{ cwd: string; branch: string; sourceBranch: string }>
     >;
     listBranches: MockedFunction<(repoId: string) => Promise<string[]>>;
-    getDiffStatsBySession: MockedFunction<(sessionId: string) => Promise<unknown>>;
+    getDiffStatsBySession: MockedFunction<(sessionId: string) => Promise<DiffStats | null>>;
     getDiffBySession: MockedFunction<(sessionId: string) => Promise<string | null>>;
   };
   let settingsService: {
@@ -47,10 +46,7 @@ describe('RepoHandler', () => {
       getSettings: vi.fn().mockResolvedValue({}),
       updateSettings: vi.fn().mockResolvedValue(undefined),
     };
-    handler = new RepoHandler(
-      repoService as unknown as RepoService,
-      settingsService as unknown as SettingsService,
-    );
+    handler = new RepoHandler(repoService, settingsService);
   });
 
   describe('register()', () => {
