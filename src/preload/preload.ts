@@ -7,7 +7,7 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats, ModelState, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type { DiffStats, SessionModelState, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。
@@ -85,7 +85,7 @@ export interface SessionAPI {
   /** 指定セッションが ACP 接続済みかどうかを返す。 */
   isAcpConnected: (sessionId: SessionId) => Promise<boolean>;
   /** セッションのモデル状態を取得する。 */
-  getModels: (sessionId: SessionId) => Promise<ModelState | null>;
+  getModels: (sessionId: SessionId) => Promise<SessionModelState>;
   /** セッションのモデルを切り替える。 */
   setModel: (sessionId: SessionId, modelId: string) => Promise<void>;
   /**

@@ -5,6 +5,8 @@ import type {
   SessionId,
   ToolCallUpdate,
   PermissionOptionId,
+  ModelInfo,
+  SessionModelState,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import type {
   RepoMapping,
@@ -12,23 +14,7 @@ import type {
   SessionMapping,
 } from '../main/repositories/config.repository';
 
-/** 利用可能なモデルの情報。 */
-export interface ModelInfo {
-  /** モデルの一意識別子。 */
-  modelId: string;
-  /** モデルの表示名。 */
-  name: string;
-  /** モデルの説明（任意）。 */
-  description?: string | null;
-}
-
-/** セッションごとのモデル状態。 */
-export interface ModelState {
-  /** 現在選択されているモデル ID。 */
-  currentModelId: string;
-  /** 利用可能なモデルの一覧。 */
-  availableModels: ModelInfo[];
-}
+export type { ModelInfo, SessionModelState };
 
 /** `git diff --shortstat` の解析結果。 */
 export interface DiffStats {
@@ -64,7 +50,7 @@ export interface IpcInvokeChannels {
   'session:active': { args: []; return: SessionId | null };
   'session:all': { args: []; return: SessionId[] };
   'session:list': { args: []; return: SessionMapping[] };
-  'session:get-models': { args: [sessionId: SessionId]; return: ModelState };
+  'session:get-models': { args: [sessionId: SessionId]; return: SessionModelState };
   'session:set-model': { args: [sessionId: SessionId, modelId: string]; return: void };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };

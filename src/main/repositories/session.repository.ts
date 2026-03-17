@@ -1,5 +1,5 @@
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { ModelState } from '../../shared/ipc';
+import type { SessionModelState } from '../../shared/ipc';
 
 /**
  * セッションに関するインメモリ状態を管理するリポジトリ。
@@ -23,7 +23,7 @@ export class SessionRepository {
   private loading: boolean = false;
 
   /** セッションごとのモデル状態。 */
-  private modelStates: Map<SessionId, ModelState> = new Map();
+  private modelStates: Map<SessionId, SessionModelState> = new Map();
 
   /**
    * セッションを追加する。
@@ -159,7 +159,7 @@ export class SessionRepository {
    * @param sessionId - 対象セッション ID
    * @param state - モデル状態
    */
-  setModelState(sessionId: SessionId, state: ModelState): void {
+  setModelState(sessionId: SessionId, state: SessionModelState): void {
     this.modelStates.set(sessionId, {
       currentModelId: state.currentModelId,
       availableModels: [...state.availableModels],
@@ -173,7 +173,7 @@ export class SessionRepository {
    * @returns モデル状態
    * @throws モデル状態が未設定の場合
    */
-  getModelState(sessionId: SessionId): ModelState {
+  getModelState(sessionId: SessionId): SessionModelState {
     const state = this.modelStates.get(sessionId);
     if (!state) {
       throw new Error(`Model state for session "${sessionId}" is not set.`);

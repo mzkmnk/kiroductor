@@ -1,6 +1,6 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { ModelInfo } from '../../shared/ipc';
+import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../debug-logger';
 import type { SessionRepository } from '../repositories/session.repository';
 import type { MessageRepository } from '../repositories/message.repository';
@@ -165,10 +165,7 @@ export class SessionService {
    * @param sessionId - 対象セッション ID
    * @param models - ACP レスポンスの models フィールド（undefined の場合は何もしない）
    */
-  private saveModelState(
-    sessionId: SessionId,
-    models: { currentModelId: string; availableModels: Array<ModelInfo> } | null | undefined,
-  ): void {
+  private saveModelState(sessionId: SessionId, models: SessionModelState | null | undefined): void {
     if (!models) {
       log.info(`saveModelState: models なし sessionId=${sessionId}`);
       return;
@@ -176,13 +173,6 @@ export class SessionService {
     log.info(
       `saveModelState: sessionId=${sessionId} currentModelId=${models.currentModelId} availableModels=${String(models.availableModels.length)}`,
     );
-    this.sessionRepo.setModelState(sessionId, {
-      currentModelId: models.currentModelId,
-      availableModels: models.availableModels.map((m) => ({
-        modelId: m.modelId,
-        name: m.name,
-        description: m.description,
-      })),
-    });
+    this.sessionRepo.setModelState(sessionId, models);
   }
 }

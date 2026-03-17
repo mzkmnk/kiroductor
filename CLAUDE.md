@@ -127,6 +127,10 @@ Vitest を採用。**TDD古典派**スタイルで実装する。コンストラ
 - 自明な getter/setter にも一文の概要は必ず書く
 - 型参照は `{@link TypeName}` で記述する
 
+## 型定義の方針
+
+`@agentclientprotocol/sdk` が提供する型（`SessionModelState`、`ModelInfo`、`ModelId`、`SessionId` など）を優先的に使用する。SDK に存在しない型のみプロジェクト独自で定義する（`src/shared/ipc.ts` など）。
+
 ## 主要な依存関係
 
 - `@agentclientprotocol/sdk` — ACP プロトコル実装（`ClientSideConnection`、型付きメッセージ）
