@@ -27,7 +27,7 @@ function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[90vh] max-w-[95vw] flex-col">
+      <DialogContent className="flex h-[90vh] max-w-[80vw] flex-col">
         <DialogHeader>
           <DialogTitle>Diff</DialogTitle>
         </DialogHeader>
