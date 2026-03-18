@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FolderGit2Icon, PlusIcon, Settings2Icon } from 'lucide-react';
+import { FolderGit2Icon, PlusIcon, SettingsIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/features/config/config.repository';
 import type { DiffStats } from '../../shared/ipc';
 import {
@@ -204,7 +204,7 @@ export function SessionSidebar({
               className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               title="Settings"
             >
-              <Settings2Icon className="h-4 w-4" />
+              <SettingsIcon className="h-4 w-4" />
             </Button>
           </div>
         </SidebarFooter>

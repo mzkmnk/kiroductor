@@ -113,7 +113,7 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Repository</label>
             <Select value={selectedRepoId} onValueChange={setSelectedRepoId}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a repository..." />
               </SelectTrigger>
               <SelectContent>
@@ -134,7 +134,7 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
               onValueChange={setSelectedBranch}
               disabled={!selectedRepoId || isFetchingBranches}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue
                   placeholder={isFetchingBranches ? 'Loading branches...' : 'HEAD (default)'}
                 />
