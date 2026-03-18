@@ -1,6 +1,11 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
-import type { SessionId, StopReason } from '@agentclientprotocol/sdk/dist/schema/index';
+import type {
+  SessionId,
+  StopReason,
+  ContentBlock,
+} from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../../shared/debug-logger';
+import type { ImageAttachment } from '../../../shared/ipc';
 import type { MessageRepository } from './message.repository';
 
 const log = createDebugLogger('Prompt');
@@ -32,18 +37,26 @@ export class PromptService {
    *
    * @param sessionId - 送信先のセッション ID
    * @param text - ユーザーが入力したテキスト
+   * @param images - 添付画像一覧（省略可）
    * @returns エージェントが返した `stopReason`
    */
-  async send(sessionId: SessionId, text: string): Promise<StopReason> {
+  async send(sessionId: SessionId, text: string, images?: ImageAttachment[]): Promise<StopReason> {
     log.info(
-      `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}"`,
+      `send 開始 sessionId=${sessionId} text="${text.slice(0, 50)}${text.length > 50 ? '…' : ''}" images=${String(images?.length ?? 0)}`,
     );
-    this.messageRepo.addUserMessage(sessionId, text);
+    this.messageRepo.addUserMessage(sessionId, text, images);
     this.messageRepo.addAgentMessage(sessionId, crypto.randomUUID());
+
+    const prompt: ContentBlock[] = [{ type: 'text', text }];
+    if (images) {
+      for (const img of images) {
+        prompt.push({ type: 'image', mimeType: img.mimeType, data: img.data });
+      }
+    }
 
     const { stopReason } = await this.connection.prompt({
       sessionId,
-      prompt: [{ type: 'text', text }],
+      prompt,
     });
     log.info(`send 完了 stopReason=${stopReason}`);
 

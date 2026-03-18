@@ -13,6 +13,14 @@ import type {
   SessionMapping,
 } from '../main/features/config/config.repository';
 
+/** エージェントに送信する画像添付データ。 */
+export interface ImageAttachment {
+  /** MIME タイプ（例: `"image/png"`, `"image/jpeg"`） */
+  mimeType: string;
+  /** Base64 エンコード済み画像データ */
+  data: string;
+}
+
 /** `git diff --shortstat` の解析結果。 */
 export interface DiffStats {
   /** 変更されたファイル数 */
@@ -36,7 +44,7 @@ export interface IpcInvokeChannels {
   'session:new': { args: [cwd: string, currentBranch: string, sourceBranch: string]; return: void };
   'session:load': { args: [sessionId: SessionId, cwd: string]; return: void };
   'session:prompt': {
-    args: [sessionId: SessionId, text: string];
+    args: [sessionId: SessionId, text: string, images?: ImageAttachment[]];
     return: { stopReason: string };
   };
   'session:cancel': { args: [sessionId: SessionId]; return: void };

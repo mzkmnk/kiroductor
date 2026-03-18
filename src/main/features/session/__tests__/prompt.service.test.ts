@@ -64,6 +64,61 @@ describe('PromptService', () => {
       expect(messages[1]).toMatchObject({ type: 'agent' });
     });
 
+    it('images を渡した場合 connection.prompt() に text と image の ContentBlock が渡されること', async () => {
+      const images = [{ mimeType: 'image/png', data: 'base64png' }];
+      await service.send(SESSION_ID, 'Look at this', images);
+      expect(connection.prompt).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        prompt: [
+          { type: 'text', text: 'Look at this' },
+          { type: 'image', mimeType: 'image/png', data: 'base64png' },
+        ],
+      });
+    });
+
+    it('images が undefined の場合 connection.prompt() に text のみの ContentBlock が渡されること', async () => {
+      await service.send(SESSION_ID, 'hello');
+      expect(connection.prompt).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        prompt: [{ type: 'text', text: 'hello' }],
+      });
+    });
+
+    it('images が空配列の場合 connection.prompt() に text のみの ContentBlock が渡されること', async () => {
+      await service.send(SESSION_ID, 'hello', []);
+      expect(connection.prompt).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        prompt: [{ type: 'text', text: 'hello' }],
+      });
+    });
+
+    it('複数画像を渡した場合すべて ContentBlock に含まれること', async () => {
+      const images = [
+        { mimeType: 'image/png', data: 'png-data' },
+        { mimeType: 'image/jpeg', data: 'jpeg-data' },
+      ];
+      await service.send(SESSION_ID, 'two images', images);
+      expect(connection.prompt).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        prompt: [
+          { type: 'text', text: 'two images' },
+          { type: 'image', mimeType: 'image/png', data: 'png-data' },
+          { type: 'image', mimeType: 'image/jpeg', data: 'jpeg-data' },
+        ],
+      });
+    });
+
+    it('images を渡した場合 MessageRepository に attachments が保存されること', async () => {
+      const images = [{ mimeType: 'image/png', data: 'base64png' }];
+      await service.send(SESSION_ID, 'hello', images);
+      const messages = messageRepo.getAll(SESSION_ID);
+      expect(messages[0]).toMatchObject({
+        type: 'user',
+        text: 'hello',
+        attachments: images,
+      });
+    });
+
     it('異なるセッション ID を指定した場合、そのセッションのメッセージに追加されること', async () => {
       const otherSessionId = 'other-session-id';
       await service.send(SESSION_ID, 'hello');

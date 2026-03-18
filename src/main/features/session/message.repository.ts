@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { ToolCallStatus } from '@agentclientprotocol/sdk';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ImageAttachment } from '../../../shared/ipc';
 
 /** ユーザーが入力したテキストメッセージ */
 export type UserMessage = {
@@ -10,6 +11,8 @@ export type UserMessage = {
   type: 'user';
   /** 入力テキスト */
   text: string;
+  /** 添付画像一覧（画像なしの場合は `undefined`） */
+  attachments?: ImageAttachment[];
 };
 
 /** エージェントの返答メッセージ */
@@ -114,13 +117,15 @@ export class MessageRepository {
    *
    * @param sessionId - セッション ID
    * @param text - ユーザーが入力したテキスト
+   * @param attachments - 添付画像一覧（省略可）
    * @returns 追加された {@link UserMessage}
    */
-  addUserMessage(sessionId: SessionId, text: string): UserMessage {
+  addUserMessage(sessionId: SessionId, text: string, attachments?: ImageAttachment[]): UserMessage {
     const message: UserMessage = {
       id: randomUUID(),
       type: 'user',
       text,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     };
     this.getMessages(sessionId).push(message);
     return message;
