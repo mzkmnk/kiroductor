@@ -101,7 +101,11 @@ export class RepoService {
 
     if (existing) {
       log.info(`既にクローン済み: ${existing.repoId} → fetch --all`);
-      await this.execGit(['fetch', '--all'], repoPath);
+      try {
+        await this.execGit(['fetch', '--all'], repoPath);
+      } catch (err) {
+        log.warn('fetch --all failed (worktree branch conflict), continuing: %s', err);
+      }
       return existing.repoId;
     }
 
@@ -156,6 +160,16 @@ export class RepoService {
     await this.fs.mkdir(worktreeDir, { recursive: true });
     const worktreePath = path.join(worktreeDir, repo.name);
 
+    // sourceBranch の最新をリモートから取得（worktree チェックアウト中なら無視して続行）
+    try {
+      await this.execGit(['fetch', 'origin', `${sourceBranch}:${sourceBranch}`], repoPath);
+    } catch (err) {
+      log.warn(
+        `fetch origin ${sourceBranch} failed (may be checked out in a worktree), continuing: %s`,
+        err,
+      );
+    }
+
     log.info(`worktree add: ${worktreePath} (branch: ${newBranch}, source: ${sourceBranch})`);
     await this.execGit(['worktree', 'add', '-b', newBranch, worktreePath, sourceBranch], repoPath);
 
@@ -190,8 +204,9 @@ export class RepoService {
   /**
    * 指定リポジトリのブランチ一覧を返す。
    *
-   * bare clone では `git branch -r` ではリモートトラッキングブランチが存在しないため、
-   * `git branch` でローカルブランチ（= fetch 済みブランチ）を一覧する。
+   * `git ls-remote --heads origin` でリモートのブランチ一覧を直接取得する。
+   * ローカル refs を更新しないため、worktree でチェックアウト中のブランチとの
+   * 競合（`refusing to fetch into branch`）が発生しない。
    *
    * @param repoId - リポジトリの識別子
    * @returns ブランチ名の配列（アルファベット順）
@@ -206,14 +221,13 @@ export class RepoService {
 
     const repoPath = this.getRepoPath(repo);
 
-    log.info('listBranches: fetching all for repoId=%s, repoPath=%s', repoId, repoPath);
-    await this.execGit(['fetch', '--all'], repoPath);
-    const stdout = await this.execGit(['branch'], repoPath);
+    log.info('listBranches: ls-remote for repoId=%s, repoPath=%s', repoId, repoPath);
+    const stdout = await this.execGit(['ls-remote', '--heads', 'origin'], repoPath);
     log.info('listBranches: raw stdout=%s', JSON.stringify(stdout));
 
     const branches = stdout
       .split('\n')
-      .map((line) => line.replace(/^[*+]?\s+/, '').trim())
+      .map((line) => line.replace(/^.*refs\/heads\//, '').trim())
       .filter((line) => line.length > 0)
       .sort();
 
