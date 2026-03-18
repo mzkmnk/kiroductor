@@ -195,11 +195,10 @@
     background: var(--muted);
   }
 
-  /* Shiki の <pre.shiki> にパディングだけ付与 */
+  /* Shiki の <pre.shiki>: Shiki のテーマ背景色は使わず var(--muted) で統一する */
   pre.shiki {
     padding: 0.75em 1em;
-    /* defaultColor: false 時はデフォルトでライトテーマの背景色変数を使用する */
-    background-color: var(--shiki-light-bg) !important;
+    background-color: var(--muted) !important;
   }
 
   /* Shiki デュアルテーマ: span のテキスト色をライト/ダークで切り替える */
@@ -257,9 +256,9 @@
   }
 }
 
-/* Shiki デュアルテーマ: ダークモード時は --shiki-dark 変数を使用する */
+/* Shiki デュアルテーマ: ダークモード時は --shiki-dark 変数を使用する（背景は var(--muted) で統一） */
 .dark .markdown-body pre.shiki {
-  background-color: var(--shiki-dark-bg) !important;
+  background-color: var(--muted) !important;
 }
 
 .dark .markdown-body pre.shiki span {
