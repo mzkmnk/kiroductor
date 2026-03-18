@@ -188,9 +188,9 @@ function PromptInput({
       <div className="rounded-2xl border border-border bg-card shadow-sm">
         {/* 画像プレビューエリア */}
         {images.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-4 pt-3">
+          <div className="flex gap-2 overflow-x-auto px-4 pt-3">
             {images.map((img) => (
-              <div key={img.id} className="group relative">
+              <div key={img.id} className="group relative shrink-0">
                 <img
                   src={img.previewUrl}
                   alt={img.name}
