@@ -272,6 +272,21 @@
   text-decoration: var(--shiki-dark-text-decoration);
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, var(--sidebar-accent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
 @keyframes stream-fade-in {
   from {
     opacity: 0;
