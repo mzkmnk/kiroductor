@@ -8,6 +8,7 @@ import type { SessionMapping } from '../main/features/config/config.repository';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
+import type { ChatViewHandle } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -102,6 +103,10 @@ function App() {
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
+  const chatViewRef = useRef<ChatViewHandle>(null);
+  /** セッションIDごとのスクロール位置。 */
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map());
+  const [restoreScrollTop, setRestoreScrollTop] = useState<number | undefined>(undefined);
 
   /** アクティブセッションの diff stats を取得する。 */
   async function fetchDiffStats(sessionId: string) {
@@ -251,6 +256,14 @@ function App() {
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, _cwd: string) {
     if (sessionId === activeSessionId) return;
+
+    // 切り替え前に現セッションのスクロール位置を保存
+    if (activeSessionId && chatViewRef.current) {
+      scrollPositionsRef.current.set(activeSessionId, chatViewRef.current.getScrollTop());
+    }
+    // 切り替え先の復元位置をセット（保存済みなら復元、なければ undefined で最下部へ）
+    setRestoreScrollTop(scrollPositionsRef.current.get(sessionId));
+
     setActiveSessionId(sessionId);
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
@@ -313,6 +326,8 @@ function App() {
         {activeSessionId ? (
           <div className="flex h-full flex-col">
             <ChatView
+              ref={chatViewRef}
+              sessionId={activeSessionId}
               messages={chatState.messages}
               animSplits={chatState.animSplits}
               isRestoring={isRestoring}
@@ -322,6 +337,7 @@ function App() {
               hasDiffChanges={
                 diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
               }
+              restoreScrollTop={restoreScrollTop}
             />
             <PromptInput
               onSubmit={handleSubmit}
