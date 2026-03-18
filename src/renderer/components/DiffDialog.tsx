@@ -1,8 +1,8 @@
-import { memo, useMemo } from 'react';
-import { DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
-import '@git-diff-view/react/styles/diff-view.css';
+import { memo, useMemo, useState } from 'react';
+import { parseDiff, Diff, Hunk, getChangeKey } from 'react-diff-view';
+import type { ChangeData, FileData } from 'react-diff-view';
+import 'react-diff-view/style/index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { parseUnifiedDiff } from './parse-unified-diff';
 import { DiffCommentInput } from './DiffCommentInput';
 import { DiffCommentBadge } from './DiffCommentBadge';
 import type { DiffComment } from '../types/diff-comment';
@@ -25,39 +25,65 @@ interface DiffDialogProps {
   onRemoveComment?: (id: string) => void;
 }
 
-/**
- * {@link SplitSide} を `'old' | 'new'` 文字列に変換する。
- */
-function splitSideToString(side: SplitSide): 'old' | 'new' {
-  return side === SplitSide.old ? 'old' : 'new';
+/** アクティブなコメント入力の状態。 */
+interface ActiveInput {
+  /** 対象ファイルパス。 */
+  filePath: string;
+  /** {@link getChangeKey} で生成した change key。 */
+  changeKey: string;
+  /** コメント対象の行番号。 */
+  lineNumber: number;
+  /** コメント対象の diff 側。 */
+  side: 'old' | 'new';
 }
 
 /**
- * コメント配列から `extendData` 用のオブジェクトを構築する。
+ * `ChangeData` とガターサイドからコメント用の行情報を抽出する。
  *
- * @param comments - 対象ファイルのコメント一覧
- * @returns DiffView の extendData prop に渡すオブジェクト
+ * @param change - diff の変更オブジェクト
+ * @param gutterSide - クリックされたガターのサイド
+ * @returns 行番号とサイドのペア
  */
-function buildExtendData(comments: DiffComment[]) {
-  const oldFile: Record<string, { data: DiffComment[] }> = {};
-  const newFile: Record<string, { data: DiffComment[] }> = {};
+function getLineInfo(
+  change: ChangeData,
+  gutterSide: 'old' | 'new',
+): { lineNumber: number; side: 'old' | 'new' } {
+  if (change.type === 'insert') return { lineNumber: change.lineNumber, side: 'new' };
+  if (change.type === 'delete') return { lineNumber: change.lineNumber, side: 'old' };
+  // normal (context) line: 使用するガターサイドに応じた行番号を返す
+  return {
+    lineNumber: gutterSide === 'old' ? change.oldLineNumber : change.newLineNumber,
+    side: gutterSide,
+  };
+}
 
-  for (const comment of comments) {
-    const target = comment.side === 'old' ? oldFile : newFile;
-    const key = String(comment.startLine);
-    if (!target[key]) {
-      target[key] = { data: [] };
-    }
-    target[key].data.push(comment);
-  }
+/**
+ * {@link DiffComment} の (startLine, side) から `react-diff-view` の change key を生成する。
+ *
+ * 変更行（追加・削除）を対象としているため、
+ * `'new'` → insert key (`I{n}`)、`'old'` → delete key (`D{n}`) とする。
+ *
+ * @param comment - 対象コメント
+ * @returns change key 文字列
+ */
+function commentToChangeKey(comment: DiffComment): string {
+  return comment.side === 'new' ? `I${comment.startLine}` : `D${comment.startLine}`;
+}
 
-  return { oldFile, newFile };
+/**
+ * ファイルパスを解決する。削除ファイルは旧パスを返す。
+ *
+ * @param file - {@link FileData} オブジェクト
+ * @returns 表示用ファイルパス
+ */
+function resolveFilePath(file: FileData): string {
+  return file.type === 'delete' ? file.oldPath : file.newPath;
 }
 
 /**
  * GitHub ライクな左右分割 diff ビューアーダイアログ。
  *
- * `@git-diff-view/react` の `DiffView` コンポーネントを使用して
+ * `react-diff-view` の {@link Diff} コンポーネントを使用して
  * ファイルごとにセクション分けした split diff を表示する。
  * 各行に対してコメントの追加・表示・削除が可能。
  */
@@ -69,8 +95,8 @@ const DiffDialog = memo(function DiffDialog({
   onAddComment,
   onRemoveComment,
 }: DiffDialogProps) {
-  const files = useMemo(() => (diff ? parseUnifiedDiff(diff) : []), [diff]);
-  const isDark = document.documentElement.classList.contains('dark');
+  const files = useMemo(() => (diff ? parseDiff(diff) : []), [diff]);
+  const [activeInput, setActiveInput] = useState<ActiveInput | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,50 +110,84 @@ const DiffDialog = memo(function DiffDialog({
           ) : (
             <div className="space-y-4">
               {files.map((file, index) => {
-                const filePath =
-                  file.newFileName === '/dev/null' ? file.oldFileName : file.newFileName;
+                const filePath = resolveFilePath(file);
                 const fileComments = comments.filter((c) => c.filePath === filePath);
-                const extendData = buildExtendData(fileComments);
+
+                // コメントを change key でグルーピングして DiffCommentBadge を生成
+                const commentsByKey: Record<string, DiffComment[]> = {};
+                for (const comment of fileComments) {
+                  const key = commentToChangeKey(comment);
+                  if (!commentsByKey[key]) commentsByKey[key] = [];
+                  commentsByKey[key].push(comment);
+                }
+
+                const widgets: Record<string, React.ReactNode> = Object.fromEntries(
+                  Object.entries(commentsByKey).map(([key, lineComments]) => [
+                    key,
+                    <DiffCommentBadge
+                      key={key}
+                      comments={lineComments}
+                      onRemove={(id) => onRemoveComment?.(id)}
+                    />,
+                  ]),
+                );
+
+                // アクティブな行にコメント入力フォームを追加（バッジより優先）
+                if (activeInput?.filePath === filePath) {
+                  const { changeKey, lineNumber, side } = activeInput;
+                  widgets[changeKey] = (
+                    <DiffCommentInput
+                      onSubmit={(content) => {
+                        onAddComment?.(filePath, lineNumber, side, content);
+                        setActiveInput(null);
+                      }}
+                      onClose={() => setActiveInput(null)}
+                    />
+                  );
+                }
 
                 return (
-                  <div key={`${file.newFileName}-${index}`}>
+                  <div key={`${filePath}-${index}`}>
                     <div className="rounded-t-md border bg-muted px-4 py-2 text-sm font-medium">
                       {filePath}
                     </div>
                     <div className="overflow-x-auto rounded-b-md border border-t-0">
-                      <DiffView
-                        data={{
-                          oldFile: { fileName: file.oldFileName },
-                          newFile: { fileName: file.newFileName },
-                          hunks: [file.rawBlock],
-                        }}
-                        diffViewMode={DiffModeEnum.Split}
-                        diffViewTheme={isDark ? 'dark' : 'light'}
-                        diffViewHighlight
-                        diffViewWrap
-                        diffViewFontSize={13}
-                        diffViewAddWidget={!!onAddComment}
-                        extendData={extendData}
-                        renderWidgetLine={({ lineNumber, side, onClose }) => (
-                          <DiffCommentInput
-                            onSubmit={(content) => {
-                              onAddComment?.(
-                                filePath,
-                                lineNumber,
-                                splitSideToString(side),
-                                content,
-                              );
-                            }}
-                            onClose={onClose}
-                          />
-                        )}
-                        renderExtendLine={({ data }) => (
-                          <DiffCommentBadge
-                            comments={data as DiffComment[]}
-                            onRemove={(id) => onRemoveComment?.(id)}
-                          />
-                        )}
-                      />
+                      <Diff
+                        viewType="split"
+                        diffType={file.type}
+                        hunks={file.hunks}
+                        widgets={widgets}
+                        renderGutter={
+                          onAddComment
+                            ? ({ change, side, renderDefault }) => (
+                                <span
+                                  className="block cursor-pointer"
+                                  onClick={() => {
+                                    const key = getChangeKey(change);
+                                    const { lineNumber, side: commentSide } = getLineInfo(
+                                      change,
+                                      side,
+                                    );
+                                    setActiveInput((prev) =>
+                                      prev?.changeKey === key && prev?.filePath === filePath
+                                        ? null
+                                        : {
+                                            filePath,
+                                            changeKey: key,
+                                            lineNumber,
+                                            side: commentSide,
+                                          },
+                                    );
+                                  }}
+                                >
+                                  {renderDefault()}
+                                </span>
+                              )
+                            : undefined
+                        }
+                      >
+                        {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
+                      </Diff>
                     </div>
                   </div>
                 );
