@@ -1,3 +1,4 @@
+@import '@git-diff-view/react/styles/diff-view.css' layer(diff-view);
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));

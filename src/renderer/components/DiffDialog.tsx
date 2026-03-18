@@ -1,6 +1,5 @@
 import { memo, useMemo } from 'react';
 import { DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
-import '@git-diff-view/react/styles/diff-view.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { parseUnifiedDiff } from './parse-unified-diff';
 import { DiffCommentInput } from './DiffCommentInput';
