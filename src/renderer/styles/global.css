@@ -300,6 +300,14 @@
   animation: stream-fade-in 0.08s ease-out forwards;
 }
 
+/* react-diff-view: コードセルの折り返しを防止 */
+.diff-code pre,
+.diff-code {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
 /* react-diff-view: ライトモード / ダークモード テーマ変数 */
 :root {
   --diff-background-color: var(--background);
