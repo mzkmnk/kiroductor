@@ -4,7 +4,7 @@
 
 Kiroductor brings the power of AI coding agents to your desktop. Chat with an AI assistant that can read, write, and refactor your code — all through a clean, intuitive interface built on the [Agent Client Protocol (ACP)](https://github.com/nicepkg/agent-client-protocol).
 
-[English](./README.md) | [日本語](./readme.md)
+[English](./README.md) | [日本語](./README.ja.md)
 
 <!-- TODO: Add screenshot -->
 <!-- ![Kiroductor Screenshot](docs/assets/screenshot.png) -->

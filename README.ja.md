@@ -4,7 +4,7 @@
 
 Kiroductor は、AI コーディングエージェントの力をデスクトップに届けます。コードの読み取り・書き込み・リファクタリングが可能な AI アシスタントと、クリーンで直感的なインターフェースを通じて対話できます。[Agent Client Protocol (ACP)](https://github.com/nicepkg/agent-client-protocol) をベースに構築されています。
 
-[English](./README.md) | [日本語](./readme.md)
+[English](./README.md) | [日本語](./README.ja.md)
 
 <!-- TODO: スクリーンショットを追加 -->
 <!-- ![Kiroductor スクリーンショット](docs/assets/screenshot.png) -->
