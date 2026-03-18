@@ -42,7 +42,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    */
   async handle(params: SessionNotification): Promise<void> {
     const { sessionId, update } = params;
-    log.info(`sessionUpdate=${update.sessionUpdate}`);
+    log.info(
+      `sessionUpdate=${update.sessionUpdate} sessionId=${sessionId} raw=${JSON.stringify(update).slice(0, 500)}`,
+    );
 
     switch (update.sessionUpdate) {
       case 'user_message_chunk':
