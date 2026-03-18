@@ -192,45 +192,6 @@ describe('MessageRepository', () => {
     });
   });
 
-  describe('addAttachmentToUserMessage', () => {
-    it('指定した UserMessage に添付画像が追加される', () => {
-      const msg = repo.addUserMessage(SESSION_A, 'hello');
-      repo.addAttachmentToUserMessage(SESSION_A, msg.id, {
-        mimeType: 'image/png',
-        data: 'base64data',
-      });
-      const messages = repo.getAll(SESSION_A);
-      assert(messages[0].type === 'user');
-      expect(messages[0].attachments).toEqual([{ mimeType: 'image/png', data: 'base64data' }]);
-    });
-
-    it('複数回呼ぶと添付画像が蓄積される', () => {
-      const msg = repo.addUserMessage(SESSION_A, 'hello');
-      repo.addAttachmentToUserMessage(SESSION_A, msg.id, {
-        mimeType: 'image/png',
-        data: 'img1',
-      });
-      repo.addAttachmentToUserMessage(SESSION_A, msg.id, {
-        mimeType: 'image/jpeg',
-        data: 'img2',
-      });
-      const messages = repo.getAll(SESSION_A);
-      assert(messages[0].type === 'user');
-      expect(messages[0].attachments).toHaveLength(2);
-    });
-
-    it('存在しない messageId では何もしない', () => {
-      repo.addUserMessage(SESSION_A, 'hello');
-      repo.addAttachmentToUserMessage(SESSION_A, 'unknown-id', {
-        mimeType: 'image/png',
-        data: 'base64data',
-      });
-      const messages = repo.getAll(SESSION_A);
-      assert(messages[0].type === 'user');
-      expect(messages[0].attachments).toBeUndefined();
-    });
-  });
-
   describe('getAll', () => {
     it('追加順にすべてのメッセージが返される', () => {
       repo.addUserMessage(SESSION_A, 'hello');

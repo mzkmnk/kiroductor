@@ -237,30 +237,6 @@ export class MessageRepository {
   }
 
   /**
-   * 指定した UserMessage に添付画像を追加する。
-   *
-   * セッション復元時に `user_message_chunk` (type: 'image') を受信した際、
-   * 直前に作成された UserMessage へ画像を紐付けるために使用する。
-   *
-   * @param sessionId - セッション ID
-   * @param messageId - 対象 UserMessage の ID
-   * @param attachment - 追加する画像添付データ
-   */
-  addAttachmentToUserMessage(
-    sessionId: SessionId,
-    messageId: string,
-    attachment: ImageAttachment,
-  ): void {
-    const message = findByType(this.getMessages(sessionId), messageId, 'user');
-    if (message) {
-      if (!message.attachments) {
-        message.attachments = [];
-      }
-      message.attachments.push(attachment);
-    }
-  }
-
-  /**
    * 指定セッションのメッセージ一覧を全件取得する。
    *
    * @param sessionId - セッション ID

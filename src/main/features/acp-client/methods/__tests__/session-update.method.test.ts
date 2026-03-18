@@ -208,27 +208,7 @@ describe('SessionUpdateMethod', () => {
       expect(notificationService.sendToRenderer).toHaveBeenCalled();
     });
 
-    it('content.type が image の場合、直近の UserMessage に添付画像が追加される', async () => {
-      // まずテキストメッセージを作成
-      await method.handle(makeUserMessageChunkParams('Hello from user'));
-
-      const params: SessionNotification = {
-        sessionId: SESSION_ID,
-        update: {
-          sessionUpdate: 'user_message_chunk',
-          content: { type: 'image', data: 'base64data', mimeType: 'image/png' },
-        },
-      };
-
-      await method.handle(params);
-
-      const messages = repo.getAll(SESSION_ID);
-      expect(messages).toHaveLength(1);
-      assert(messages[0].type === 'user');
-      expect(messages[0].attachments).toEqual([{ mimeType: 'image/png', data: 'base64data' }]);
-    });
-
-    it('content.type が image で UserMessage が存在しない場合、何も追加されない', async () => {
+    it('content.type が text 以外の場合、ユーザーメッセージは追加されない', async () => {
       const params: SessionNotification = {
         sessionId: SESSION_ID,
         update: {
@@ -240,29 +220,6 @@ describe('SessionUpdateMethod', () => {
       await method.handle(params);
 
       expect(repo.getAll(SESSION_ID)).toHaveLength(0);
-    });
-
-    it('複数の image チャンクが同一 UserMessage に蓄積される', async () => {
-      await method.handle(makeUserMessageChunkParams('Hello'));
-
-      await method.handle({
-        sessionId: SESSION_ID,
-        update: {
-          sessionUpdate: 'user_message_chunk',
-          content: { type: 'image', data: 'img1', mimeType: 'image/png' },
-        },
-      });
-      await method.handle({
-        sessionId: SESSION_ID,
-        update: {
-          sessionUpdate: 'user_message_chunk',
-          content: { type: 'image', data: 'img2', mimeType: 'image/jpeg' },
-        },
-      });
-
-      const messages = repo.getAll(SESSION_ID);
-      assert(messages[0].type === 'user');
-      expect(messages[0].attachments).toHaveLength(2);
     });
   });
 
