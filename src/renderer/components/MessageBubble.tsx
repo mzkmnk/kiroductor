@@ -4,11 +4,8 @@ import remarkGfm from 'remark-gfm';
 import { createHighlighter } from 'shiki';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 
-import {
-  isUserMessage,
-  type AgentMessage,
-  type UserMessage,
-} from '../../main/features/session/message.repository';
+import { isUserMessage } from '../../shared/message-types';
+import type { AgentMessage, UserMessage } from '../../shared/message-types';
 
 /**
  * アプリ全体で共有する Shiki ハイライター。

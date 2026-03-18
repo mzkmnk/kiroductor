@@ -1,9 +1,5 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
-import type {
-  AgentMessage,
-  Message,
-  UserMessage,
-} from '../main/features/session/message.repository';
+import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment } from '../shared/ipc';

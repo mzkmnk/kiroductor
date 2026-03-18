@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
-import type { Message } from '../main/features/session/message.repository';
+import type { Message } from '../shared/message-types';
 import type {
   RepoMapping,
   KiroductorSettings,

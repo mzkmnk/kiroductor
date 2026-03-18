@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import type { ToolCallMessage } from '../../main/features/session/message.repository';
+import type { ToolCallMessage } from '../../shared/message-types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 /**
