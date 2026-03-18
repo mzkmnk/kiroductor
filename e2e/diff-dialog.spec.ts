@@ -75,4 +75,41 @@ test.describe('DiffDialog', () => {
     await app.goto();
     await expect(app.showDiffButton).toBeDisabled();
   });
+
+  test('行ホバーで「+」ボタンが表示されコメント入力欄が開くこと', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      sessions: [SESSION_WITH_BRANCHES],
+      messages: DIFF_DIALOG_MESSAGES,
+      diff: SAMPLE_DIFF,
+      diffStats: { filesChanged: 2, insertions: 5, deletions: 1 },
+    });
+    await app.goto();
+    await app.openDiffDialog();
+    await expect(app.message('src/main.ts')).toBeVisible();
+
+    await app.clickAddCommentWidget(0);
+
+    await expect(app.commentInput).toBeVisible();
+    await expect(page).toHaveScreenshot('diff-dialog-comment-input-open.png');
+  });
+
+  test('コメント追加後にバッジが表示されること', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      sessions: [SESSION_WITH_BRANCHES],
+      messages: DIFF_DIALOG_MESSAGES,
+      diff: SAMPLE_DIFF,
+      diffStats: { filesChanged: 2, insertions: 5, deletions: 1 },
+    });
+    await app.goto();
+    await app.openDiffDialog();
+    await expect(app.message('src/main.ts')).toBeVisible();
+
+    await app.clickAddCommentWidget(0);
+    await app.addComment('この引数追加の意図は？');
+
+    await expect(page.getByText('この引数追加の意図は？')).toBeVisible();
+    await expect(page).toHaveScreenshot('diff-dialog-comment-badge.png');
+  });
 });

@@ -21,6 +21,14 @@ export class AppPage {
   readonly showDiffButton: Locator;
   /** セッション復元中インジケータ */
   readonly restoringIndicator: Locator;
+  /** diff コメント入力テキストエリア */
+  readonly commentInput: Locator;
+  /** diff コメント追加ボタン */
+  readonly commentAddButton: Locator;
+  /** diff コメントキャンセルボタン */
+  readonly commentCancelButton: Locator;
+  /** コメントチップの全削除ボタン */
+  readonly commentClearAllButton: Locator;
 
   constructor(readonly page: Page) {
     this.promptInput = page.getByPlaceholder(/Ask to make changes/);
@@ -29,6 +37,10 @@ export class AppPage {
     this.attachButton = page.getByRole('button', { name: 'Attach image' });
     this.showDiffButton = page.getByLabel('Show diff');
     this.restoringIndicator = page.getByText('Restoring session...');
+    this.commentInput = page.getByPlaceholder('Add a comment...');
+    this.commentAddButton = page.getByRole('button', { name: 'Add' });
+    this.commentCancelButton = page.getByRole('button', { name: 'Cancel' });
+    this.commentClearAllButton = page.getByText('Clear all');
   }
 
   /**
@@ -73,5 +85,47 @@ export class AppPage {
    */
   sessionItem(title: string) {
     return this.page.getByText(title);
+  }
+
+  /**
+   * diff ダイアログを開く。
+   *
+   * showDiffButton をクリックし、ダイアログが表示されるまで待機する。
+   */
+  async openDiffDialog() {
+    await this.showDiffButton.click();
+  }
+
+  /**
+   * diff のコメント追加ウィジェットボタンをクリックする。
+   *
+   * ウィジェットボタンは行ホバー時のみ visible になるため `force: true` でクリックする。
+   *
+   * @param index - クリックする diff ウィジェットのインデックス（0 始まり）
+   */
+  async clickAddCommentWidget(index = 0) {
+    const addWidget = this.page.locator('[data-add-widget] button').nth(index);
+    await addWidget.click({ force: true });
+  }
+
+  /**
+   * コメント入力欄にテキストを入力して追加する。
+   *
+   * @param text - コメント本文
+   */
+  async addComment(text: string) {
+    await this.commentInput.fill(text);
+    await this.commentAddButton.click();
+  }
+
+  /**
+   * プロンプト入力欄のコメントチップを取得する。
+   *
+   * @param fileName - チップに表示されるファイル名（部分一致）
+   */
+  commentChip(fileName: string) {
+    return this.page
+      .getByText(fileName)
+      .locator('xpath=ancestor::span[contains(@class, "rounded-full")]');
   }
 }
