@@ -105,6 +105,26 @@ test.describe('PromptInput', () => {
     await expect(page).toHaveScreenshot('prompt-input-with-image-and-text.png');
   });
 
+  test('10枚の画像を添付した状態', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup();
+    await app.goto();
+    await app.waitForReady();
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(
+      Array.from({ length: 10 }, (_, i) => ({
+        name: `image-${i + 1}.png`,
+        mimeType: 'image/png' as const,
+        buffer: tinyPngBuffer(),
+      })),
+    );
+
+    // 10枚すべてのプレビューが表示されるのを待つ
+    await expect(page.getByAltText('image-10.png')).toBeVisible();
+    await expect(page).toHaveScreenshot('prompt-input-with-10-images.png');
+  });
+
   test('処理中は画像添付ボタンが非表示になる', async ({ page }) => {
     const app = new AppPage(page);
     await app.setup({ promptDelayMs: 500 });

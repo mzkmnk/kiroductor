@@ -245,6 +245,28 @@ test.describe('MessageBubble', () => {
     await expect(page).toHaveScreenshot('message-bubble-user-with-multiple-images.png');
   });
 
+  test('10枚の添付画像付きユーザーメッセージが表示される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      messages: [
+        {
+          id: '1',
+          type: 'user',
+          text: '10枚の画像を確認してください',
+          attachments: Array.from({ length: 10 }, (_, i) => ({
+            mimeType: 'image/png',
+            data: i % 2 === 0 ? TINY_PNG_BASE64 : TINY_BLUE_PNG_BASE64,
+          })),
+        },
+      ],
+    });
+    await app.goto();
+    await expect(app.message('10枚の画像を確認してください')).toBeVisible();
+    const images = page.getByAltText('Attached image');
+    await expect(images).toHaveCount(10);
+    await expect(page).toHaveScreenshot('message-bubble-user-with-10-images.png');
+  });
+
   test('添付画像付きメッセージとエージェント返答の会話が表示される', async ({ page }) => {
     const app = new AppPage(page);
     await app.setup({

@@ -71,10 +71,10 @@ describe('MessageRepository', () => {
       expect(messages[0]).not.toHaveProperty('attachments');
     });
 
-    it('空の attachments 配列を渡した場合は attachments プロパティが存在しないこと', () => {
+    it('空の attachments 配列を渡した場合も attachments プロパティが保持されること', () => {
       repo.addUserMessage(SESSION_A, 'hello', []);
       const messages = repo.getAll(SESSION_A);
-      expect(messages[0]).not.toHaveProperty('attachments');
+      expect(messages[0]).toHaveProperty('attachments', []);
     });
 
     it('追加されたメッセージに一意な id が付与される', () => {

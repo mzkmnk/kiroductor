@@ -125,7 +125,7 @@ export class MessageRepository {
       id: randomUUID(),
       type: 'user',
       text,
-      ...(attachments && attachments.length > 0 ? { attachments } : {}),
+      ...(attachments ? { attachments } : {}),
     };
     this.getMessages(sessionId).push(message);
     return message;

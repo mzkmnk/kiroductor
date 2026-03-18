@@ -231,7 +231,7 @@ function App() {
       id: crypto.randomUUID(),
       type: 'user',
       text,
-      ...(images && images.length > 0 ? { attachments: images } : {}),
+      ...(images ? { attachments: images } : {}),
     };
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);

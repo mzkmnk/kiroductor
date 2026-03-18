@@ -127,10 +127,7 @@ function PromptInput({
   function handleSubmit() {
     const trimmed = text.trim();
     if (!trimmed && images.length === 0) return;
-    const attachments =
-      images.length > 0
-        ? images.map((img) => ({ mimeType: img.mimeType, data: img.data }))
-        : undefined;
+    const attachments = images.map((img) => ({ mimeType: img.mimeType, data: img.data }));
     onSubmit(trimmed || '', attachments);
     setText('');
     setImages([]);
