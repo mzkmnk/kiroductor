@@ -15,6 +15,20 @@ export type UserMessage = {
   attachments?: ImageAttachment[];
 };
 
+/** {@link UserMessage} かどうかを判定するユーザー定義型ガード。 */
+export function isUserMessage(
+  message: UserMessage | AgentMessage | ToolCallMessage,
+): message is UserMessage {
+  return message.type === 'user';
+}
+
+/** {@link AgentMessage} かどうかを判定するユーザー定義型ガード。 */
+export function isAgentMessage(
+  message: UserMessage | AgentMessage | ToolCallMessage,
+): message is AgentMessage {
+  return message.type === 'agent';
+}
+
 /** エージェントの返答メッセージ */
 export type AgentMessage = {
   /** メッセージの一意識別子 */

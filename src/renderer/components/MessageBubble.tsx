@@ -4,7 +4,11 @@ import remarkGfm from 'remark-gfm';
 import { createHighlighter } from 'shiki';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 
-import type { AgentMessage, UserMessage } from '../../main/features/session/message.repository';
+import {
+  isUserMessage,
+  type AgentMessage,
+  type UserMessage,
+} from '../../main/features/session/message.repository';
 
 /**
  * アプリ全体で共有する Shiki ハイライター。
@@ -61,7 +65,7 @@ interface MessageBubbleProps {
  * - ストリーミング完了後はメッセージ本文を Markdown + シンタックスハイライト付きでレンダリングする。
  */
 function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
-  const isUser = message.type === 'user';
+  const isUser = isUserMessage(message);
   const isStreaming = !isUser && (message as AgentMessage).status === 'streaming';
 
   const [rehypePlugins, setRehypePlugins] = useState<RehypePlugins>(cachedRehypePlugins ?? []);
@@ -85,12 +89,11 @@ function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
   const newChunk = message.text.slice(animSplit);
 
   if (isUser) {
-    const userMsg = message as UserMessage;
     return (
       <div className="flex flex-col items-end gap-1">
-        {userMsg.attachments && userMsg.attachments.length > 0 && (
+        {message.attachments && message.attachments.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1.5">
-            {userMsg.attachments.map((att, i) => (
+            {message.attachments.map((att, i) => (
               <img
                 key={i}
                 src={`data:${att.mimeType};base64,${att.data}`}
