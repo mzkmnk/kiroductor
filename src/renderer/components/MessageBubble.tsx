@@ -89,13 +89,13 @@ function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
     return (
       <div className="flex flex-col items-end gap-1">
         {message.attachments && message.attachments.length > 0 && (
-          <div className="flex flex-wrap justify-end gap-1.5">
+          <div className="flex max-w-[10.125rem] justify-end gap-1.5 overflow-x-auto">
             {message.attachments.map((att, i) => (
               <img
                 key={i}
                 src={`data:${att.mimeType};base64,${att.data}`}
                 alt="Attached image"
-                className="size-6 rounded border border-border object-cover"
+                className="size-6 shrink-0 rounded border border-border object-cover"
               />
             ))}
           </div>
