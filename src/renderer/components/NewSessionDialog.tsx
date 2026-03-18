@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import type { RepoMapping } from '../../main/features/config/config.repository';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 /** {@link NewSessionDialog} のプロパティ。 */
@@ -24,7 +23,6 @@ interface NewSessionDialogProps {
 export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSessionDialogProps) {
   const [repos, setRepos] = useState<RepoMapping[]>([]);
   const [selectedRepoId, setSelectedRepoId] = useState<string>('');
-  const [cloneUrl, setCloneUrl] = useState('');
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [isFetchingBranches, setIsFetchingBranches] = useState(false);
@@ -38,7 +36,6 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         .then(setRepos)
         .catch(() => setRepos([]));
       setSelectedRepoId('');
-      setCloneUrl('');
       setBranches([]);
       setSelectedBranch('');
       setError(null);
@@ -77,15 +74,10 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
     setError(null);
     setIsStarting(true);
     try {
-      let repoId = selectedRepoId;
-
-      if (!repoId && cloneUrl.trim()) {
-        const result = await window.kiroductor.repo.clone(cloneUrl.trim());
-        repoId = result.repoId;
-      }
+      const repoId = selectedRepoId;
 
       if (!repoId) {
-        setError('Please select a repository or enter a clone URL.');
+        setError('Please select a repository.');
         return;
       }
 
@@ -111,9 +103,15 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* 既存リポジトリ選択 */}
+          {repos.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">
+              No repositories registered. Add one from the sidebar footer.
+            </p>
+          )}
+
+          {/* リポジトリ選択 */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Cloned repositories</label>
+            <label className="text-sm font-medium text-foreground">Repository</label>
             <Select value={selectedRepoId} onValueChange={setSelectedRepoId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a repository..." />
@@ -151,29 +149,12 @@ export function NewSessionDialog({ open, onClose, onSessionCreated }: NewSession
             </Select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex-1 border-t border-border" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 border-t border-border" />
-          </div>
-
-          {/* 新規クローン URL */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Clone repository URL</label>
-            <Input
-              placeholder="https://github.com/org/repo.git"
-              value={cloneUrl}
-              onChange={(e) => setCloneUrl(e.target.value)}
-              disabled={!!selectedRepoId}
-            />
-          </div>
-
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
             className="w-full"
             onClick={handleStartSession}
-            disabled={isStarting || (!selectedRepoId && !cloneUrl.trim())}
+            disabled={isStarting || !selectedRepoId}
           >
             {isStarting ? 'Starting...' : 'Start Session'}
           </Button>
