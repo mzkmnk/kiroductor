@@ -1,4 +1,3 @@
-@import '@git-diff-view/react/styles/diff-view.css' layer(diff-view);
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
@@ -271,16 +270,6 @@
   font-style: var(--shiki-dark-font-style);
   font-weight: var(--shiki-dark-font-weight);
   text-decoration: var(--shiki-dark-text-decoration);
-}
-
-/*
- * @git-diff-view/react の .diff-line-widget-wrapper * / .diff-line-extend-wrapper *
- * が color: initial で全子要素を黒にリセットしてしまう問題への対策。
- * color: inherit に戻し、各コンポーネントが自前で色を制御できるようにする。
- */
-.diff-line-widget-wrapper *,
-.diff-line-extend-wrapper * {
-  color: inherit;
 }
 
 @keyframes shimmer {

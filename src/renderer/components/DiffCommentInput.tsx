@@ -45,7 +45,7 @@ function DiffCommentInput({ onSubmit, onClose }: DiffCommentInputProps) {
   }
 
   return (
-    <div className="border-t bg-muted/30 p-3">
+    <div className="border-t bg-muted/30 p-3" style={{ color: 'var(--foreground)' }}>
       <div className="rounded-2xl border border-border bg-card shadow-sm">
         <textarea
           ref={textareaRef}
@@ -69,6 +69,7 @@ function DiffCommentInput({ onSubmit, onClose }: DiffCommentInputProps) {
             disabled={!content.trim()}
             size="icon"
             className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+            style={{ color: 'var(--primary-foreground)' }}
             aria-label="Add comment"
           >
             <ArrowUp className="size-4" />
