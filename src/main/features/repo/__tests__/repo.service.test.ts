@@ -200,8 +200,12 @@ describe('RepoService', () => {
 
     it('git worktree add -b が実行されること', async () => {
       const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const fetchProcess = createMockProcess(0);
       const worktreeProcess = createMockProcess(0);
-      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
+      spawnMock
+        .mockReturnValueOnce(symbolicRefProcess)
+        .mockReturnValueOnce(fetchProcess)
+        .mockReturnValueOnce(worktreeProcess);
 
       await service.createWorktree('test-repo-id');
 
@@ -222,8 +226,9 @@ describe('RepoService', () => {
     });
 
     it('branch を指定した場合その branch が sourceBranch として使用されること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const fetchProcess = createMockProcess(0);
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(worktreeProcess);
 
       const result = await service.createWorktree('test-repo-id', 'feature/test');
 
@@ -244,8 +249,12 @@ describe('RepoService', () => {
 
     it('branch を省略した場合 git symbolic-ref HEAD でデフォルトブランチを解決すること', async () => {
       const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/develop\n');
+      const fetchProcess = createMockProcess(0);
       const worktreeProcess = createMockProcess(0);
-      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
+      spawnMock
+        .mockReturnValueOnce(symbolicRefProcess)
+        .mockReturnValueOnce(fetchProcess)
+        .mockReturnValueOnce(worktreeProcess);
 
       const result = await service.createWorktree('test-repo-id');
 
@@ -259,8 +268,9 @@ describe('RepoService', () => {
     });
 
     it('result.branch が kiroductor/ プレフィックス付きの新ブランチ名であること', async () => {
-      const mockProcess = createMockProcess(0);
-      spawnMock.mockReturnValue(mockProcess);
+      const fetchProcess = createMockProcess(0);
+      const worktreeProcess = createMockProcess(0);
+      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(worktreeProcess);
 
       const result = await service.createWorktree('test-repo-id', 'feature/test');
 
@@ -269,8 +279,12 @@ describe('RepoService', () => {
 
     it('返されたパスが ~/.kiroductor/worktrees/{nanoid}/{repoName} 形式であること', async () => {
       const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const fetchProcess = createMockProcess(0);
       const worktreeProcess = createMockProcess(0);
-      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
+      spawnMock
+        .mockReturnValueOnce(symbolicRefProcess)
+        .mockReturnValueOnce(fetchProcess)
+        .mockReturnValueOnce(worktreeProcess);
 
       const result = await service.createWorktree('test-repo-id');
 
@@ -279,8 +293,12 @@ describe('RepoService', () => {
 
     it('worktrees/{nanoid} ディレクトリが存在しなければ作成すること', async () => {
       const symbolicRefProcess = createMockProcess(0, undefined, 'refs/heads/main\n');
+      const fetchProcess = createMockProcess(0);
       const worktreeProcess = createMockProcess(0);
-      spawnMock.mockReturnValueOnce(symbolicRefProcess).mockReturnValueOnce(worktreeProcess);
+      spawnMock
+        .mockReturnValueOnce(symbolicRefProcess)
+        .mockReturnValueOnce(fetchProcess)
+        .mockReturnValueOnce(worktreeProcess);
 
       await service.createWorktree('test-repo-id');
 
@@ -318,21 +336,26 @@ describe('RepoService', () => {
     });
 
     it('bare clone のブランチ一覧を返すこと', async () => {
-      // fetch --all 用
-      const fetchProcess = createMockProcess(0);
-      // git branch 用（bare clone では * main のようにカレントブランチに * が付く）
-      const branchProcess = createMockProcess(0, undefined, '* main\n  feature/test\n  develop\n');
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+      // git ls-remote --heads origin 用
+      const lsRemoteProcess = createMockProcess(
+        0,
+        undefined,
+        'abc123\trefs/heads/main\ndef456\trefs/heads/feature/test\nghi789\trefs/heads/develop\n',
+      );
+      spawnMock.mockReturnValueOnce(lsRemoteProcess);
 
       const result = await service.listBranches('test-repo-id');
 
       expect(result).toEqual(['develop', 'feature/test', 'main']);
     });
 
-    it('他の worktree でチェックアウト中のブランチ（+ マーカー）を正しく処理すること', async () => {
-      const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(0, undefined, '+ feature-wt\n* main\n  develop\n');
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+    it('ls-remote の出力からブランチ名を正しくパースすること', async () => {
+      const lsRemoteProcess = createMockProcess(
+        0,
+        undefined,
+        'abc123\trefs/heads/feature-wt\ndef456\trefs/heads/main\nghi789\trefs/heads/develop\n',
+      );
+      spawnMock.mockReturnValueOnce(lsRemoteProcess);
 
       const result = await service.listBranches('test-repo-id');
 
@@ -340,9 +363,12 @@ describe('RepoService', () => {
     });
 
     it('結果がアルファベット順にソートされること', async () => {
-      const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(0, undefined, '  zebra\n* alpha\n  middle\n');
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+      const lsRemoteProcess = createMockProcess(
+        0,
+        undefined,
+        'abc123\trefs/heads/zebra\ndef456\trefs/heads/alpha\nghi789\trefs/heads/middle\n',
+      );
+      spawnMock.mockReturnValueOnce(lsRemoteProcess);
 
       const result = await service.listBranches('test-repo-id');
 
@@ -356,30 +382,23 @@ describe('RepoService', () => {
     });
 
     it('ブランチが無い場合は空配列を返すこと', async () => {
-      const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(0, undefined, '');
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+      const lsRemoteProcess = createMockProcess(0, undefined, '');
+      spawnMock.mockReturnValueOnce(lsRemoteProcess);
 
       const result = await service.listBranches('test-repo-id');
 
       expect(result).toEqual([]);
     });
 
-    it('git fetch --all と git branch が bare repo パスで実行されること', async () => {
-      const fetchProcess = createMockProcess(0);
-      const branchProcess = createMockProcess(0, undefined, '* main\n');
-      spawnMock.mockReturnValueOnce(fetchProcess).mockReturnValueOnce(branchProcess);
+    it('git ls-remote --heads origin が bare repo パスで実行されること', async () => {
+      const lsRemoteProcess = createMockProcess(0, undefined, 'abc123\trefs/heads/main\n');
+      spawnMock.mockReturnValueOnce(lsRemoteProcess);
 
       await service.listBranches('test-repo-id');
 
       expect(spawnMock).toHaveBeenCalledWith(
         'git',
-        ['fetch', '--all'],
-        expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
-      );
-      expect(spawnMock).toHaveBeenCalledWith(
-        'git',
-        ['branch'],
+        ['ls-remote', '--heads', 'origin'],
         expect.objectContaining({ cwd: expect.stringContaining('kiroductor.git') }),
       );
     });
