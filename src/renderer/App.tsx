@@ -227,7 +227,12 @@ function App() {
     if (!activeSessionId) return;
     const submittedSessionId = activeSessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
-    const optimisticMessage: UserMessage = { id: crypto.randomUUID(), type: 'user', text };
+    const optimisticMessage: UserMessage = {
+      id: crypto.randomUUID(),
+      type: 'user',
+      text,
+      ...(images && images.length > 0 ? { attachments: images } : {}),
+    };
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);
     setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));

@@ -96,7 +96,7 @@ function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
                   key={i}
                   src={`data:${att.mimeType};base64,${att.data}`}
                   alt="Attached image"
-                  className="max-h-48 max-w-full rounded-lg border border-border object-contain"
+                  className="size-10 rounded-lg border border-border object-cover"
                 />
               ))}
             </div>
