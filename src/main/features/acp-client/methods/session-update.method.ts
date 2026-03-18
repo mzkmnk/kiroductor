@@ -77,40 +77,22 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param update - `user_message_chunk` イベントデータ
    */
   private handleUserMessageChunk(sessionId: SessionId, update: ContentChunk): void {
-    log.info(
-      `handleUserMessageChunk: content.type=${update.content.type} sessionId=${sessionId} keys=${Object.keys(update.content).join(',')}`,
-    );
-
     if (update.content.type === 'text') {
       const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
-      log.info(`handleUserMessageChunk: text="${text.slice(0, 100)}"`);
       this.messageRepository.addUserMessage(sessionId, text);
     } else if (update.content.type === 'image') {
       const { data, mimeType } = update.content as Extract<
         ContentChunk['content'],
         { type: 'image' }
       >;
-      log.info(
-        `handleUserMessageChunk: image mimeType=${mimeType} dataLength=${data?.length ?? 'undefined'}`,
-      );
       const messages = this.messageRepository.getAll(sessionId);
       const lastUserMsg = [...messages].reverse().find((m) => m.type === 'user');
-      log.info(
-        `handleUserMessageChunk: lastUserMsg=${lastUserMsg ? `id=${lastUserMsg.id}` : 'null'} totalMessages=${String(messages.length)}`,
-      );
       if (lastUserMsg) {
         this.messageRepository.addAttachmentToUserMessage(sessionId, lastUserMsg.id, {
           mimeType,
           data,
         });
-        log.info('handleUserMessageChunk: attachment added successfully');
-      } else {
-        log.info('handleUserMessageChunk: no UserMessage found, image chunk dropped');
       }
-    } else {
-      log.info(
-        `handleUserMessageChunk: unknown content.type="${String(update.content.type)}" — skipped`,
-      );
     }
   }
 
