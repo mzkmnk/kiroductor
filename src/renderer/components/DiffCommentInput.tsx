@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { ArrowUp, X } from 'lucide-react';
 import { Button } from './ui/button';
 
 /**
@@ -16,6 +17,7 @@ interface DiffCommentInputProps {
  *
  * `renderWidgetLine` から呼び出される。
  * テキストエリアにオートフォーカスし、送信またはキャンセルで閉じる。
+ * PromptInput と同じカード風のスタイルを採用している。
  */
 function DiffCommentInput({ onSubmit, onClose }: DiffCommentInputProps) {
   const [content, setContent] = useState('');
@@ -43,23 +45,35 @@ function DiffCommentInput({ onSubmit, onClose }: DiffCommentInputProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2 border-t bg-card p-3">
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Add a comment..."
-        className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring"
-        rows={2}
-      />
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button size="sm" onClick={handleSubmit} disabled={!content.trim()}>
-          Add
-        </Button>
+    <div className="border-t bg-muted/30 p-3">
+      <div className="rounded-2xl border border-border bg-card shadow-sm">
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add a comment..."
+          className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none"
+          rows={2}
+        />
+        <div className="flex items-center justify-between px-3 py-2">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3" />
+            <span>Cancel</span>
+          </button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!content.trim()}
+            size="icon"
+            className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+            aria-label="Add comment"
+          >
+            <ArrowUp className="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
