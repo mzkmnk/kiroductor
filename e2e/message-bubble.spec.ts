@@ -219,7 +219,7 @@ test.describe('MessageBubble', () => {
     });
     await app.goto();
     await expect(app.message('この画像を見てください')).toBeVisible();
-    await expect(page.getByAlt('Attached image')).toBeVisible();
+    await expect(page.getByAltText('Attached image')).toBeVisible();
     await expect(page).toHaveScreenshot('message-bubble-user-with-image.png');
   });
 
@@ -240,7 +240,7 @@ test.describe('MessageBubble', () => {
     });
     await app.goto();
     await expect(app.message('2枚の画像を比較してください')).toBeVisible();
-    const images = page.getByAlt('Attached image');
+    const images = page.getByAltText('Attached image');
     await expect(images).toHaveCount(2);
     await expect(page).toHaveScreenshot('message-bubble-user-with-multiple-images.png');
   });

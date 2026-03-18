@@ -66,7 +66,7 @@ test.describe('PromptInput', () => {
     });
 
     // プレビューサムネイルが表示されるのを待つ
-    await expect(page.getByAlt('test-image.png')).toBeVisible();
+    await expect(page.getByAltText('test-image.png')).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-with-image.png');
   });
 
@@ -82,8 +82,8 @@ test.describe('PromptInput', () => {
       { name: 'image-2.png', mimeType: 'image/png', buffer: tinyPngBuffer() },
     ]);
 
-    await expect(page.getByAlt('image-1.png')).toBeVisible();
-    await expect(page.getByAlt('image-2.png')).toBeVisible();
+    await expect(page.getByAltText('image-1.png')).toBeVisible();
+    await expect(page.getByAltText('image-2.png')).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-with-multiple-images.png');
   });
 
@@ -101,7 +101,7 @@ test.describe('PromptInput', () => {
     });
     await app.promptInput.fill('この画像について説明してください');
 
-    await expect(page.getByAlt('screenshot.png')).toBeVisible();
+    await expect(page.getByAltText('screenshot.png')).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-with-image-and-text.png');
   });
 
