@@ -152,15 +152,12 @@ export function SessionSidebar({
                         <SidebarMenuButton
                           isActive={isActive}
                           onClick={() => onSwitchSession(session.acpSessionId, session.cwd)}
-                          className="h-auto items-start py-2"
+                          className="relative h-auto items-start overflow-hidden py-2"
                         >
+                          {isSessionProcessing && (
+                            <div className="pointer-events-none absolute inset-0 animate-shimmer rounded-md" />
+                          )}
                           <div className="flex min-w-0 flex-1 items-center gap-1">
-                            {isSessionProcessing && (
-                              <span
-                                className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-blue-500"
-                                title="Processing"
-                              />
-                            )}
                             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                               <span className="truncate text-sm font-medium leading-none">
                                 {session.title ?? 'New Session'}
