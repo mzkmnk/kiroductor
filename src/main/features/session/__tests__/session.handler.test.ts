@@ -9,7 +9,7 @@ import type { ImageAttachment } from '../../../../shared/ipc';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../../shared/interfaces/notification.service';
 import type { SessionMapping } from '../../config/config.repository';
-import type { Message } from '../message.repository';
+import type { Message } from '../../../../shared/message-types';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 

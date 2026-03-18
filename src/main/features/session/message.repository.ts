@@ -2,14 +2,6 @@ import { randomUUID } from 'crypto';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { ImageAttachment } from '../../../shared/ipc';
 
-export type {
-  UserMessage,
-  AgentMessage,
-  ToolCallMessage,
-  Message,
-} from '../../../shared/message-types';
-export { isUserMessage, isAgentMessage } from '../../../shared/message-types';
-
 import type {
   UserMessage,
   AgentMessage,
