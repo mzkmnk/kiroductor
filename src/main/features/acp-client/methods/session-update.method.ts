@@ -75,6 +75,8 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    * @param update - `user_message_chunk` イベントデータ
    */
   private handleUserMessageChunk(sessionId: SessionId, update: ContentChunk): void {
+    // TODO: kiro CLI ACP が image content をサポートしたら、
+    //       type === 'image' の場合に attachments として復元する
     if (update.content.type !== 'text') return;
 
     const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;

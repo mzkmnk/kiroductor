@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
-import type { Message } from '../main/features/session/message.repository';
+import type { Message } from '../shared/message-types';
 import type {
   RepoMapping,
   KiroductorSettings,
@@ -8,7 +8,7 @@ import type {
 } from '../main/features/config/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type { DiffStats, ImageAttachment, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。
@@ -67,8 +67,12 @@ export interface SessionAPI {
   create: (cwd: string, currentBranch: string, sourceBranch: string) => Promise<void>;
   /** 既存セッションを指定した作業ディレクトリで復元する。 */
   load: (sessionId: SessionId, cwd: string) => Promise<void>;
-  /** ユーザーテキストをエージェントへ送信する。 */
-  prompt: (text: string, sessionId: SessionId) => Promise<{ stopReason: string }>;
+  /** ユーザーテキスト（および添付画像）をエージェントへ送信する。 */
+  prompt: (
+    text: string,
+    sessionId: SessionId,
+    images?: ImageAttachment[],
+  ) => Promise<{ stopReason: string }>;
   /** 実行中のセッションをキャンセルする。 */
   cancel: (sessionId: SessionId) => Promise<void>;
   /** メッセージ一覧を取得する。 */
@@ -188,7 +192,7 @@ const kiroductorAPI: KiroductorAPI = {
     create: (cwd, currentBranch, sourceBranch) =>
       invoke('session:new', cwd, currentBranch, sourceBranch),
     load: (sessionId, cwd) => invoke('session:load', sessionId, cwd),
-    prompt: (text, sessionId) => invoke('session:prompt', sessionId, text),
+    prompt: (text, sessionId, images) => invoke('session:prompt', sessionId, text, images),
     cancel: (sessionId) => invoke('session:cancel', sessionId),
     getMessages: (sessionId) => invoke('session:messages', sessionId),
     getProcessingSessions: () => invoke('session:processing-sessions'),

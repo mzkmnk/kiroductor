@@ -8,7 +8,7 @@ import type {
   Message,
   ToolCallMessage,
   UserMessage,
-} from '../../main/features/session/message.repository';
+} from '../../shared/message-types';
 import { MessageBubble } from './MessageBubble';
 import { ToolCallCard } from './ToolCallCard';
 import { ThinkingIndicator } from './ThinkingIndicator';

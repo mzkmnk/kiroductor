@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test';
 
 import { AppPage } from './pages/app.page';
 
+/** テスト用 1x1 赤ピクセル PNG の Base64（モックメッセージの attachments 用） */
+const TINY_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==';
+
+/** テスト用 1x1 青ピクセル PNG の Base64（2枚目の画像用） */
+const TINY_BLUE_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==';
+
 const MARKDOWN_SAMPLE = [
   '# Markdown サンプル',
   '',
@@ -195,6 +203,94 @@ test.describe('MessageBubble', () => {
     await app.goto();
     await expect(page.getByRole('heading', { name: 'Markdown サンプル' })).toBeVisible();
     await expect(page).toHaveScreenshot('message-bubble-markdown-user.png');
+  });
+
+  test('添付画像付きのユーザーメッセージが表示される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      messages: [
+        {
+          id: '1',
+          type: 'user',
+          text: 'この画像を見てください',
+          attachments: [{ mimeType: 'image/png', data: TINY_PNG_BASE64 }],
+        },
+      ],
+    });
+    await app.goto();
+    await expect(app.message('この画像を見てください')).toBeVisible();
+    await expect(page.getByAltText('Attached image')).toBeVisible();
+    await expect(page).toHaveScreenshot('message-bubble-user-with-image.png');
+  });
+
+  test('複数の添付画像付きユーザーメッセージが表示される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      messages: [
+        {
+          id: '1',
+          type: 'user',
+          text: '2枚の画像を比較してください',
+          attachments: [
+            { mimeType: 'image/png', data: TINY_PNG_BASE64 },
+            { mimeType: 'image/png', data: TINY_BLUE_PNG_BASE64 },
+          ],
+        },
+      ],
+    });
+    await app.goto();
+    await expect(app.message('2枚の画像を比較してください')).toBeVisible();
+    const images = page.getByAltText('Attached image');
+    await expect(images).toHaveCount(2);
+    await expect(page).toHaveScreenshot('message-bubble-user-with-multiple-images.png');
+  });
+
+  test('20枚の添付画像付きユーザーメッセージが表示される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      messages: [
+        {
+          id: '1',
+          type: 'user',
+          text: '20枚の画像を確認してください',
+          attachments: Array.from({ length: 20 }, (_, i) => ({
+            mimeType: 'image/png',
+            data: i % 2 === 0 ? TINY_PNG_BASE64 : TINY_BLUE_PNG_BASE64,
+          })),
+        },
+      ],
+    });
+    await app.goto();
+    await expect(app.message('20枚の画像を確認してください')).toBeVisible();
+    const images = page.getByAltText('Attached image');
+    await expect(images).toHaveCount(20);
+    await expect(page).toHaveScreenshot('message-bubble-user-with-20-images.png');
+  });
+
+  test('添付画像付きメッセージとエージェント返答の会話が表示される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({
+      messages: [
+        {
+          id: '1',
+          type: 'user',
+          text: 'このスクリーンショットのバグを修正してください',
+          attachments: [{ mimeType: 'image/png', data: TINY_PNG_BASE64 }],
+        },
+        {
+          id: '2',
+          type: 'agent',
+          text: '画像を確認しました。ボタンの位置がずれていますね。修正します。',
+          status: 'completed',
+        },
+      ],
+    });
+    await app.goto();
+    await expect(app.message('このスクリーンショットのバグを修正してください')).toBeVisible();
+    await expect(
+      app.message('画像を確認しました。ボタンの位置がずれていますね。修正します。'),
+    ).toBeVisible();
+    await expect(page).toHaveScreenshot('message-bubble-conversation-with-image.png');
   });
 
   test('Markdownのテーブルとリンクが正しく表示される', async ({ page }) => {

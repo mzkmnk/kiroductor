@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Claude from '@lobehub/icons/es/Claude';
 import OpenAI from '@lobehub/icons/es/OpenAI';
 import Gemini from '@lobehub/icons/es/Gemini';
@@ -6,10 +6,31 @@ import Mistral from '@lobehub/icons/es/Mistral';
 import Qwen from '@lobehub/icons/es/Qwen';
 import DeepSeek from '@lobehub/icons/es/DeepSeek';
 import Minimax from '@lobehub/icons/es/Minimax';
-import { ArrowUp, SparklesIcon, Square } from 'lucide-react';
+import { ArrowUp, Paperclip, SparklesIcon, Square, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ImageAttachment } from '../../shared/ipc';
+
+/** 許可する MIME タイプ一覧。 */
+const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+
+/** 添付可能なファイルサイズ上限（10MB）。 */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/** Base64 変換済みの添付画像。 */
+interface ImagePreview {
+  /** 一意識別子（UI のキーに使用） */
+  id: string;
+  /** MIME タイプ */
+  mimeType: string;
+  /** Base64 エンコード済みデータ */
+  data: string;
+  /** プレビュー表示用の Data URL */
+  previewUrl: string;
+  /** 元ファイル名 */
+  name: string;
+}
 
 /**
  * モデル ID に対応するプロバイダーアイコンを表示するコンポーネント。
@@ -44,8 +65,8 @@ interface PromptInputProps {
   disabled?: boolean;
   /** エージェントがプロンプトを処理中かどうか。true のとき停止ボタンを表示する。 */
   isProcessing?: boolean;
-  /** ユーザーがテキストを送信したときに呼ばれるコールバック。 */
-  onSubmit: (text: string) => void;
+  /** ユーザーがテキスト（および添付画像）を送信したときに呼ばれるコールバック。 */
+  onSubmit: (text: string, images?: ImageAttachment[]) => void;
   /** ユーザーがキャンセルを要求したときに呼ばれるコールバック。 */
   onCancel?: () => void;
   /** 現在選択中のモデル ID。 */
@@ -57,10 +78,37 @@ interface PromptInputProps {
 }
 
 /**
+ * ファイルを Base64 エンコードして {@link ImagePreview} を返す。
+ *
+ * @param file - 変換するファイル
+ * @returns Base64 エンコード済みの画像プレビュー
+ */
+function readFileAsBase64(file: File): Promise<ImagePreview> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // "data:image/png;base64,..." から Base64 部分を抽出
+      const base64 = dataUrl.split(',')[1];
+      resolve({
+        id: crypto.randomUUID(),
+        mimeType: file.type,
+        data: base64,
+        previewUrl: dataUrl,
+        name: file.name,
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * ユーザーがテキストを入力して送信するフォーム。
  *
  * - Enter キーで送信、Shift+Enter で改行する。
  * - `disabled` が true のとき入力と送信の両方を無効化する。
+ * - 画像ファイルを添付してプロンプトと一緒に送信できる。
  */
 function PromptInput({
   disabled = false,
@@ -72,12 +120,18 @@ function PromptInput({
   onModelChange,
 }: PromptInputProps) {
   const [text, setText] = useState('');
+  const [images, setImages] = useState<ImagePreview[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit() {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    onSubmit(trimmed);
+    if (!trimmed && images.length === 0) return;
+    const attachments = images.map((img) => ({ mimeType: img.mimeType, data: img.data }));
+    onSubmit(trimmed || '', attachments);
     setText('');
+    setImages([]);
+    setImageError(null);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -87,9 +141,77 @@ function PromptInput({
     }
   }
 
+  /** ファイル選択ダイアログを開く。 */
+  function handleAttachClick() {
+    fileInputRef.current?.click();
+  }
+
+  /** 選択されたファイルをバリデーション → Base64 変換する。 */
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setImageError(null);
+    const newImages: ImagePreview[] = [];
+
+    for (const file of Array.from(files)) {
+      if (!ALLOWED_MIME_TYPES.has(file.type)) {
+        setImageError(`Unsupported file type: ${file.type || file.name}`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setImageError(`File too large (max 10MB): ${file.name}`);
+        continue;
+      }
+      try {
+        const preview = await readFileAsBase64(file);
+        newImages.push(preview);
+      } catch {
+        setImageError(`Failed to read file: ${file.name}`);
+      }
+    }
+
+    setImages((prev) => [...prev, ...newImages]);
+    // input をリセットして同じファイルを再選択可能にする
+    e.target.value = '';
+  }
+
+  /** 添付画像を削除する。 */
+  function handleRemoveImage(id: string) {
+    setImages((prev) => prev.filter((img) => img.id !== id));
+  }
+
+  const hasContent = text.trim().length > 0 || images.length > 0;
+
   return (
     <div className="px-4 pb-4">
       <div className="rounded-2xl border border-border bg-card shadow-sm">
+        {/* 画像プレビューエリア */}
+        {images.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto px-4 pt-3">
+            {images.map((img) => (
+              <div key={img.id} className="group relative shrink-0">
+                <img
+                  src={img.previewUrl}
+                  alt={img.name}
+                  className="size-16 rounded-lg border border-border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(img.id)}
+                  className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-foreground text-background opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label={`Remove ${img.name}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* エラーメッセージ */}
+        {imageError && <div className="px-4 pt-2 text-xs text-destructive">{imageError}</div>}
+
         {/* テキスト入力エリア */}
         <textarea
           value={text}
@@ -101,7 +223,17 @@ function PromptInput({
           rows={3}
         />
 
-        {/* フッターバー: モデル選択 + 送信ボタン */}
+        {/* 隠しファイル入力 */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* フッターバー: モデル選択 + 添付 + 送信ボタン */}
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             {availableModels.length > 0 && currentModelId ? (
@@ -136,6 +268,20 @@ function PromptInput({
           </div>
 
           <div className="flex items-center gap-1">
+            {/* 画像添付ボタン */}
+            {!isProcessing && (
+              <Button
+                onClick={handleAttachClick}
+                disabled={disabled}
+                size="icon"
+                variant="ghost"
+                className="size-8 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30"
+                aria-label="Attach image"
+              >
+                <Paperclip className="size-4" />
+              </Button>
+            )}
+
             {isProcessing ? (
               <Button
                 onClick={onCancel}
@@ -148,7 +294,7 @@ function PromptInput({
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={disabled || !text.trim()}
+                disabled={disabled || !hasContent}
                 size="icon"
                 className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
                 aria-label="Send"

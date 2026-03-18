@@ -59,10 +59,10 @@ export class SessionHandler {
       this.sessionService.create(cwd, currentBranch, sourceBranch),
     );
     handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
-    handle('session:prompt', async (_event, sessionId, text) => {
+    handle('session:prompt', async (_event, sessionId, text, images) => {
       this.sessionService.addProcessing(sessionId);
       try {
-        const stopReason = await this.promptService.send(sessionId, text);
+        const stopReason = await this.promptService.send(sessionId, text, images);
         return { stopReason };
       } finally {
         this.sessionService.removeProcessing(sessionId);

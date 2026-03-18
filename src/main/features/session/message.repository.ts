@@ -1,47 +1,13 @@
 import { randomUUID } from 'crypto';
-import type { ToolCallStatus } from '@agentclientprotocol/sdk';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ImageAttachment } from '../../../shared/ipc';
 
-/** ユーザーが入力したテキストメッセージ */
-export type UserMessage = {
-  /** メッセージの一意識別子 */
-  id: string;
-  /** メッセージ種別 */
-  type: 'user';
-  /** 入力テキスト */
-  text: string;
-};
-
-/** エージェントの返答メッセージ */
-export type AgentMessage = {
-  /** メッセージの一意識別子 */
-  id: string;
-  /** メッセージ種別 */
-  type: 'agent';
-  /** 返答テキスト（ストリーミング中は逐次追記される） */
-  text: string;
-  /** ストリーミング状態。`'streaming'`: 受信中、`'completed'`: 確定済み */
-  status: 'streaming' | 'completed';
-};
-
-/** エージェントが実行するツール呼び出し */
-export type ToolCallMessage = {
-  /** ツール呼び出しの一意識別子（ACP プロトコルから受け取った ID） */
-  id: string;
-  /** メッセージ種別 */
-  type: 'tool_call';
-  /** ツール名 */
-  name: string;
-  /** ツールへの入力パラメータ */
-  input: unknown;
-  /** 実行状態。SDK の {@link ToolCallStatus} をそのまま使用する */
-  status: ToolCallStatus;
-  /** ツール実行結果（完了後に設定される） */
-  result?: string;
-};
-
-/** チャット上のメッセージを表すユニオン型 */
-export type Message = UserMessage | AgentMessage | ToolCallMessage;
+import type {
+  UserMessage,
+  AgentMessage,
+  ToolCallMessage,
+  Message,
+} from '../../../shared/message-types';
 
 /**
  * メッセージ配列から `id` と `type` に一致するメッセージを返す。
@@ -114,13 +80,15 @@ export class MessageRepository {
    *
    * @param sessionId - セッション ID
    * @param text - ユーザーが入力したテキスト
+   * @param attachments - 添付画像一覧（省略可）
    * @returns 追加された {@link UserMessage}
    */
-  addUserMessage(sessionId: SessionId, text: string): UserMessage {
+  addUserMessage(sessionId: SessionId, text: string, attachments?: ImageAttachment[]): UserMessage {
     const message: UserMessage = {
       id: randomUUID(),
       type: 'user',
       text,
+      ...(attachments ? { attachments } : {}),
     };
     this.getMessages(sessionId).push(message);
     return message;

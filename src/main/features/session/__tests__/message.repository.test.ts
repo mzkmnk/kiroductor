@@ -54,6 +54,29 @@ describe('MessageRepository', () => {
       expect(messages[0]).toMatchObject({ type: 'user', text: 'hello' });
     });
 
+    it('attachments を渡したとき正しく保存されること', () => {
+      const attachments = [{ mimeType: 'image/png', data: 'base64data' }];
+      repo.addUserMessage(SESSION_A, 'hello', attachments);
+      const messages = repo.getAll(SESSION_A);
+      expect(messages[0]).toMatchObject({
+        type: 'user',
+        text: 'hello',
+        attachments: [{ mimeType: 'image/png', data: 'base64data' }],
+      });
+    });
+
+    it('attachments 省略時は attachments プロパティが存在しないこと', () => {
+      repo.addUserMessage(SESSION_A, 'hello');
+      const messages = repo.getAll(SESSION_A);
+      expect(messages[0]).not.toHaveProperty('attachments');
+    });
+
+    it('空の attachments 配列を渡した場合も attachments プロパティが保持されること', () => {
+      repo.addUserMessage(SESSION_A, 'hello', []);
+      const messages = repo.getAll(SESSION_A);
+      expect(messages[0]).toHaveProperty('attachments', []);
+    });
+
     it('追加されたメッセージに一意な id が付与される', () => {
       const m1 = repo.addUserMessage(SESSION_A, 'first');
       const m2 = repo.addUserMessage(SESSION_A, 'second');

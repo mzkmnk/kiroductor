@@ -15,6 +15,8 @@ export class AppPage {
   readonly sendButton: Locator;
   /** 停止ボタン（エージェント処理中のみ表示） */
   readonly stopButton: Locator;
+  /** 画像添付ボタン */
+  readonly attachButton: Locator;
   /** diff 表示ボタン */
   readonly showDiffButton: Locator;
   /** セッション復元中インジケータ */
@@ -24,6 +26,7 @@ export class AppPage {
     this.promptInput = page.getByPlaceholder(/Ask to make changes/);
     this.sendButton = page.getByRole('button', { name: 'Send' });
     this.stopButton = page.getByRole('button', { name: 'Stop' });
+    this.attachButton = page.getByRole('button', { name: 'Attach image' });
     this.showDiffButton = page.getByLabel('Show diff');
     this.restoringIndicator = page.getByText('Restoring session...');
   }

@@ -1,12 +1,8 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
-import type {
-  AgentMessage,
-  Message,
-  UserMessage,
-} from '../main/features/session/message.repository';
+import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats } from '../shared/ipc';
+import type { DiffStats, ImageAttachment } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
 import type { ChatViewHandle } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
@@ -223,15 +219,20 @@ function App() {
    *
    * @param text - 送信するテキスト
    */
-  async function handleSubmit(text: string) {
+  async function handleSubmit(text: string, images?: ImageAttachment[]) {
     if (!activeSessionId) return;
     const submittedSessionId = activeSessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
-    const optimisticMessage: UserMessage = { id: crypto.randomUUID(), type: 'user', text };
+    const optimisticMessage: UserMessage = {
+      id: crypto.randomUUID(),
+      type: 'user',
+      text,
+      ...(images ? { attachments: images } : {}),
+    };
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);
     setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
-    await window.kiroductor.session.prompt(text, submittedSessionId);
+    await window.kiroductor.session.prompt(text, submittedSessionId, images);
 
     // まだ同じセッションを表示中の場合のみ UI を更新する
     if (activeSessionIdRef.current === submittedSessionId) {

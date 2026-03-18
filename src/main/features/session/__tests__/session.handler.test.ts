@@ -5,10 +5,11 @@ import type {
   SessionModelState,
   StopReason,
 } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ImageAttachment } from '../../../../shared/ipc';
 import { SessionHandler } from '../session.handler';
 import type { NotificationService } from '../../../shared/interfaces/notification.service';
 import type { SessionMapping } from '../../config/config.repository';
-import type { Message } from '../message.repository';
+import type { Message } from '../../../../shared/message-types';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -40,7 +41,9 @@ describe('SessionHandler', () => {
     removeProcessing: MockedFunction<(sessionId: SessionId) => void>;
   };
   let promptService: {
-    send: MockedFunction<(sessionId: SessionId, text: string) => Promise<StopReason>>;
+    send: MockedFunction<
+      (sessionId: SessionId, text: string, images?: ImageAttachment[]) => Promise<StopReason>
+    >;
   };
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
@@ -135,11 +138,45 @@ describe('SessionHandler', () => {
           _event: unknown,
           sessionId: string,
           text: string,
+          images?: ImageAttachment[],
         ) => Promise<{ stopReason: string }>;
 
         await promptHandler(null, SESSION_ID, 'hello');
 
-        expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello');
+        expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello', undefined);
+      });
+
+      it('images を promptService.send にパススルーすること', async () => {
+        handler.register();
+        const promptHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:prompt',
+        )?.[1] as (
+          _event: unknown,
+          sessionId: string,
+          text: string,
+          images?: ImageAttachment[],
+        ) => Promise<{ stopReason: string }>;
+
+        const images: ImageAttachment[] = [{ mimeType: 'image/png', data: 'base64data' }];
+        await promptHandler(null, SESSION_ID, 'hello', images);
+
+        expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello', images);
+      });
+
+      it('images が undefined の場合も promptService.send にパススルーすること', async () => {
+        handler.register();
+        const promptHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:prompt',
+        )?.[1] as (
+          _event: unknown,
+          sessionId: string,
+          text: string,
+          images?: ImageAttachment[],
+        ) => Promise<{ stopReason: string }>;
+
+        await promptHandler(null, SESSION_ID, 'hello', undefined);
+
+        expect(promptService.send).toHaveBeenCalledWith(SESSION_ID, 'hello', undefined);
       });
 
       it('prompt 実行前に sessionService.addProcessing() が呼ばれ、完了後に removeProcessing() が呼ばれる', async () => {

@@ -5,6 +5,12 @@
  * 外部スコープへの参照を持たない自己完結した実装にすること。
  */
 
+/** モック用画像添付データ型 */
+export interface MockImageAttachment {
+  mimeType: string;
+  data: string;
+}
+
 /** モックメッセージ型 */
 export interface MockMessage {
   id: string;
@@ -14,6 +20,8 @@ export interface MockMessage {
   input?: unknown;
   status?: string;
   result?: string;
+  /** ユーザーメッセージの添付画像（type: 'user' のみ） */
+  attachments?: MockImageAttachment[];
 }
 
 /** モックセッション型 */
