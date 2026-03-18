@@ -9,8 +9,10 @@ import Minimax from '@lobehub/icons/es/Minimax';
 import { ArrowUp, Paperclip, SparklesIcon, Square, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CommentChip } from './CommentChip';
 import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { ImageAttachment } from '../../shared/ipc';
+import type { DiffComment } from '../types/diff-comment';
 
 /** 許可する MIME タイプ一覧。 */
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
@@ -75,6 +77,14 @@ interface PromptInputProps {
   availableModels?: ModelInfo[];
   /** モデル変更時のコールバック。 */
   onModelChange?: (modelId: string) => void;
+  /** diff 上のコメント一覧。 */
+  comments?: DiffComment[];
+  /** コメント削除時のコールバック。 */
+  onRemoveComment?: (id: string) => void;
+  /** 全コメント削除時のコールバック。 */
+  onClearComments?: () => void;
+  /** コメントチップクリック時のコールバック。 */
+  onChipClick?: (comment: DiffComment) => void;
 }
 
 /**
@@ -118,6 +128,10 @@ function PromptInput({
   currentModelId,
   availableModels = [],
   onModelChange,
+  comments = [],
+  onRemoveComment,
+  onClearComments,
+  onChipClick,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -186,6 +200,27 @@ function PromptInput({
   return (
     <div className="px-4 pb-4">
       <div className="rounded-2xl border border-border bg-card shadow-sm">
+        {/* コメントチップバー */}
+        {comments.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b px-3 py-2">
+            {comments.map((comment) => (
+              <CommentChip
+                key={comment.id}
+                comment={comment}
+                onClick={(c) => onChipClick?.(c)}
+                onRemove={(id) => onRemoveComment?.(id)}
+              />
+            ))}
+            <button
+              onClick={onClearComments}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3" />
+              <span>Clear all</span>
+            </button>
+          </div>
+        )}
+
         {/* 画像プレビューエリア */}
         {images.length > 0 && (
           <div className="flex gap-2 overflow-x-auto px-4 pt-3">

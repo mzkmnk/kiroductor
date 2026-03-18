@@ -10,6 +10,8 @@ import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { DiffDialog } from './components/DiffDialog';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
+import { useDiffComments } from './hooks/use-diff-comments';
+import { buildReviewPrompt } from './lib/build-review-prompt';
 
 /**
  * チャット UI の状態。
@@ -96,6 +98,7 @@ function App() {
   const [diffStats, setDiffStats] = useState<DiffStats | null>(null);
   const [currentModelId, setCurrentModelId] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const { comments, addComment, removeComment, clearComments } = useDiffComments();
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -222,7 +225,9 @@ function App() {
   async function handleSubmit(text: string, images?: ImageAttachment[]) {
     if (!activeSessionId) return;
     const submittedSessionId = activeSessionId;
-    // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
+    // コメントがある場合はレビュープロンプトを組み立てる
+    const prompt = buildReviewPrompt(comments, text);
+    // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する（ユーザーの生テキストを表示）
     const optimisticMessage: UserMessage = {
       id: crypto.randomUUID(),
       type: 'user',
@@ -232,7 +237,8 @@ function App() {
     dispatchChat({ type: 'append', message: optimisticMessage });
     setIsProcessing(true);
     setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
-    await window.kiroductor.session.prompt(text, submittedSessionId, images);
+    clearComments();
+    await window.kiroductor.session.prompt(prompt, submittedSessionId, images);
 
     // まだ同じセッションを表示中の場合のみ UI を更新する
     if (activeSessionIdRef.current === submittedSessionId) {
@@ -268,6 +274,7 @@ function App() {
     setActiveSessionId(sessionId);
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
+    clearComments();
     setDiffStats(null);
     fetchDiffStats(sessionId);
 
@@ -349,6 +356,10 @@ function App() {
               currentModelId={currentModelId}
               availableModels={availableModels}
               onModelChange={handleSetModel}
+              comments={comments}
+              onRemoveComment={removeComment}
+              onClearComments={clearComments}
+              onChipClick={() => setDiffDialogOpen(true)}
             />
           </div>
         ) : (
@@ -358,7 +369,14 @@ function App() {
           </>
         )}
       </SidebarInset>
-      <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
+      <DiffDialog
+        open={diffDialogOpen}
+        onOpenChange={setDiffDialogOpen}
+        diff={diffData}
+        comments={comments}
+        onAddComment={addComment}
+        onRemoveComment={removeComment}
+      />
     </SidebarProvider>
   );
 }
