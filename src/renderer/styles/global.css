@@ -43,6 +43,7 @@
 
 :root {
   --radius: 0.625rem;
+  --code-bg: oklch(0.93 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -73,6 +74,7 @@
 }
 
 .dark {
+  --code-bg: oklch(0.145 0.02 268);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -177,7 +179,7 @@
   code {
     padding: 0.15em 0.35em;
     border-radius: 0.25em;
-    background: var(--muted);
+    background: var(--code-bg);
     font-size: 0.875em;
     font-family:
       ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -185,10 +187,30 @@
 
   pre {
     margin: 0.5em 0;
-    padding: 0.75em 1em;
     border-radius: 0.5em;
-    background: var(--muted);
     overflow-x: auto;
+  }
+
+  /* Shiki が生成する <pre> には background をインラインスタイルで付与するため上書きしない */
+  pre:not(.shiki) {
+    padding: 0.75em 1em;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+  }
+
+  /* Shiki の <pre.shiki>: --code-bg で背景を統一する */
+  pre.shiki {
+    padding: 0.75em 1em;
+    background-color: var(--code-bg) !important;
+    border: 1px solid var(--border);
+  }
+
+  /* Shiki デュアルテーマ: span のテキスト色をライト/ダークで切り替える */
+  pre.shiki span {
+    color: var(--shiki-light);
+    font-style: var(--shiki-light-font-style);
+    font-weight: var(--shiki-light-font-weight);
+    text-decoration: var(--shiki-light-text-decoration);
   }
 
   pre code {
@@ -236,6 +258,18 @@
   img {
     max-width: 100%;
   }
+}
+
+/* Shiki デュアルテーマ: ダークモード時は --shiki-dark 変数を使用する（背景は --code-bg で統一） */
+.dark .markdown-body pre.shiki {
+  background-color: var(--code-bg) !important;
+}
+
+.dark .markdown-body pre.shiki span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+  text-decoration: var(--shiki-dark-text-decoration);
 }
 
 @keyframes stream-fade-in {
