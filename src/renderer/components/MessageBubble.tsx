@@ -12,7 +12,7 @@ import type { AgentMessage, UserMessage } from '../../main/features/session/mess
  * モジュールロード時に一度だけ初期化し、以降は Promise を使い回す。
  */
 const highlighterPromise = createHighlighter({
-  themes: ['github-dark'],
+  themes: ['github-light', 'github-dark'],
   langs: [
     'typescript',
     'javascript',
@@ -70,7 +70,13 @@ function MessageBubble({ message, animSplit = 0 }: MessageBubbleProps) {
     // キャッシュ済みの場合は初期 state で反映済みのため更新不要
     if (cachedRehypePlugins) return;
     highlighterPromise.then((h) => {
-      cachedRehypePlugins = [[rehypeShikiFromHighlighter, h, { theme: 'github-dark' }]];
+      cachedRehypePlugins = [
+        [
+          rehypeShikiFromHighlighter,
+          h,
+          { themes: { light: 'github-light', dark: 'github-dark' }, defaultColor: false },
+        ],
+      ];
       setRehypePlugins(cachedRehypePlugins);
     });
   }, []);
