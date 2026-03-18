@@ -272,6 +272,16 @@
   text-decoration: var(--shiki-dark-text-decoration);
 }
 
+/*
+ * @git-diff-view/react の .diff-line-widget-wrapper * / .diff-line-extend-wrapper *
+ * が color: initial で全子要素を黒にリセットしてしまう問題への対策。
+ * color: inherit に戻し、各コンポーネントが自前で色を制御できるようにする。
+ */
+.diff-line-widget-wrapper *,
+.diff-line-extend-wrapper * {
+  color: inherit;
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
