@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, Settings2Icon } from 'lucide-react';
+import { FolderGit2Icon, PlusIcon, SettingsIcon } from 'lucide-react';
 import type { SessionMapping } from '../../main/features/config/config.repository';
 import type { DiffStats } from '../../shared/ipc';
 import {
@@ -15,6 +15,7 @@ import {
 } from './ui/sidebar';
 import { Button } from './ui/button';
 import { NewSessionDialog } from './NewSessionDialog';
+import { RepoDialog } from './RepoDialog';
 /** {@link SessionSidebar} のプロパティ。 */
 interface SessionSidebarProps {
   /** 現在のアクティブセッション ID。 */
@@ -56,6 +57,7 @@ export function SessionSidebar({
   const [sessions, setSessions] = useState<SessionMapping[]>([]);
   const [diffStatsMap, setDiffStatsMap] = useState<Record<string, DiffStats | null>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRepoDialogOpen, setIsRepoDialogOpen] = useState(false);
 
   /** 全セッションの diff stats を取得する。 */
   const refreshDiffStats = useCallback((sessionList: SessionMapping[]) => {
@@ -186,14 +188,25 @@ export function SessionSidebar({
 
         {/* フッター */}
         <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton title="Settings">
-                <Settings2Icon />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <div className="flex items-center justify-end gap-1 px-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              title="Repositories"
+              onClick={() => setIsRepoDialogOpen(true)}
+            >
+              <FolderGit2Icon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              title="Settings"
+            >
+              <SettingsIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </SidebarFooter>
       </Sidebar>
 
@@ -202,6 +215,8 @@ export function SessionSidebar({
         onClose={() => setIsDialogOpen(false)}
         onSessionCreated={handleSessionCreated}
       />
+
+      <RepoDialog open={isRepoDialogOpen} onOpenChange={setIsRepoDialogOpen} />
     </>
   );
 }
