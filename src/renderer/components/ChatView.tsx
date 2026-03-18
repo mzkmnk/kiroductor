@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, GitBranchIcon, GitCompareArrows, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -10,6 +11,7 @@ import type {
 } from '../../main/features/session/message.repository';
 import { MessageBubble } from './MessageBubble';
 import { ToolCallCard } from './ToolCallCard';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 /** 最下部とみなす閾値（px）。 */
 const NEAR_BOTTOM_THRESHOLD = 50;
@@ -46,6 +48,8 @@ interface ChatViewProps {
   hasDiffChanges?: boolean;
   /** 復元するスクロール位置。undefined の場合は最下部へスクロールする。 */
   restoreScrollTop?: number;
+  /** AI が処理中かどうか。true のとき ThinkingIndicator を表示する。 */
+  isProcessing?: boolean;
 }
 
 /**
@@ -66,6 +70,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
     onDiffClick,
     hasDiffChanges = false,
     restoreScrollTop,
+    isProcessing = false,
   },
   ref,
 ) {
@@ -179,6 +184,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
               />
             );
           })}
+          <AnimatePresence>{isProcessing && <ThinkingIndicator key="thinking" />}</AnimatePresence>
           <div ref={bottomRef} />
         </div>
       </div>

@@ -331,6 +331,7 @@ function App() {
               messages={chatState.messages}
               animSplits={chatState.animSplits}
               isRestoring={isRestoring}
+              isProcessing={isProcessing}
               currentBranch={activeMapping?.currentBranch}
               sourceBranch={activeMapping?.sourceBranch}
               onDiffClick={handleDiffClick}
