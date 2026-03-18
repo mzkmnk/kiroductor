@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { DiffView, DiffModeEnum } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -21,8 +22,8 @@ interface DiffDialogProps {
  * `@git-diff-view/react` の `DiffView` コンポーネントを使用して
  * ファイルごとにセクション分けした split diff を表示する。
  */
-function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
-  const files = diff ? parseUnifiedDiff(diff) : [];
+const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
+  const files = useMemo(() => (diff ? parseUnifiedDiff(diff) : []), [diff]);
   const isDark = document.documentElement.classList.contains('dark');
 
   return (
@@ -63,6 +64,6 @@ function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 export { DiffDialog };
