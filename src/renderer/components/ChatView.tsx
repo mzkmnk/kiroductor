@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { ArrowLeft, GitBranchIcon, GitCompareArrows, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -11,10 +11,21 @@ import type {
 import { MessageBubble } from './MessageBubble';
 import { ToolCallCard } from './ToolCallCard';
 
+/** 最下部とみなす閾値（px）。 */
+const NEAR_BOTTOM_THRESHOLD = 50;
+
+/** 親コンポーネントから呼び出せるメソッド。 */
+interface ChatViewHandle {
+  /** 現在のスクロール位置を返す。 */
+  getScrollTop: () => number;
+}
+
 /**
  * ChatView コンポーネントの props。
  */
 interface ChatViewProps {
+  /** アクティブなセッション ID。スクロール位置の復元キーに使用する。 */
+  sessionId: string;
   /** 表示するメッセージ一覧。 */
   messages: Message[];
   /**
@@ -33,28 +44,83 @@ interface ChatViewProps {
   onDiffClick?: () => void;
   /** 差分が存在するかどうか。false の場合ボタンを無効化する。 */
   hasDiffChanges?: boolean;
+  /** 復元するスクロール位置。undefined の場合は最下部へスクロールする。 */
+  restoreScrollTop?: number;
 }
 
 /**
  * メッセージ一覧を表示するスクロール可能なコンテナ。
  *
  * - `MessageBubble` と `ToolCallCard` を縦に並べるリストレイアウトを提供する。
- * - 新しいメッセージが届いたら自動で最下部へスクロールする。
+ * - ユーザーが最下部付近にいる場合のみ、新しいメッセージで自動スクロールする。
+ * - セッション切り替え時はスクロール位置を保存・復元する。
  */
-function ChatView({
-  messages,
-  animSplits,
-  isRestoring = false,
-  currentBranch,
-  sourceBranch,
-  onDiffClick,
-  hasDiffChanges = false,
-}: ChatViewProps) {
+const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
+  {
+    sessionId,
+    messages,
+    animSplits,
+    isRestoring = false,
+    currentBranch,
+    sourceBranch,
+    onDiffClick,
+    hasDiffChanges = false,
+    restoreScrollTop,
+  },
+  ref,
+) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  /** ユーザーが最下部付近にいるかどうか。 */
+  const isNearBottomRef = useRef(true);
+  /** 前回のセッション ID。切り替え検知に使用する。 */
+  const prevSessionIdRef = useRef<string>(sessionId);
+  /** セッション切り替え直後、復元待ちかどうか。 */
+  const pendingRestoreRef = useRef(false);
 
+  useImperativeHandle(ref, () => ({
+    getScrollTop: () => scrollRef.current?.scrollTop ?? 0,
+  }));
+
+  /** isNearBottom を更新する。 */
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || pendingRestoreRef.current) return;
+    isNearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_THRESHOLD;
+  }, []);
+
+  // セッション切り替え検知
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (prevSessionIdRef.current === sessionId) return;
+    prevSessionIdRef.current = sessionId;
+    pendingRestoreRef.current = true;
+  }, [sessionId]);
+
+  // messages 更新時の処理
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    if (pendingRestoreRef.current) {
+      if (messages.length === 0) return;
+      pendingRestoreRef.current = false;
+
+      if (restoreScrollTop !== undefined) {
+        el.scrollTop = restoreScrollTop;
+        isNearBottomRef.current =
+          el.scrollHeight - restoreScrollTop - el.clientHeight < NEAR_BOTTOM_THRESHOLD;
+      } else {
+        el.scrollTop = el.scrollHeight;
+        isNearBottomRef.current = true;
+      }
+      return;
+    }
+
+    if (isNearBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+    }
+  }, [messages, sessionId, restoreScrollTop]);
 
   if (isRestoring) {
     return (
@@ -99,7 +165,7 @@ function ChatView({
       ) : (
         <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-6 py-6">
           {messages.map((m) => {
             if (m.type === 'tool_call') {
@@ -118,6 +184,7 @@ function ChatView({
       </div>
     </>
   );
-}
+});
 
 export { ChatView };
+export type { ChatViewHandle };
