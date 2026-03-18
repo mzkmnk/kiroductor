@@ -276,7 +276,7 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[95vw] flex-col gap-0 overflow-hidden p-0">
         {/* ── Header ── */}
         <DialogHeader className="flex shrink-0 flex-row items-center gap-3 border-b px-4 py-3 pr-12">
           <DialogTitle className="text-sm font-semibold">Diff</DialogTitle>
