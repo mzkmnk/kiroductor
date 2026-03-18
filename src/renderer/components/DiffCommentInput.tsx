@@ -68,7 +68,8 @@ function DiffCommentInput({ onSubmit, onClose }: DiffCommentInputProps) {
             onClick={handleSubmit}
             disabled={!content.trim()}
             size="icon"
-            className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+            className="size-8 rounded-lg bg-primary shadow-sm hover:bg-primary/90 disabled:opacity-30"
+            style={{ color: 'hsl(var(--primary-foreground))' }}
             aria-label="Add comment"
           >
             <ArrowUp className="size-4" />
