@@ -9,7 +9,7 @@
     "build": "electron-vite build",
     "package": "electron-vite build && electron-builder --dir",
     "make": "electron-vite build && electron-builder",
-    "make:mac": "electron-vite build && electron-builder --mac",
+    "make:mac": "electron-vite build && electron-builder --mac --publish never",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint .",
