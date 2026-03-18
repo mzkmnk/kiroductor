@@ -69,16 +69,31 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
   /**
    * `user_message_chunk` イベントを処理する。
    *
-   * `content.type === 'text'` のとき、ユーザーメッセージをリポジトリに追加する。
+   * - `content.type === 'text'`: ユーザーメッセージをリポジトリに追加する。
+   * - `content.type === 'image'`: 直近の UserMessage に添付画像を追加する。
+   *   セッション復元時に ACP サーバーから画像チャンクが再送されるケースに対応する。
    *
    * @param sessionId - セッション ID
    * @param update - `user_message_chunk` イベントデータ
    */
   private handleUserMessageChunk(sessionId: SessionId, update: ContentChunk): void {
-    if (update.content.type !== 'text') return;
-
-    const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
-    this.messageRepository.addUserMessage(sessionId, text);
+    if (update.content.type === 'text') {
+      const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
+      this.messageRepository.addUserMessage(sessionId, text);
+    } else if (update.content.type === 'image') {
+      const { data, mimeType } = update.content as Extract<
+        ContentChunk['content'],
+        { type: 'image' }
+      >;
+      const messages = this.messageRepository.getAll(sessionId);
+      const lastUserMsg = [...messages].reverse().find((m) => m.type === 'user');
+      if (lastUserMsg) {
+        this.messageRepository.addAttachmentToUserMessage(sessionId, lastUserMsg.id, {
+          mimeType,
+          data,
+        });
+      }
+    }
   }
 
   /**
