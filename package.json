@@ -24,6 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.16.0",
+    "@fontsource-variable/m-plus-2": "^5.2.9",
     "@git-diff-view/react": "^0.1.2",
     "@lobehub/icons": "^5.0.1",
     "@shikijs/rehype": "^4.0.2",

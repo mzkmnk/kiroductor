@@ -11,6 +11,9 @@ importers:
       '@agentclientprotocol/sdk':
         specifier: ^0.16.0
         version: 0.16.0(zod@4.3.6)
+      '@fontsource-variable/m-plus-2':
+        specifier: ^5.2.9
+        version: 5.2.9
       '@git-diff-view/react':
         specifier: ^0.1.2
         version: 0.1.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -805,6 +808,9 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource-variable/m-plus-2@5.2.9':
+    resolution: {integrity: sha512-DOitQ0wPFdgWCUob8XyCuA17BsZ0MnctRQD0B6OVcdWA/sVQuN/zR7+OHFi9hoeDV/eOpytt4tHKBKzIQblDAQ==}
 
   '@giscus/react@3.1.0':
     resolution: {integrity: sha512-0TCO2TvL43+oOdyVVGHDItwxD1UMKP2ZYpT6gXmhFOqfAJtZxTzJ9hkn34iAF/b6YzyJ4Um89QIt9z/ajmAEeg==}
@@ -6753,6 +6759,8 @@ snapshots:
       tabbable: 6.4.0
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@fontsource-variable/m-plus-2@5.2.9': {}
 
   '@giscus/react@3.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
