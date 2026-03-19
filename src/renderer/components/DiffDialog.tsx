@@ -93,6 +93,8 @@ interface DiffDialogProps {
   diff: string | null;
   /** worktree のルートパス。画像ファイルの表示に使用する。 */
   cwd?: string;
+  /** ベースブランチ名。Before 画像を git から取得するために使用する。 */
+  sourceBranch?: string;
 }
 
 /**
@@ -242,17 +244,28 @@ interface ImagePreviewProps {
   mimeType: string;
   /** 表示ラベル（"Before" / "After" など）。 */
   label?: string;
+  /**
+   * Before 画像取得用の git ref（ブランチ名など）。
+   * 指定した場合は git から旧バージョンを取得する。省略時はファイルシステムから取得する。
+   */
+  gitRef?: string;
 }
 
 /**
  * IPC 経由でファイルを Base64 読み込みして表示する画像プレビュー。
+ *
+ * `gitRef` が指定された場合は `git show gitRef:filePath` で旧バージョンを取得する。
+ * 省略時はファイルシステム上の現在のファイルを取得する。
  */
-function ImagePreview({ cwd, filePath, mimeType, label }: ImagePreviewProps) {
+function ImagePreview({ cwd, filePath, mimeType, label, gitRef }: ImagePreviewProps) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    window.kiroductor.repo.readFileBase64(cwd, filePath).then((base64) => {
+    const fetching = gitRef
+      ? window.kiroductor.repo.readGitFileBase64(cwd, gitRef, filePath)
+      : window.kiroductor.repo.readFileBase64(cwd, filePath);
+    fetching.then((base64) => {
       if (!cancelled && base64) {
         setSrc(`data:${mimeType};base64,${base64}`);
       }
@@ -260,7 +273,7 @@ function ImagePreview({ cwd, filePath, mimeType, label }: ImagePreviewProps) {
     return () => {
       cancelled = true;
     };
-  }, [cwd, filePath, mimeType]);
+  }, [cwd, filePath, mimeType, gitRef]);
 
   return (
     <div className="flex flex-col items-center gap-1 p-3">
@@ -279,13 +292,24 @@ function ImagePreview({ cwd, filePath, mimeType, label }: ImagePreviewProps) {
 /**
  * 画像ファイルの差分を表示する。
  *
- * - `add`: 新しい画像のみ表示
- * - `delete`: 削除前の画像のみ表示
- * - `modify` / `rename` / `copy`: Before / After を横並びで表示
+ * - `add`（または `oldPath === '/dev/null'`）: 新しい画像のみ表示
+ * - `delete`（または `newPath === '/dev/null'`）: 削除前の画像のみ表示（git から取得）
+ * - `modify` / `rename` / `copy`: Before（git から取得）/ After を横並びで表示
  */
-function ImageDiff({ file, cwd }: { file: FileData; cwd: string }) {
-  const isModified = file.type === 'modify' || file.type === 'rename' || file.type === 'copy';
-  const isDeleted = file.type === 'delete';
+function ImageDiff({
+  file,
+  cwd,
+  sourceBranch,
+}: {
+  file: FileData;
+  cwd: string;
+  sourceBranch?: string;
+}) {
+  // parseDiff はバイナリファイルの type を正しく設定しないことがあるため、
+  // oldPath / newPath の値も併用して新規・削除を判定する。
+  const isNewFile = file.type === 'add' || file.oldPath === '/dev/null';
+  const isDeleted = file.type === 'delete' || file.newPath === '/dev/null';
+  const isModified = !isNewFile && !isDeleted;
 
   const newMime = getImageMimeType(file.newPath) ?? 'image/png';
   const oldMime = getImageMimeType(file.oldPath) ?? 'image/png';
@@ -293,14 +317,22 @@ function ImageDiff({ file, cwd }: { file: FileData; cwd: string }) {
   if (isModified) {
     return (
       <div className="grid grid-cols-2 divide-x">
-        <ImagePreview cwd={cwd} filePath={file.oldPath} mimeType={oldMime} label="Before" />
+        <ImagePreview
+          cwd={cwd}
+          filePath={file.oldPath}
+          mimeType={oldMime}
+          label="Before"
+          gitRef={sourceBranch}
+        />
         <ImagePreview cwd={cwd} filePath={file.newPath} mimeType={newMime} label="After" />
       </div>
     );
   }
 
   if (isDeleted) {
-    return <ImagePreview cwd={cwd} filePath={file.oldPath} mimeType={oldMime} />;
+    return (
+      <ImagePreview cwd={cwd} filePath={file.oldPath} mimeType={oldMime} gitRef={sourceBranch} />
+    );
   }
 
   return <ImagePreview cwd={cwd} filePath={file.newPath} mimeType={newMime} />;
@@ -397,7 +429,13 @@ function TreeNodeItem({ node, activeFile, onSelect, depth = 0 }: TreeNodeItemPro
  * ファイルツリーのアイテムをクリックすると対応する diff セクションにスクロールし、
  * スクロール中は {@link IntersectionObserver} でアクティブファイルを自動更新する。
  */
-const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff, cwd }: DiffDialogProps) {
+const DiffDialog = memo(function DiffDialog({
+  open,
+  onOpenChange,
+  diff,
+  cwd,
+  sourceBranch,
+}: DiffDialogProps) {
   const files = useMemo(() => (diff ? parseDiff(diff) : []), [diff]);
   const tree = useMemo(() => buildTree(files), [files]);
   // ユーザーが明示的に選択したファイルパス（null = 未選択）
@@ -545,7 +583,7 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff, cwd }: D
 
                       {/* Diff content: image preview or diff table */}
                       {isImageFile(file) && cwd ? (
-                        <ImageDiff file={file} cwd={cwd} />
+                        <ImageDiff file={file} cwd={cwd} sourceBranch={sourceBranch} />
                       ) : (
                         <div className="overflow-x-auto">
                           <Diff

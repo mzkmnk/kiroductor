@@ -70,6 +70,10 @@ export interface IpcInvokeChannels {
   'repo:diff-stats': { args: [sessionId: string]; return: DiffStats | null };
   'repo:diff': { args: [sessionId: string]; return: string | null };
   'repo:read-file-base64': { args: [cwd: string, filePath: string]; return: string | null };
+  'repo:read-git-file-base64': {
+    args: [cwd: string, ref: string, filePath: string];
+    return: string | null;
+  };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

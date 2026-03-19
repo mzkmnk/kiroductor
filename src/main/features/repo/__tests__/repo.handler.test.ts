@@ -26,6 +26,9 @@ describe('RepoHandler', () => {
     getDiffStatsBySession: MockedFunction<(sessionId: string) => Promise<DiffStats | null>>;
     getDiffBySession: MockedFunction<(sessionId: string) => Promise<string | null>>;
     readFileBase64: MockedFunction<(cwd: string, filePath: string) => Promise<string | null>>;
+    readGitFileBase64: MockedFunction<
+      (cwd: string, ref: string, filePath: string) => Promise<string | null>
+    >;
   };
   let settingsService: {
     getSettings: MockedFunction<() => Promise<KiroductorSettings>>;
@@ -43,6 +46,7 @@ describe('RepoHandler', () => {
       getDiffStatsBySession: vi.fn().mockResolvedValue(null),
       getDiffBySession: vi.fn().mockResolvedValue(null),
       readFileBase64: vi.fn().mockResolvedValue(null),
+      readGitFileBase64: vi.fn().mockResolvedValue(null),
     };
     settingsService = {
       getSettings: vi.fn().mockResolvedValue({}),

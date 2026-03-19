@@ -167,6 +167,8 @@ export interface RepoAPI {
   getDiff: (sessionId: string) => Promise<string | null>;
   /** 指定ファイルを Base64 エンコードして返す。画像表示に使用する。 */
   readFileBase64: (cwd: string, filePath: string) => Promise<string | null>;
+  /** 指定 git ref のファイル内容を Base64 エンコードして返す。Before 画像の表示に使用する。 */
+  readGitFileBase64: (cwd: string, ref: string, filePath: string) => Promise<string | null>;
 }
 
 /**
@@ -241,6 +243,8 @@ const kiroductorAPI: KiroductorAPI = {
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
     readFileBase64: (cwd, filePath) => invoke('repo:read-file-base64', cwd, filePath),
+    readGitFileBase64: (cwd, ref, filePath) =>
+      invoke('repo:read-git-file-base64', cwd, ref, filePath),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

@@ -399,6 +399,7 @@ function App() {
         onOpenChange={setDiffDialogOpen}
         diff={diffData}
         cwd={activeMapping?.cwd}
+        sourceBranch={activeMapping?.sourceBranch}
       />
     </SidebarProvider>
   );
