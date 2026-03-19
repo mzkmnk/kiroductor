@@ -305,10 +305,11 @@ function ImageDiff({
   cwd: string;
   sourceBranch?: string;
 }) {
-  // parseDiff はバイナリファイルの type を正しく設定しないことがあるため、
-  // oldPath / newPath の値も併用して新規・削除を判定する。
-  const isNewFile = file.type === 'add' || file.oldPath === '/dev/null';
-  const isDeleted = file.type === 'delete' || file.newPath === '/dev/null';
+  // gitdiff-parser の simiLoop は 'Binary' ケースを処理しないため、バイナリファイルの
+  // type が常に 'modify' になるバグがある。一方 index 行から設定される oldRevision /
+  // newRevision は正確なので、'0000000'（null SHA）で新規・削除ファイルを判定する。
+  const isNewFile = file.type === 'add' || file.oldRevision === '0000000';
+  const isDeleted = file.type === 'delete' || file.newRevision === '0000000';
   const isModified = !isNewFile && !isDeleted;
 
   const newMime = getImageMimeType(file.newPath) ?? 'image/png';
