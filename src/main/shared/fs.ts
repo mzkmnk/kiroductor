@@ -15,14 +15,6 @@ export interface FileSystem {
   readFile(path: string, encoding: BufferEncoding): Promise<string>;
 
   /**
-   * ファイルをバイナリとして読み込む。
-   *
-   * @param path - 読み込むファイルのパス
-   * @returns Buffer
-   */
-  readFileBinary(path: string): Promise<Buffer>;
-
-  /**
    * ファイルに内容を書き込む。
    *
    * @param path - 書き込むファイルのパス

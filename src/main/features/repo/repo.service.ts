@@ -358,26 +358,6 @@ export class RepoService {
     return this.getDiff(session.cwd, session.sourceBranch);
   }
 
-  /**
-   * 指定ファイルを Base64 エンコードして返す。
-   *
-   * 画像などのバイナリファイルをレンダラーで表示するために使用する。
-   * ファイルが存在しない場合やエラーが発生した場合は `null` を返す。
-   *
-   * @param cwd - worktree のパス
-   * @param filePath - cwd からの相対ファイルパス
-   * @returns Base64 文字列または `null`
-   */
-  async readFileBase64(cwd: string, filePath: string): Promise<string | null> {
-    try {
-      const fullPath = path.join(cwd, filePath);
-      const buffer = await this.fs.readFileBinary(fullPath);
-      return buffer.toString('base64');
-    } catch {
-      return null;
-    }
-  }
-
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -386,60 +366,6 @@ export class RepoService {
     } catch {
       return false;
     }
-  }
-
-  /**
-   * 指定 git ref のファイル内容を Base64 エンコードして返す。
-   *
-   * `git show ref:filePath` を実行し、バイナリデータを Buffer として収集してから Base64 に変換する。
-   * ref やファイルが存在しない場合は `null` を返す。
-   *
-   * @param cwd - worktree のパス
-   * @param ref - git の参照（ブランチ名・コミットハッシュ等）
-   * @param filePath - cwd からの相対ファイルパス
-   * @returns Base64 文字列または `null`
-   */
-  async readGitFileBase64(cwd: string, ref: string, filePath: string): Promise<string | null> {
-    try {
-      const buffer = await this.execGitBinary(['show', `${ref}:${filePath}`], cwd);
-      return buffer.toString('base64');
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * git コマンドを実行し、stdout を Buffer として返す。
-   *
-   * バイナリファイル取得など、stdout を文字列に変換せず生データが必要な場合に使用する。
-   * 終了コードが 0 でない場合はエラーを投げる。
-   */
-  private execGitBinary(args: string[], cwd?: string): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      const proc = this.spawnFn('git', args, { cwd, stdio: 'pipe' });
-      const chunks: Buffer[] = [];
-      let stderr = '';
-
-      proc.stdout?.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
-      });
-
-      proc.stderr?.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
-      });
-
-      proc.on('close', (code: number | null) => {
-        if (code === 0) {
-          resolve(Buffer.concat(chunks));
-        } else {
-          reject(new Error(stderr.trim() || `git ${args[0]} failed with code ${String(code)}`));
-        }
-      });
-
-      proc.on('error', (err: Error) => {
-        reject(err);
-      });
-    });
   }
 
   /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。stdout を返す。 */

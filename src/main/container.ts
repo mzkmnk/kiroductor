@@ -56,7 +56,6 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const fsAdapter = {
     readFile: (filePath: string, encoding: BufferEncoding): Promise<string> =>
       fs.promises.readFile(filePath, encoding),
-    readFileBinary: (filePath: string): Promise<Buffer> => fs.promises.readFile(filePath),
     writeFile: (filePath: string, content: string, encoding: BufferEncoding): Promise<void> =>
       fs.promises.writeFile(filePath, content, encoding),
     mkdir: (dirPath: string, opts?: { recursive?: boolean }): Promise<string | undefined> =>

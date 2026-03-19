@@ -91,10 +91,6 @@ interface DiffDialogProps {
   onOpenChange: (open: boolean) => void;
   /** unified diff 文字列。null の場合は「差分なし」を表示する。 */
   diff: string | null;
-  /** worktree のルートパス。画像ファイルの表示に使用する。 */
-  cwd?: string;
-  /** ベースブランチ名。Before 画像を git から取得するために使用する。 */
-  sourceBranch?: string;
 }
 
 /**
@@ -123,44 +119,6 @@ const DIFF_TYPE_CONFIG: Record<string, { icon: LucideIcon; className: string }> 
   rename: { icon: FileSymlink, className: 'text-blue-500 dark:text-blue-400' },
   copy: { icon: Copy, className: 'text-purple-500 dark:text-purple-400' },
 };
-
-// =================== Image Utilities ===================
-
-/** 画像として扱う拡張子と MIME タイプのマッピング。 */
-const IMAGE_MIME_MAP: Record<string, string> = {
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  svg: 'image/svg+xml',
-  ico: 'image/x-icon',
-  bmp: 'image/bmp',
-  tiff: 'image/tiff',
-  tif: 'image/tiff',
-};
-
-/**
- * ファイルパスから MIME タイプを返す。画像でない場合は `null`。
- *
- * @param filePath - ファイルパス
- * @returns MIME タイプ文字列または null
- */
-function getImageMimeType(filePath: string): string | null {
-  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-  return IMAGE_MIME_MAP[ext] ?? null;
-}
-
-/**
- * ファイルが画像かどうか判定する。
- *
- * @param file - {@link FileData} オブジェクト
- * @returns 画像なら true
- */
-function isImageFile(file: FileData): boolean {
-  const path = file.type === 'delete' ? file.oldPath : file.newPath;
-  return getImageMimeType(path) !== null;
-}
 
 // =================== Utilities ===================
 
@@ -228,115 +186,6 @@ function buildTree(files: FileData[]): TreeNode[] {
   }
 
   return root.children;
-}
-
-// =================== Image Preview ===================
-
-/**
- * {@link ImagePreview} の props。
- */
-interface ImagePreviewProps {
-  /** worktree のルートパス。 */
-  cwd: string;
-  /** cwd からの相対ファイルパス。 */
-  filePath: string;
-  /** 画像の MIME タイプ。 */
-  mimeType: string;
-  /** 表示ラベル（"Before" / "After" など）。 */
-  label?: string;
-  /**
-   * Before 画像取得用の git ref（ブランチ名など）。
-   * 指定した場合は git から旧バージョンを取得する。省略時はファイルシステムから取得する。
-   */
-  gitRef?: string;
-}
-
-/**
- * IPC 経由でファイルを Base64 読み込みして表示する画像プレビュー。
- *
- * `gitRef` が指定された場合は `git show gitRef:filePath` で旧バージョンを取得する。
- * 省略時はファイルシステム上の現在のファイルを取得する。
- */
-function ImagePreview({ cwd, filePath, mimeType, label, gitRef }: ImagePreviewProps) {
-  const [src, setSrc] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetching = gitRef
-      ? window.kiroductor.repo.readGitFileBase64(cwd, gitRef, filePath)
-      : window.kiroductor.repo.readFileBase64(cwd, filePath);
-    fetching.then((base64) => {
-      if (!cancelled && base64) {
-        setSrc(`data:${mimeType};base64,${base64}`);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, filePath, mimeType, gitRef]);
-
-  return (
-    <div className="flex flex-col items-center gap-1 p-3">
-      {label && <span className="text-[10px] font-medium text-muted-foreground">{label}</span>}
-      {src ? (
-        <img src={src} alt={filePath} className="max-h-96 max-w-full rounded object-contain" />
-      ) : (
-        <div className="flex h-24 w-full items-center justify-center rounded border border-dashed text-xs text-muted-foreground">
-          Loading…
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * 画像ファイルの差分を表示する。
- *
- * - `add`（または `oldPath === '/dev/null'`）: 新しい画像のみ表示
- * - `delete`（または `newPath === '/dev/null'`）: 削除前の画像のみ表示（git から取得）
- * - `modify` / `rename` / `copy`: Before（git から取得）/ After を横並びで表示
- */
-function ImageDiff({
-  file,
-  cwd,
-  sourceBranch,
-}: {
-  file: FileData;
-  cwd: string;
-  sourceBranch?: string;
-}) {
-  // gitdiff-parser の simiLoop は 'Binary' ケースを処理しないため、バイナリファイルの
-  // type が常に 'modify' になるバグがある。一方 index 行から設定される oldRevision /
-  // newRevision は正確なので、'0000000'（null SHA）で新規・削除ファイルを判定する。
-  const isNewFile = file.type === 'add' || file.oldRevision === '0000000';
-  const isDeleted = file.type === 'delete' || file.newRevision === '0000000';
-  const isModified = !isNewFile && !isDeleted;
-
-  const newMime = getImageMimeType(file.newPath) ?? 'image/png';
-  const oldMime = getImageMimeType(file.oldPath) ?? 'image/png';
-
-  if (isModified) {
-    return (
-      <div className="grid grid-cols-2 divide-x">
-        <ImagePreview
-          cwd={cwd}
-          filePath={file.oldPath}
-          mimeType={oldMime}
-          label="Before"
-          gitRef={sourceBranch}
-        />
-        <ImagePreview cwd={cwd} filePath={file.newPath} mimeType={newMime} label="After" />
-      </div>
-    );
-  }
-
-  if (isDeleted) {
-    return (
-      <ImagePreview cwd={cwd} filePath={file.oldPath} mimeType={oldMime} gitRef={sourceBranch} />
-    );
-  }
-
-  return <ImagePreview cwd={cwd} filePath={file.newPath} mimeType={newMime} />;
 }
 
 // =================== Sub-components ===================
@@ -430,13 +279,7 @@ function TreeNodeItem({ node, activeFile, onSelect, depth = 0 }: TreeNodeItemPro
  * ファイルツリーのアイテムをクリックすると対応する diff セクションにスクロールし、
  * スクロール中は {@link IntersectionObserver} でアクティブファイルを自動更新する。
  */
-const DiffDialog = memo(function DiffDialog({
-  open,
-  onOpenChange,
-  diff,
-  cwd,
-  sourceBranch,
-}: DiffDialogProps) {
+const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
   const files = useMemo(() => (diff ? parseDiff(diff) : []), [diff]);
   const tree = useMemo(() => buildTree(files), [files]);
   // ユーザーが明示的に選択したファイルパス（null = 未選択）
@@ -582,23 +425,17 @@ const DiffDialog = memo(function DiffDialog({
                         </div>
                       </div>
 
-                      {/* Diff content: image preview or diff table */}
-                      {isImageFile(file) && cwd ? (
-                        <ImageDiff file={file} cwd={cwd} sourceBranch={sourceBranch} />
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <Diff
-                            viewType="split"
-                            diffType={file.type}
-                            hunks={file.hunks}
-                            tokens={getTokens(file)}
-                          >
-                            {(hunks) =>
-                              hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)
-                            }
-                          </Diff>
-                        </div>
-                      )}
+                      {/* Diff table */}
+                      <div className="overflow-x-auto">
+                        <Diff
+                          viewType="split"
+                          diffType={file.type}
+                          hunks={file.hunks}
+                          tokens={getTokens(file)}
+                        >
+                          {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
+                        </Diff>
+                      </div>
                     </div>
                   );
                 })}

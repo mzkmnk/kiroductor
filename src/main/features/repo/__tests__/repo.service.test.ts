@@ -15,7 +15,6 @@ describe('RepoService', () => {
   beforeEach(() => {
     fs = {
       readFile: vi.fn().mockRejectedValue(new Error('ENOENT')),
-      readFileBinary: vi.fn().mockRejectedValue(new Error('ENOENT')),
       writeFile: vi.fn().mockResolvedValue(undefined),
       mkdir: vi.fn().mockResolvedValue(undefined),
       access: vi.fn().mockRejectedValue(new Error('ENOENT')),

@@ -21,8 +21,6 @@ export class RepoHandler {
       | 'listBranches'
       | 'getDiffStatsBySession'
       | 'getDiffBySession'
-      | 'readFileBase64'
-      | 'readGitFileBase64'
     >,
     private readonly settingsService: Pick<SettingsService, 'getSettings' | 'updateSettings'>,
   ) {}
@@ -59,14 +57,6 @@ export class RepoHandler {
     );
 
     handle('repo:diff', (_event, sessionId) => this.repoService.getDiffBySession(sessionId));
-
-    handle('repo:read-file-base64', (_event, cwd, filePath) =>
-      this.repoService.readFileBase64(cwd, filePath),
-    );
-
-    handle('repo:read-git-file-base64', (_event, cwd, ref, filePath) =>
-      this.repoService.readGitFileBase64(cwd, ref, filePath),
-    );
 
     handle('config:get-settings', () => this.settingsService.getSettings());
 
