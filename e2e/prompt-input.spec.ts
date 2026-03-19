@@ -134,4 +134,43 @@ test.describe('PromptInput', () => {
     await expect(app.promptInput).toBeDisabled();
     await expect(app.attachButton).not.toBeVisible();
   });
+
+  test('複数行入力時にフォーカス中は高さが拡張される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup();
+    await app.goto();
+    await app.waitForReady();
+
+    await app.promptInput.click();
+    await app.promptInput.fill('line1\nline2\nline3\nline4\nline5\nline6\nline7');
+
+    await expect(page).toHaveScreenshot('prompt-input-multiline-focused.png');
+  });
+
+  test('フォーカスが外れると元の高さに戻る', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup();
+    await app.goto();
+    await app.waitForReady();
+
+    await app.promptInput.click();
+    await app.promptInput.fill('line1\nline2\nline3\nline4\nline5');
+    await page.locator('body').click({ position: { x: 100, y: 100 } });
+
+    await expect(page).toHaveScreenshot('prompt-input-multiline-blurred.png');
+  });
+
+  test('再フォーカス時に複数行の高さが復元される', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup();
+    await app.goto();
+    await app.waitForReady();
+
+    await app.promptInput.click();
+    await app.promptInput.fill('line1\nline2\nline3\nline4\nline5');
+    await page.locator('body').click({ position: { x: 100, y: 100 } });
+    await app.promptInput.click();
+
+    await expect(page).toHaveScreenshot('prompt-input-multiline-refocused.png');
+  });
 });
