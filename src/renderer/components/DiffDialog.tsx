@@ -3,7 +3,16 @@ import { parseDiff, Diff, Hunk, tokenize } from 'react-diff-view';
 import type { FileData, HunkTokens } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import refractor from 'refractor';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronDown,
+  FilePlus,
+  FileMinus,
+  FilePen,
+  FileSymlink,
+  Copy,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '../lib/utils';
 
@@ -103,13 +112,13 @@ interface TreeNode {
 /**
  * diff タイプごとの表示設定。
  */
-const DIFF_TYPE_CONFIG = {
-  add: { label: 'A', className: 'text-emerald-500 dark:text-emerald-400' },
-  delete: { label: 'D', className: 'text-red-500 dark:text-red-400' },
-  modify: { label: 'M', className: 'text-amber-500 dark:text-amber-400' },
-  rename: { label: 'R', className: 'text-blue-500 dark:text-blue-400' },
-  copy: { label: 'C', className: 'text-purple-500 dark:text-purple-400' },
-} as const;
+const DIFF_TYPE_CONFIG: Record<string, { icon: LucideIcon; className: string }> = {
+  add: { icon: FilePlus, className: 'text-emerald-500 dark:text-emerald-400' },
+  delete: { icon: FileMinus, className: 'text-red-500 dark:text-red-400' },
+  modify: { icon: FilePen, className: 'text-amber-500 dark:text-amber-400' },
+  rename: { icon: FileSymlink, className: 'text-blue-500 dark:text-blue-400' },
+  copy: { icon: Copy, className: 'text-purple-500 dark:text-purple-400' },
+};
 
 // =================== Utilities ===================
 
@@ -220,9 +229,7 @@ function TreeNodeItem({ node, activeFile, onSelect, depth = 0 }: TreeNodeItemPro
         )}
         style={{ paddingLeft: `${indent}px` }}
       >
-        <span className={cn('shrink-0 text-[9px] font-bold tabular-nums', typeConfig.className)}>
-          {typeConfig.label}
-        </span>
+        <typeConfig.icon className={cn('size-3 shrink-0', typeConfig.className)} />
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
         <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px] tabular-nums opacity-70">
           {additions > 0 && <span className="text-emerald-500">+{additions}</span>}
@@ -400,14 +407,9 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                     >
                       {/* File header */}
                       <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2">
-                        <span
-                          className={cn(
-                            'shrink-0 text-[9px] font-bold tabular-nums',
-                            typeConfig.className,
-                          )}
-                        >
-                          {typeConfig.label}
-                        </span>
+                        <typeConfig.icon
+                          className={cn('size-3.5 shrink-0', typeConfig.className)}
+                        />
                         <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">
                           {filePath}
                         </span>
