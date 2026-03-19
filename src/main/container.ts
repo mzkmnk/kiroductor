@@ -73,7 +73,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const readTextFileMethod = new ReadTextFileMethod(fsAdapter);
   const writeTextFileMethod = new WriteTextFileMethod(fsAdapter);
   const requestPermissionMethod = new RequestPermissionMethod(notificationService);
-  const sessionUpdateMethod = new SessionUpdateMethod(messageRepo, notificationService);
+  const sessionUpdateMethod = new SessionUpdateMethod(
+    messageRepo,
+    notificationService,
+    sessionRepo,
+  );
 
   const clientHandlerFactory: ClientHandlerFactory = () =>
     new KiroductorClientHandler(
