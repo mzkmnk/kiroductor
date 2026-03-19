@@ -8,6 +8,7 @@ import type {
 } from '../main/features/config/config.repository';
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
 
 /**
@@ -101,6 +102,19 @@ export interface SessionAPI {
    */
   onModelChanged: (
     callback: (payload: { sessionId: SessionId; modelId: string }) => void,
+  ) => () => void;
+  /** セッションの mode 状態を取得する。 */
+  getModes: (sessionId: SessionId) => Promise<SessionModeState>;
+  /** セッションの mode を切り替える。 */
+  setMode: (sessionId: SessionId, modeId: string) => Promise<void>;
+  /**
+   * mode 変更通知を購読する。
+   *
+   * @param callback - 変更されたセッション ID と mode ID を受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onModeChanged: (
+    callback: (payload: { sessionId: SessionId; modeId: string }) => void,
   ) => () => void;
   /**
    * セッション更新通知を購読する。
@@ -205,6 +219,10 @@ const kiroductorAPI: KiroductorAPI = {
     setModel: (sessionId, modelId) => invoke('session:set-model', sessionId, modelId),
     onModelChanged: (callback) =>
       typedOn('acp:model-changed', (_event, payload) => callback(payload)),
+    getModes: (sessionId) => invoke('session:get-modes', sessionId),
+    setMode: (sessionId, modeId) => invoke('session:set-mode', sessionId, modeId),
+    onModeChanged: (callback) =>
+      typedOn('acp:mode-changed', (_event, payload) => callback(payload)),
     onUpdate: (callback) => typedOn('acp:session-update', (_event, update) => callback(update)),
     onSessionLoading: (callback) =>
       typedOn('acp:session-loading', (_event, payload) => callback(payload)),
