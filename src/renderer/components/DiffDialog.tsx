@@ -426,7 +426,7 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                       </div>
 
                       {/* Diff table */}
-                      <div className="overflow-x-auto [--diff-font-family:ui-monospace,SFMono-Regular,Menlo,monospace] [&_.diff-line]:text-[12px] [&_.diff-gutter]:text-[11px]">
+                      <div className="overflow-x-auto">
                         <Diff
                           viewType="split"
                           diffType={file.type}
