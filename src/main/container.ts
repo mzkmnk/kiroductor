@@ -73,7 +73,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
   const readTextFileMethod = new ReadTextFileMethod(fsAdapter);
   const writeTextFileMethod = new WriteTextFileMethod(fsAdapter);
   const requestPermissionMethod = new RequestPermissionMethod(notificationService);
-  const sessionUpdateMethod = new SessionUpdateMethod(messageRepo, notificationService);
+  const sessionUpdateMethod = new SessionUpdateMethod(
+    messageRepo,
+    notificationService,
+    sessionRepo,
+  );
 
   const clientHandlerFactory: ClientHandlerFactory = () =>
     new KiroductorClientHandler(
@@ -98,7 +102,12 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
    */
   const connectionProxy: Pick<
     ClientSideConnection,
-    'newSession' | 'cancel' | 'prompt' | 'loadSession' | 'unstable_setSessionModel'
+    | 'newSession'
+    | 'cancel'
+    | 'prompt'
+    | 'loadSession'
+    | 'unstable_setSessionModel'
+    | 'setSessionMode'
   > = {
     newSession: (params) => {
       const conn = connectionRepo.getConnection();
@@ -124,6 +133,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       const conn = connectionRepo.getConnection();
       if (!conn) throw new Error('ACP not connected');
       return conn.unstable_setSessionModel(params);
+    },
+    setSessionMode: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.setSessionMode(params);
     },
   };
 

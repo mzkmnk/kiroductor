@@ -147,6 +147,16 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         }),
       setModel: () => Promise.resolve(),
       onModelChanged: () => () => {},
+      getModes: () =>
+        Promise.resolve({
+          currentModeId: 'kiro_default',
+          availableModes: [
+            { id: 'kiro_default', name: 'Default' },
+            { id: 'test-reviewer', name: 'Test Reviewer' },
+          ],
+        }),
+      setMode: () => Promise.resolve(),
+      onModeChanged: () => () => {},
     },
     repo: {
       clone: () => Promise.resolve({ repoId: 'mock-repo' }),

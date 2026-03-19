@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionRepository } from '../session.repository';
 
 describe('SessionRepository', () => {
@@ -176,6 +177,43 @@ describe('SessionRepository', () => {
       });
       expect(repo.getModelState('session-1').currentModelId).toBe('claude-haiku-4.5');
       expect(repo.getModelState('session-2').currentModelId).toBe('claude-sonnet-4.5');
+    });
+  });
+
+  describe('modeState', () => {
+    const MODE_STATE: SessionModeState = {
+      currentModeId: 'kiro_default',
+      availableModes: [
+        { id: 'kiro_default', name: 'Default' },
+        { id: 'test-reviewer', name: 'test-reviewer' },
+        { id: 'test-coder', name: 'test-coder' },
+      ],
+    };
+
+    it('初期状態で getModeState() はエラーを投げる', () => {
+      expect(() => repo.getModeState('session-1')).toThrow();
+    });
+
+    it('setModeState() で設定した mode 状態を getModeState() で取得できる', () => {
+      repo.setModeState('session-1', MODE_STATE);
+      expect(repo.getModeState('session-1')).toEqual(MODE_STATE);
+    });
+
+    it('updateCurrentModeId() で currentModeId を更新できる', () => {
+      repo.setModeState('session-1', MODE_STATE);
+      repo.updateCurrentModeId('session-1', 'test-reviewer');
+      expect(repo.getModeState('session-1').currentModeId).toBe('test-reviewer');
+    });
+
+    it('updateCurrentModeId() は mode 状態未設定の場合エラーを投げる', () => {
+      expect(() => repo.updateCurrentModeId('nonexistent', 'test-reviewer')).toThrow();
+    });
+
+    it('異なるセッションの mode 状態は独立して管理される', () => {
+      repo.setModeState('session-1', MODE_STATE);
+      repo.setModeState('session-2', { ...MODE_STATE, currentModeId: 'test-coder' });
+      expect(repo.getModeState('session-1').currentModeId).toBe('kiro_default');
+      expect(repo.getModeState('session-2').currentModeId).toBe('test-coder');
     });
   });
 

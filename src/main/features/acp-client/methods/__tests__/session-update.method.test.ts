@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, assert } from 'vitest';
 import { SessionUpdateMethod } from '../session-update.method';
 import { MessageRepository } from '../../../session/message.repository';
+import { SessionRepository } from '../../../session/session.repository';
 import type { SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 
 describe('SessionUpdateMethod', () => {
@@ -48,13 +49,15 @@ describe('SessionUpdateMethod', () => {
   });
 
   let repo: MessageRepository;
+  let sessionRepo: SessionRepository;
   let notificationService: ReturnType<typeof makeNotificationService>;
   let method: SessionUpdateMethod;
 
   beforeEach(() => {
     repo = new MessageRepository();
+    sessionRepo = new SessionRepository();
     notificationService = makeNotificationService();
-    method = new SessionUpdateMethod(repo, notificationService);
+    method = new SessionUpdateMethod(repo, notificationService, sessionRepo);
   });
 
   describe('agent_message_chunk', () => {
@@ -271,6 +274,46 @@ describe('SessionUpdateMethod', () => {
       expect(messagesB).toHaveLength(1);
       assert(messagesB[0].type === 'agent');
       expect(messagesB[0].text).toBe('Hello from B');
+    });
+  });
+
+  describe('current_mode_update', () => {
+    it('current_mode_update 受信時に sessionRepo の currentModeId が更新される', async () => {
+      sessionRepo.setModeState(SESSION_ID, {
+        currentModeId: 'kiro_default',
+        availableModes: [
+          { id: 'kiro_default', name: 'Default' },
+          { id: 'test-reviewer', name: 'test-reviewer' },
+        ],
+      });
+
+      await method.handle({
+        sessionId: SESSION_ID,
+        update: {
+          sessionUpdate: 'current_mode_update',
+          currentModeId: 'test-reviewer',
+        },
+      });
+
+      expect(sessionRepo.getModeState(SESSION_ID).currentModeId).toBe('test-reviewer');
+    });
+
+    it('current_mode_update 受信時に acp:session-update 通知がレンダラーに転送される', async () => {
+      sessionRepo.setModeState(SESSION_ID, {
+        currentModeId: 'kiro_default',
+        availableModes: [{ id: 'kiro_default', name: 'Default' }],
+      });
+
+      const params: SessionNotification = {
+        sessionId: SESSION_ID,
+        update: {
+          sessionUpdate: 'current_mode_update',
+          currentModeId: 'kiro_default',
+        },
+      };
+      await method.handle(params);
+
+      expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-update', params);
     });
   });
 

@@ -3,6 +3,7 @@ import type { MockedFunction } from 'vitest';
 import type {
   SessionId,
   SessionModelState,
+  SessionModeState,
   StopReason,
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { ImageAttachment } from '../../../../shared/ipc';
@@ -30,6 +31,8 @@ describe('SessionHandler', () => {
     load: MockedFunction<(sessionId: SessionId, cwd: string) => Promise<void>>;
     setModel: MockedFunction<(sessionId: SessionId, modelId: string) => Promise<void>>;
     getModelState: MockedFunction<(sessionId: SessionId) => SessionModelState>;
+    setMode: MockedFunction<(sessionId: SessionId, modeId: string) => Promise<void>>;
+    getModeState: MockedFunction<(sessionId: SessionId) => SessionModeState>;
     getMessages: MockedFunction<(sessionId: SessionId) => Message[]>;
     switchSession: MockedFunction<(sessionId: SessionId) => void>;
     getActiveSessionId: MockedFunction<() => SessionId | null>;
@@ -58,6 +61,8 @@ describe('SessionHandler', () => {
       load: vi.fn().mockResolvedValue(undefined),
       setModel: vi.fn().mockResolvedValue(undefined),
       getModelState: vi.fn(),
+      setMode: vi.fn().mockResolvedValue(undefined),
+      getModeState: vi.fn(),
       getMessages: vi.fn().mockReturnValue([]),
       switchSession: vi.fn(),
       getActiveSessionId: vi.fn().mockReturnValue(SESSION_ID),
@@ -94,6 +99,8 @@ describe('SessionHandler', () => {
       expect(channels).toContain('session:is-acp-connected');
       expect(channels).toContain('session:get-models');
       expect(channels).toContain('session:set-model');
+      expect(channels).toContain('session:get-modes');
+      expect(channels).toContain('session:set-mode');
     });
 
     describe('session:new', () => {
@@ -379,6 +386,57 @@ describe('SessionHandler', () => {
         expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:model-changed', {
           sessionId: SESSION_ID,
           modelId: 'claude-sonnet-4.5',
+        });
+      });
+    });
+
+    describe('session:get-modes', () => {
+      it('sessionService.getModeState() の結果を返す', () => {
+        const modeState: SessionModeState = {
+          currentModeId: 'kiro_default',
+          availableModes: [
+            { id: 'kiro_default', name: 'Default' },
+            { id: 'test-reviewer', name: 'test-reviewer' },
+          ],
+        };
+        sessionService.getModeState.mockReturnValue(modeState);
+        handler.register();
+        const getModesHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-modes',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        const result = getModesHandler(null, SESSION_ID);
+
+        expect(result).toEqual(modeState);
+        expect(sessionService.getModeState).toHaveBeenCalledWith(SESSION_ID);
+      });
+
+      it('session:new / session:load 完了前に呼ぶとエラーを投げる', () => {
+        sessionService.getModeState.mockImplementation(() => {
+          throw new Error('Mode state not set');
+        });
+        handler.register();
+        const getModesHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:get-modes',
+        )?.[1] as (_event: unknown, sessionId: string) => unknown;
+
+        expect(() => getModesHandler(null, SESSION_ID)).toThrow();
+      });
+    });
+
+    describe('session:set-mode', () => {
+      it('sessionService.setMode() を呼び、レンダラーに通知を送る', async () => {
+        handler.register();
+        const setModeHandler = ipcHandle.mock.calls.find(
+          (call) => call[0] === 'session:set-mode',
+        )?.[1] as (_event: unknown, sessionId: string, modeId: string) => Promise<void>;
+
+        await setModeHandler(null, SESSION_ID, 'test-reviewer');
+
+        expect(sessionService.setMode).toHaveBeenCalledWith(SESSION_ID, 'test-reviewer');
+        expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:mode-changed', {
+          sessionId: SESSION_ID,
+          modeId: 'test-reviewer',
         });
       });
     });

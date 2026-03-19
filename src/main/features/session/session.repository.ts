@@ -1,5 +1,6 @@
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
 
 /**
  * セッションに関するインメモリ状態を管理するリポジトリ。
@@ -24,6 +25,9 @@ export class SessionRepository {
 
   /** セッションごとのモデル状態。 */
   private modelStates: Map<SessionId, SessionModelState> = new Map();
+
+  /** セッションごとの mode 状態。 */
+  private modeStates: Map<SessionId, SessionModeState> = new Map();
 
   /**
    * セッションを追加する。
@@ -194,5 +198,48 @@ export class SessionRepository {
       throw new Error(`Model state for session "${sessionId}" is not set.`);
     }
     state.currentModelId = modelId;
+  }
+
+  /**
+   * セッションの mode 状態を設定する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param state - mode 状態
+   */
+  setModeState(sessionId: SessionId, state: SessionModeState): void {
+    this.modeStates.set(sessionId, {
+      ...state,
+      availableModes: [...state.availableModes],
+    });
+  }
+
+  /**
+   * セッションの mode 状態を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns mode 状態
+   * @throws mode 状態が未設定の場合
+   */
+  getModeState(sessionId: SessionId): SessionModeState {
+    const state = this.modeStates.get(sessionId);
+    if (!state) {
+      throw new Error(`Mode state for session "${sessionId}" is not set.`);
+    }
+    return state;
+  }
+
+  /**
+   * セッションの現在の mode ID を更新する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param modeId - 新しい mode ID
+   * @throws mode 状態が未設定の場合
+   */
+  updateCurrentModeId(sessionId: SessionId, modeId: string): void {
+    const state = this.modeStates.get(sessionId);
+    if (!state) {
+      throw new Error(`Mode state for session "${sessionId}" is not set.`);
+    }
+    this.modeStates.set(sessionId, { ...state, currentModeId: modeId });
   }
 }

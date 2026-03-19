@@ -8,6 +8,7 @@ import type {
 } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../../../shared/debug-logger';
 import type { MessageRepository } from '../../session/message.repository';
+import type { SessionRepository } from '../../session/session.repository';
 import type { NotificationService } from '../../../shared/interfaces/notification.service';
 
 const log = createDebugLogger('SessionUpdate');
@@ -29,10 +30,12 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
   /**
    * @param messageRepository - メッセージ一覧を管理するリポジトリ（依存注入）
    * @param notificationService - レンダラーへの通知を担うサービス（依存注入）
+   * @param sessionRepository - セッション状態を管理するリポジトリ（依存注入）
    */
   constructor(
     private readonly messageRepository: MessageRepository,
     private readonly notificationService: NotificationService,
+    private readonly sessionRepository: Pick<SessionRepository, 'updateCurrentModeId'>,
   ) {}
 
   /**
@@ -56,6 +59,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
         break;
       case 'tool_call_update':
         this.handleToolCallUpdate(sessionId, update);
+        break;
+      case 'current_mode_update':
+        this.sessionRepository.updateCurrentModeId(sessionId, update.currentModeId);
         break;
       default:
         // フォールスルー: レンダラーへ転送するだけ
