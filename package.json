@@ -1,6 +1,6 @@
 {
   "name": "kiroductor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Electron ACP client for kiro-cli",
   "main": "out/main/index.js",
   "packageManager": "pnpm@10.29.3",
