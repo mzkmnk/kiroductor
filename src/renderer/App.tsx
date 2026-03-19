@@ -1,7 +1,7 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
-import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
 import type { ChatViewHandle } from './components/ChatView';
@@ -96,6 +96,8 @@ function App() {
   const [diffStats, setDiffStats] = useState<DiffStats | null>(null);
   const [currentModelId, setCurrentModelId] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [currentModeId, setCurrentModeId] = useState<string | null>(null);
+  const [availableModes, setAvailableModes] = useState<SessionMode[]>([]);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -127,6 +129,19 @@ function App() {
     });
   }
 
+  /** 指定セッションの mode 情報を取得して state に反映する。 */
+  function fetchModes(sessionId: string) {
+    window.kiroductor.session.getModes(sessionId).then((state) => {
+      if (state) {
+        setCurrentModeId(state.currentModeId);
+        setAvailableModes(state.availableModes);
+      } else {
+        setCurrentModeId(null);
+        setAvailableModes([]);
+      }
+    });
+  }
+
   useEffect(() => {
     // 初回: セッション一覧を取得
     window.kiroductor.session.list().then(setSessionMappings);
@@ -141,6 +156,7 @@ function App() {
           .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
         fetchDiffStats(id);
         fetchModels(id);
+        fetchModes(id);
       }
     });
 
@@ -167,12 +183,20 @@ function App() {
         .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
       fetchDiffStats(sessionId);
       fetchModels(sessionId);
+      fetchModes(sessionId);
     });
 
     // モデル変更通知
     const unsubModelChanged = window.kiroductor.session.onModelChanged(({ sessionId, modelId }) => {
       if (sessionId === activeSessionIdRef.current) {
         setCurrentModelId(modelId);
+      }
+    });
+
+    // mode 変更通知
+    const unsubModeChanged = window.kiroductor.session.onModeChanged(({ sessionId, modeId }) => {
+      if (sessionId === activeSessionIdRef.current) {
+        setCurrentModeId(modeId);
       }
     });
 
@@ -198,6 +222,7 @@ function App() {
       unsubSwitched();
       unsubCompleted();
       unsubModelChanged();
+      unsubModeChanged();
     };
   }, []);
 
@@ -287,8 +312,9 @@ function App() {
       dispatchChat({ type: 'set', messages: loadedMsgs });
       setIsRestoring(false);
     }
-    // load 完了後にモデル情報を取得（load パスでは loadSession がモデル状態を保存した後に呼ぶ必要がある）
+    // load 完了後にモデル・mode 情報を取得（load パスでは loadSession が状態を保存した後に呼ぶ必要がある）
     fetchModels(sessionId);
+    fetchModes(sessionId);
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
@@ -303,6 +329,7 @@ function App() {
       dispatchChat({ type: 'set', messages: msgs });
       fetchDiffStats(id);
       fetchModels(id);
+      fetchModes(id);
     }
   }
 
@@ -310,6 +337,12 @@ function App() {
   async function handleSetModel(modelId: string) {
     if (!activeSessionId) return;
     await window.kiroductor.session.setModel(activeSessionId, modelId);
+  }
+
+  /** mode を切り替える。 */
+  async function handleSetMode(modeId: string) {
+    if (!activeSessionId) return;
+    await window.kiroductor.session.setMode(activeSessionId, modeId);
   }
 
   const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
@@ -349,6 +382,9 @@ function App() {
               currentModelId={currentModelId}
               availableModels={availableModels}
               onModelChange={handleSetModel}
+              currentModeId={currentModeId}
+              availableModes={availableModes}
+              onModeChange={handleSetMode}
             />
           </div>
         ) : (

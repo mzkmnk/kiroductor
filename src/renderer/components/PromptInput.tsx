@@ -9,7 +9,7 @@ import Minimax from '@lobehub/icons/es/Minimax';
 import { ArrowUp, Paperclip, SparklesIcon, Square, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { ModelInfo } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { ImageAttachment } from '../../shared/ipc';
 
 /** 許可する MIME タイプ一覧。 */
@@ -75,6 +75,12 @@ interface PromptInputProps {
   availableModels?: ModelInfo[];
   /** モデル変更時のコールバック。 */
   onModelChange?: (modelId: string) => void;
+  /** 現在選択中の mode ID。 */
+  currentModeId?: string | null;
+  /** 利用可能な mode 一覧。 */
+  availableModes?: SessionMode[];
+  /** mode 変更時のコールバック。 */
+  onModeChange?: (modeId: string) => void;
 }
 
 /**
@@ -118,6 +124,9 @@ function PromptInput({
   currentModelId,
   availableModels = [],
   onModelChange,
+  currentModeId,
+  availableModes = [],
+  onModeChange,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -236,6 +245,27 @@ function PromptInput({
         {/* フッターバー: モデル選択 + 添付 + 送信ボタン */}
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
+            {availableModes.length > 0 && currentModeId && (
+              <Select
+                value={currentModeId}
+                onValueChange={(value) => onModeChange?.(value)}
+                disabled={isProcessing}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-7 w-auto max-w-[160px] gap-1.5 rounded-lg border-none bg-transparent px-2 text-xs text-muted-foreground shadow-none hover:bg-muted/50 focus:ring-0 disabled:opacity-40"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModes.map((mode) => (
+                    <SelectItem key={mode.id} value={mode.id}>
+                      <span className="text-xs">{mode.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {availableModels.length > 0 && currentModelId ? (
               <Select
                 value={currentModelId}
