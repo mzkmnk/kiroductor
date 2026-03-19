@@ -143,8 +143,6 @@ test.describe('PromptInput', () => {
 
     await app.promptInput.click();
     await app.promptInput.fill('line1\nline2\nline3\nline4\nline5\nline6\nline7');
-    // max-height transition (150ms) が完了するまで待つ
-    await page.waitForTimeout(200);
 
     await expect(page).toHaveScreenshot('prompt-input-multiline-focused.png');
   });
@@ -158,8 +156,6 @@ test.describe('PromptInput', () => {
     await app.promptInput.click();
     await app.promptInput.fill('line1\nline2\nline3\nline4\nline5');
     await page.locator('body').click({ position: { x: 100, y: 100 } });
-    // max-height transition (150ms) が完了するまで待つ
-    await page.waitForTimeout(200);
 
     await expect(page).toHaveScreenshot('prompt-input-multiline-blurred.png');
   });
@@ -174,8 +170,6 @@ test.describe('PromptInput', () => {
     await app.promptInput.fill('line1\nline2\nline3\nline4\nline5');
     await page.locator('body').click({ position: { x: 100, y: 100 } });
     await app.promptInput.click();
-    // max-height transition (150ms) が完了するまで待つ
-    await page.waitForTimeout(200);
 
     await expect(page).toHaveScreenshot('prompt-input-multiline-refocused.png');
   });

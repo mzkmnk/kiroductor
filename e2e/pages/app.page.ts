@@ -40,6 +40,13 @@ export class AppPage {
    */
   async setup(config: MockConfig = {}) {
     await this.page.addInitScript(installMockKiroductorAPI, config);
+    // VRT の安定化のため CSS トランジション・アニメーションを無効化する
+    await this.page.addInitScript(() => {
+      const style = document.createElement('style');
+      style.textContent =
+        '*, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }';
+      document.documentElement.appendChild(style);
+    });
   }
 
   /** ページを開く */
