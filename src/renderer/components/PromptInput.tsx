@@ -236,7 +236,7 @@ function PromptInput({
             'w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm',
             'placeholder:text-muted-foreground/60 focus:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            'field-sizing-content',
+            'field-sizing-content min-h-[80px]',
             'transition-[max-height] duration-150 ease-out',
             isFocused ? 'max-h-[140px] overflow-y-auto' : 'max-h-[80px] overflow-hidden',
           )}
