@@ -11,7 +11,8 @@ export default defineConfig({
       rollupOptions: {
         input: 'src/main/main.ts',
         output: {
-          entryFileNames: 'index.js',
+          format: 'es',
+          entryFileNames: 'index.mjs',
         },
       },
     },
@@ -23,7 +24,8 @@ export default defineConfig({
       rollupOptions: {
         input: 'src/preload/preload.ts',
         output: {
-          entryFileNames: 'index.js',
+          format: 'es',
+          entryFileNames: 'index.mjs',
         },
       },
     },

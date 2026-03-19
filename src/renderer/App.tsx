@@ -1,6 +1,7 @@
 import { useState, useReducer, useEffect, useRef } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
+import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment } from '../shared/ipc';
 import { ChatView } from './components/ChatView';
@@ -98,6 +99,7 @@ function App() {
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [currentModeId, setCurrentModeId] = useState<string | null>(null);
   const [availableModes, setAvailableModes] = useState<SessionMode[]>([]);
+  const [acpStatus, setAcpStatus] = useState<AcpStatus>('connecting');
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -143,6 +145,12 @@ function App() {
   }
 
   useEffect(() => {
+    // 初回: ACP 接続ステータスを取得し、以降の変化を購読する
+    window.kiroductor.acp.getStatus().then(setAcpStatus);
+    const unsubAcpStatus = window.kiroductor.acp.onStatusChange(({ status }) =>
+      setAcpStatus(status),
+    );
+
     // 初回: セッション一覧を取得
     window.kiroductor.session.list().then(setSessionMappings);
 
@@ -218,6 +226,7 @@ function App() {
     });
 
     return () => {
+      unsubAcpStatus();
       unsubUpdate();
       unsubSwitched();
       unsubCompleted();
@@ -306,11 +315,20 @@ function App() {
       dispatchChat({ type: 'set', messages: msgs });
     } else {
       // ACP 未接続（sessions.json から復元されたセッション）は load で復元する
+      // ACP 接続エラー中は load を試みない（接続が回復するまでスキップ）
+      if (acpStatus === 'error') {
+        return;
+      }
       setIsRestoring(true);
-      await window.kiroductor.session.load(sessionId, _cwd);
-      const loadedMsgs = await window.kiroductor.session.getMessages(sessionId);
-      dispatchChat({ type: 'set', messages: loadedMsgs });
-      setIsRestoring(false);
+      try {
+        await window.kiroductor.session.load(sessionId, _cwd);
+        const loadedMsgs = await window.kiroductor.session.getMessages(sessionId);
+        dispatchChat({ type: 'set', messages: loadedMsgs });
+      } catch (err) {
+        console.error('session.load failed:', err);
+      } finally {
+        setIsRestoring(false);
+      }
     }
     // load 完了後にモデル・mode 情報を取得（load パスでは loadSession が状態を保存した後に呼ぶ必要がある）
     fetchModels(sessionId);
