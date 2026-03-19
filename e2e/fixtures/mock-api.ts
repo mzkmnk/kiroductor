@@ -63,6 +63,8 @@ export interface MockConfig {
   diff?: string | null;
   /** isAcpConnected() の戻り値（省略時: true） */
   acpConnected?: boolean;
+  /** readFileBase64() が返す Base64 文字列のマップ（キー: filePath、省略時: null） */
+  fileBase64Map?: Record<string, string>;
 }
 
 /** デフォルト 1 セッション設定 */
@@ -160,6 +162,8 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         return Promise.resolve(config.diffStats ?? null);
       },
       getDiff: () => Promise.resolve(config.diff ?? null),
+      readFileBase64: (_cwd: string, filePath: string) =>
+        Promise.resolve(config.fileBase64Map?.[filePath] ?? null),
     },
     config: {
       getSettings: () => Promise.resolve({}),
