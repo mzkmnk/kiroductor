@@ -358,6 +358,26 @@ export class RepoService {
     return this.getDiff(session.cwd, session.sourceBranch);
   }
 
+  /**
+   * 指定ファイルを Base64 エンコードして返す。
+   *
+   * 画像などのバイナリファイルをレンダラーで表示するために使用する。
+   * ファイルが存在しない場合やエラーが発生した場合は `null` を返す。
+   *
+   * @param cwd - worktree のパス
+   * @param filePath - cwd からの相対ファイルパス
+   * @returns Base64 文字列または `null`
+   */
+  async readFileBase64(cwd: string, filePath: string): Promise<string | null> {
+    try {
+      const fullPath = path.join(cwd, filePath);
+      const buffer = await this.fs.readFileBinary(fullPath);
+      return buffer.toString('base64');
+    } catch {
+      return null;
+    }
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
