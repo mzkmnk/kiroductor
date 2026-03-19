@@ -15,6 +15,7 @@ describe('ConfigRepository', () => {
     fsAdapter = {
       mkdir: (dirPath, opts) => fs.promises.mkdir(dirPath, opts),
       readFile: (filePath, encoding) => fs.promises.readFile(filePath, encoding),
+      readFileBinary: (filePath) => fs.promises.readFile(filePath),
       writeFile: (filePath, content, encoding) =>
         fs.promises.writeFile(filePath, content, encoding),
       access: (filePath) => fs.promises.access(filePath),

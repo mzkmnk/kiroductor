@@ -151,6 +151,8 @@ export interface RepoAPI {
   getDiffStats: (sessionId: string) => Promise<DiffStats | null>;
   /** 指定セッションの unified diff 本文を取得する。 */
   getDiff: (sessionId: string) => Promise<string | null>;
+  /** 指定ファイルを Base64 エンコードして返す。画像表示に使用する。 */
+  readFileBase64: (cwd: string, filePath: string) => Promise<string | null>;
 }
 
 /**
@@ -220,6 +222,7 @@ const kiroductorAPI: KiroductorAPI = {
     listBranches: (repoId) => invoke('repo:list-branches', repoId),
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
+    readFileBase64: (cwd, filePath) => invoke('repo:read-file-base64', cwd, filePath),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

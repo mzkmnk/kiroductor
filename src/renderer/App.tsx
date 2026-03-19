@@ -358,7 +358,12 @@ function App() {
           </>
         )}
       </SidebarInset>
-      <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
+      <DiffDialog
+        open={diffDialogOpen}
+        onOpenChange={setDiffDialogOpen}
+        diff={diffData}
+        cwd={activeMapping?.cwd}
+      />
     </SidebarProvider>
   );
 }
