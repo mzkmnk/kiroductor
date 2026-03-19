@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { cn } from '../lib/utils';
 import Claude from '@lobehub/icons/es/Claude';
 import OpenAI from '@lobehub/icons/es/OpenAI';
 import Gemini from '@lobehub/icons/es/Gemini';
@@ -131,6 +132,7 @@ function PromptInput({
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit() {
@@ -225,11 +227,19 @@ function PromptInput({
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder="Ask to make changes..."
-          className="w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          rows={3}
+          className={cn(
+            'w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm',
+            'placeholder:text-muted-foreground/60 focus:outline-none',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            'field-sizing-content',
+            'transition-[max-height] duration-150 ease-out',
+            isFocused ? 'max-h-[140px] overflow-y-auto' : 'max-h-[80px] overflow-hidden',
+          )}
         />
 
         {/* 隠しファイル入力 */}
