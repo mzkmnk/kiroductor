@@ -1,10 +1,74 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { parseDiff, Diff, Hunk } from 'react-diff-view';
-import type { FileData } from 'react-diff-view';
+import { parseDiff, Diff, Hunk, tokenize } from 'react-diff-view';
+import type { FileData, HunkTokens } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
+import refractor from 'refractor';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '../lib/utils';
+
+// =================== Language Detection ===================
+
+/**
+ * ファイル拡張子から refractor の言語名を返す。未対応の場合は null を返す。
+ *
+ * @param filePath - ファイルパス
+ * @returns refractor 言語名、または null
+ */
+function detectLanguage(filePath: string): string | null {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'tsx',
+    js: 'javascript',
+    jsx: 'jsx',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    json: 'json',
+    css: 'css',
+    scss: 'scss',
+    html: 'html',
+    md: 'markdown',
+    yml: 'yaml',
+    yaml: 'yaml',
+    sh: 'bash',
+    bash: 'bash',
+    py: 'python',
+    rb: 'ruby',
+    go: 'go',
+    rs: 'rust',
+    java: 'java',
+    kt: 'kotlin',
+    swift: 'swift',
+    c: 'c',
+    cpp: 'cpp',
+    cs: 'csharp',
+    php: 'php',
+    sql: 'sql',
+    xml: 'xml',
+    toml: 'toml',
+    ini: 'ini',
+  };
+  return map[ext] ?? null;
+}
+
+/**
+ * ファイルの hunks をトークナイズしてシンタックスハイライト用トークンを生成する。
+ *
+ * @param file - {@link FileData} オブジェクト
+ * @returns {@link HunkTokens}、またはハイライト不可の場合は null
+ */
+function getTokens(file: FileData): HunkTokens | null {
+  const filePath = file.type === 'delete' ? file.oldPath : file.newPath;
+  const language = detectLanguage(filePath);
+  if (!language) return null;
+
+  try {
+    return tokenize(file.hunks, { highlight: true, refractor, language });
+  } catch {
+    return null;
+  }
+}
 
 // =================== Types ===================
 
@@ -360,8 +424,13 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                       </div>
 
                       {/* Diff table */}
-                      <div className="overflow-x-auto">
-                        <Diff viewType="split" diffType={file.type} hunks={file.hunks}>
+                      <div className="overflow-x-auto [--diff-font-family:ui-monospace,SFMono-Regular,Menlo,monospace] [&_.diff-line]:text-[12px] [&_.diff-gutter]:text-[11px]">
+                        <Diff
+                          viewType="split"
+                          diffType={file.type}
+                          hunks={file.hunks}
+                          tokens={getTokens(file)}
+                        >
                           {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
                         </Diff>
                       </div>
