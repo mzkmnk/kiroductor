@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { SessionService } from '../session.service';
 
 vi.mock('../session-title.generator', () => ({
@@ -22,6 +23,10 @@ describe('SessionService', () => {
           currentModelId: string;
           availableModels: Array<{ modelId: string; name: string; description?: string | null }>;
         } | null;
+        modes?: {
+          currentModeId: string;
+          availableModes: Array<{ id: string; name: string; description?: string | null }>;
+        } | null;
       }>
     >;
     cancel: MockedFunction<(params: { sessionId: string }) => Promise<void>>;
@@ -32,10 +37,17 @@ describe('SessionService', () => {
           currentModelId: string;
           availableModels: Array<{ modelId: string; name: string; description?: string | null }>;
         } | null;
+        modes?: {
+          currentModeId: string;
+          availableModes: Array<{ id: string; name: string; description?: string | null }>;
+        } | null;
       }>
     >;
     unstable_setSessionModel: MockedFunction<
       (params: { sessionId: string; modelId: string }) => Promise<Record<string, never>>
+    >;
+    setSessionMode: MockedFunction<
+      (params: { sessionId: string; modeId: string }) => Promise<Record<string, never>>
     >;
   };
   let notificationService: {
@@ -55,6 +67,7 @@ describe('SessionService', () => {
       cancel: vi.fn().mockResolvedValue(undefined),
       loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
       unstable_setSessionModel: vi.fn().mockResolvedValue({}),
+      setSessionMode: vi.fn().mockResolvedValue({}),
     };
     notificationService = {
       sendToRenderer: vi.fn(),
@@ -389,6 +402,79 @@ describe('SessionService', () => {
       sessionRepo.addSession('unconnected');
 
       expect(service.isAcpConnected('unconnected')).toBe(false);
+    });
+  });
+
+  describe('create() の mode 保存', () => {
+    const MODES: SessionModeState = {
+      currentModeId: 'kiro_default',
+      availableModes: [
+        { id: 'kiro_default', name: 'Default' },
+        { id: 'test-reviewer', name: 'test-reviewer' },
+      ],
+    };
+
+    it('newSession レスポンスに modes がある場合、sessionRepo に mode 状態が保存されること', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id', modes: MODES });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      const state = sessionRepo.getModeState('test-session-id');
+      expect(state).toEqual(MODES);
+    });
+
+    it('newSession レスポンスに modes がない場合、mode 状態が保存されないこと', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id' });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      expect(() => sessionRepo.getModeState('test-session-id')).toThrow();
+    });
+  });
+
+  describe('load() の mode 保存', () => {
+    const MODES: SessionModeState = {
+      currentModeId: 'test-coder',
+      availableModes: [
+        { id: 'kiro_default', name: 'Default' },
+        { id: 'test-coder', name: 'test-coder' },
+      ],
+    };
+
+    it('loadSession レスポンスに modes がある場合、sessionRepo に mode 状態が保存されること', async () => {
+      connection.loadSession.mockResolvedValue({ sessionId: 'session-abc', modes: MODES });
+      await service.load('session-abc', '/path/to/project');
+      const state = sessionRepo.getModeState('session-abc');
+      expect(state).toEqual(MODES);
+    });
+
+    it('loadSession レスポンスに modes がない場合、mode 状態が保存されないこと', async () => {
+      connection.loadSession.mockResolvedValue({ sessionId: 'session-abc' });
+      await service.load('session-abc', '/path/to/project');
+      expect(() => sessionRepo.getModeState('session-abc')).toThrow();
+    });
+  });
+
+  describe('setMode(sessionId, modeId)', () => {
+    const MODES: SessionModeState = {
+      currentModeId: 'kiro_default',
+      availableModes: [
+        { id: 'kiro_default', name: 'Default' },
+        { id: 'test-reviewer', name: 'test-reviewer' },
+      ],
+    };
+
+    it('connection.setSessionMode() が正しいパラメータで呼ばれること', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id', modes: MODES });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      await service.setMode('test-session-id', 'test-reviewer');
+      expect(connection.setSessionMode).toHaveBeenCalledWith({
+        sessionId: 'test-session-id',
+        modeId: 'test-reviewer',
+      });
+    });
+
+    it('setMode() 後に getModeState() の currentModeId が更新されること', async () => {
+      connection.newSession.mockResolvedValue({ sessionId: 'test-session-id', modes: MODES });
+      await service.create('/path/to/project', 'kiroductor/tokyo', 'main');
+      await service.setMode('test-session-id', 'test-reviewer');
+      expect(sessionRepo.getModeState('test-session-id').currentModeId).toBe('test-reviewer');
     });
   });
 

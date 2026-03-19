@@ -1,6 +1,7 @@
 import type { ClientSideConnection } from '@agentclientprotocol/sdk';
 import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
 import { createDebugLogger } from '../../shared/debug-logger';
 import type { SessionRepository } from './session.repository';
 import type { MessageRepository } from './message.repository';
@@ -30,7 +31,7 @@ export class SessionService {
     private readonly messageRepo: MessageRepository,
     private readonly connection: Pick<
       ClientSideConnection,
-      'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel'
+      'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel' | 'setSessionMode'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
@@ -65,6 +66,7 @@ export class SessionService {
     this.messageRepo.initSession(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
     this.saveModelState(sessionId, response.models);
+    this.saveModeState(sessionId, response.modes);
     const now = new Date().toISOString();
     await this.configRepo.upsertSession({
       acpSessionId: sessionId,
@@ -96,6 +98,7 @@ export class SessionService {
     const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.saveModelState(sessionId, response.models);
+    this.saveModeState(sessionId, response.modes);
     this.completeAllStreamingMessages(sessionId);
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.markAcpConnected(sessionId);
@@ -168,6 +171,31 @@ export class SessionService {
    */
   getModelState(sessionId: SessionId): SessionModelState {
     return this.sessionRepo.getModelState(sessionId);
+  }
+
+  /**
+   * 指定セッションの mode を切り替える。
+   *
+   * ACP の `setSessionMode` を呼び出し、成功したらリポジトリを更新する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param modeId - 切り替え先の mode ID
+   */
+  async setMode(sessionId: SessionId, modeId: string): Promise<void> {
+    log.info(`setMode sessionId=${sessionId} modeId=${modeId}`);
+    await this.connection.setSessionMode({ sessionId, modeId });
+    this.sessionRepo.updateCurrentModeId(sessionId, modeId);
+    log.info('setMode 完了');
+  }
+
+  /**
+   * 指定セッションの mode 状態を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns mode 状態
+   */
+  getModeState(sessionId: SessionId): SessionModeState {
+    return this.sessionRepo.getModeState(sessionId);
   }
 
   /**
@@ -268,5 +296,22 @@ export class SessionService {
       `saveModelState: sessionId=${sessionId} currentModelId=${models.currentModelId} availableModels=${String(models.availableModels.length)}`,
     );
     this.sessionRepo.setModelState(sessionId, models);
+  }
+
+  /**
+   * ACP レスポンスの modes フィールドをリポジトリに保存する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param modes - ACP レスポンスの modes フィールド（undefined の場合は何もしない）
+   */
+  private saveModeState(sessionId: SessionId, modes?: SessionModeState | null): void {
+    if (!modes) {
+      log.info(`saveModeState: modes なし sessionId=${sessionId}`);
+      return;
+    }
+    log.info(
+      `saveModeState: sessionId=${sessionId} currentModeId=${modes.currentModeId} availableModes=${String(modes.availableModes.length)}`,
+    );
+    this.sessionRepo.setModeState(sessionId, modes);
   }
 }

@@ -25,6 +25,8 @@ export class SessionHandler {
       | 'load'
       | 'setModel'
       | 'getModelState'
+      | 'setMode'
+      | 'getModeState'
       | 'getMessages'
       | 'switchSession'
       | 'getActiveSessionId'
@@ -103,6 +105,16 @@ export class SessionHandler {
       await this.sessionService.setModel(sessionId, modelId);
       this.notificationService.sendToRenderer('acp:model-changed', { sessionId, modelId });
       log.info(`session:set-model 完了 → acp:model-changed 通知済み`);
+    });
+    handle('session:get-modes', (_event, sessionId) => {
+      log.info(`session:get-modes sessionId=${sessionId}`);
+      return this.sessionService.getModeState(sessionId);
+    });
+    handle('session:set-mode', async (_event, sessionId, modeId) => {
+      log.info(`session:set-mode sessionId=${sessionId} modeId=${modeId}`);
+      await this.sessionService.setMode(sessionId, modeId);
+      this.notificationService.sendToRenderer('acp:mode-changed', { sessionId, modeId });
+      log.info(`session:set-mode 完了 → acp:mode-changed 通知済み`);
     });
   }
 }
