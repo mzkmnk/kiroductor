@@ -385,6 +385,7 @@ function App() {
               currentModeId={currentModeId}
               availableModes={availableModes}
               onModeChange={handleSetMode}
+              sessionId={activeSessionId}
             />
           </div>
         ) : (

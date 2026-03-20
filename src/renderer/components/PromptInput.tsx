@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { cn } from '../lib/utils';
 import Claude from '@lobehub/icons/es/Claude';
 import OpenAI from '@lobehub/icons/es/OpenAI';
@@ -7,11 +7,13 @@ import Mistral from '@lobehub/icons/es/Mistral';
 import Qwen from '@lobehub/icons/es/Qwen';
 import DeepSeek from '@lobehub/icons/es/DeepSeek';
 import Minimax from '@lobehub/icons/es/Minimax';
-import { ArrowUp, Paperclip, SparklesIcon, Square, X } from 'lucide-react';
+import { ArrowUp, File, Folder, Paperclip, SparklesIcon, Square, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { MentionDropdown } from './MentionDropdown';
+import type { MentionDropdownHandle } from './MentionDropdown';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { ImageAttachment } from '../../shared/ipc';
+import type { FileEntry, ImageAttachment } from '../../shared/ipc';
 
 /** 許可する MIME タイプ一覧。 */
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
@@ -58,6 +60,16 @@ function ProviderIcon({ modelId, size = 14 }: { modelId: string; size?: number }
   return <SparklesIcon className="shrink-0" style={{ width: size, height: size }} />;
 }
 
+/** 選択済みメンションの情報。 */
+interface MentionItem {
+  /** ファイル/フォルダ名 */
+  name: string;
+  /** cwd からの相対パス */
+  path: string;
+  /** ディレクトリかどうか */
+  isDirectory: boolean;
+}
+
 /**
  * PromptInput コンポーネントの props。
  */
@@ -82,6 +94,8 @@ interface PromptInputProps {
   availableModes?: SessionMode[];
   /** mode 変更時のコールバック。 */
   onModeChange?: (modeId: string) => void;
+  /** アクティブセッション ID（@ メンション機能に使用）。 */
+  sessionId?: string | null;
 }
 
 /**
@@ -128,24 +142,126 @@ function PromptInput({
   currentModeId,
   availableModes = [],
   onModeChange,
+  sessionId,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentions, setMentions] = useState<MentionItem[]>([]);
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionDropdownRef = useRef<MentionDropdownHandle>(null);
 
   function handleSubmit() {
     const trimmed = text.trim();
-    if (!trimmed && images.length === 0) return;
+    if (!trimmed && images.length === 0 && mentions.length === 0) return;
+
+    // メンションがある場合はテキストの先頭にパスを埋め込む
+    let finalText = trimmed || '';
+    if (mentions.length > 0) {
+      const paths = mentions.map((m) => m.path).join(', ');
+      finalText = `[Mentioned files: ${paths}]\n${finalText}`;
+    }
+
     const attachments = images.map((img) => ({ mimeType: img.mimeType, data: img.data }));
-    onSubmit(trimmed || '', attachments);
+    onSubmit(finalText, attachments);
     setText('');
     setImages([]);
+    setMentions([]);
     setImageError(null);
+    setMentionOpen(false);
+  }
+
+  /** テキスト変更時に @ メンションを検知する。 */
+  const handleTextChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newText = e.target.value;
+      setText(newText);
+
+      if (!sessionId) return;
+
+      const cursorPos = e.target.selectionStart;
+      // カーソルより前のテキストで最後の @ を探す
+      const textBeforeCursor = newText.slice(0, cursorPos);
+      const atIndex = textBeforeCursor.lastIndexOf('@');
+
+      if (atIndex >= 0) {
+        // @ の前が空白または行頭であることを確認（メールアドレス等を誤検知しない）
+        const charBefore = atIndex > 0 ? newText[atIndex - 1] : ' ';
+        if (charBefore === ' ' || charBefore === '\n' || atIndex === 0) {
+          const query = textBeforeCursor.slice(atIndex + 1);
+          // query にスペースが含まれていたらメンション入力終了
+          if (!query.includes(' ')) {
+            setMentionOpen(true);
+            setMentionQuery(query);
+            setMentionStartIndex(atIndex);
+            return;
+          }
+        }
+      }
+
+      setMentionOpen(false);
+      setMentionQuery('');
+      setMentionStartIndex(-1);
+    },
+    [sessionId],
+  );
+
+  /** メンションドロップダウンでファイルが選択されたとき。 */
+  function handleMentionSelect(entry: FileEntry) {
+    // テキストから @query 部分を除去
+    const before = text.slice(0, mentionStartIndex);
+    const cursorPos = textareaRef.current?.selectionStart ?? text.length;
+    const after = text.slice(cursorPos);
+    setText(before + after);
+
+    // メンション一覧に追加（重複チェック）
+    setMentions((prev) => {
+      if (prev.some((m) => m.path === entry.path)) return prev;
+      return [...prev, { name: entry.name, path: entry.path, isDirectory: entry.isDirectory }];
+    });
+
+    setMentionOpen(false);
+    setMentionQuery('');
+    setMentionStartIndex(-1);
+
+    // textarea にフォーカスを戻す
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  }
+
+  /** メンションの query を更新する（フォルダ展開時）。 */
+  function handleMentionQueryChange(query: string) {
+    const before = text.slice(0, mentionStartIndex);
+    const cursorPos = textareaRef.current?.selectionStart ?? text.length;
+    const after = text.slice(cursorPos);
+    const newText = before + '@' + query + after;
+    setText(newText);
+    setMentionQuery(query);
+
+    // カーソル位置を @ + query の末尾に設定
+    const newCursorPos = mentionStartIndex + 1 + query.length;
+    setTimeout(() => {
+      textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+      textareaRef.current?.focus();
+    }, 0);
+  }
+
+  /** メンションチップを削除する。 */
+  function handleRemoveMention(path: string) {
+    setMentions((prev) => prev.filter((m) => m.path !== path));
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // メンションドロップダウンが開いているときはそちらにイベントを委譲
+    if (mentionOpen && mentionDropdownRef.current) {
+      const handled = mentionDropdownRef.current.handleKeyDown(e);
+      if (handled) return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSubmit();
@@ -192,14 +308,48 @@ function PromptInput({
     setImages((prev) => prev.filter((img) => img.id !== id));
   }
 
-  const hasContent = text.trim().length > 0 || images.length > 0;
+  const hasContent = text.trim().length > 0 || images.length > 0 || mentions.length > 0;
 
   return (
     <div className="px-4 pb-4">
-      <div className="rounded-2xl border border-border bg-card shadow-sm">
-        {/* 画像プレビューエリア */}
-        {images.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto px-4 pt-3">
+      <div className="relative rounded-2xl border border-border bg-card shadow-sm">
+        {/* メンションドロップダウン */}
+        {sessionId && (
+          <MentionDropdown
+            ref={mentionDropdownRef}
+            sessionId={sessionId}
+            query={mentionQuery}
+            visible={mentionOpen}
+            onSelect={handleMentionSelect}
+            onClose={() => setMentionOpen(false)}
+            onQueryChange={handleMentionQueryChange}
+          />
+        )}
+
+        {/* メンションチップ + 画像プレビューエリア */}
+        {(mentions.length > 0 || images.length > 0) && (
+          <div className="flex flex-wrap gap-2 px-4 pt-3">
+            {mentions.map((mention) => (
+              <div
+                key={mention.path}
+                className="flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs"
+              >
+                {mention.isDirectory ? (
+                  <Folder className="size-3 text-blue-500" />
+                ) : (
+                  <File className="size-3 text-muted-foreground" />
+                )}
+                <span className="max-w-[200px] truncate">{mention.path}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveMention(mention.path)}
+                  className="ml-0.5 text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${mention.path}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
             {images.map((img) => (
               <div key={img.id} className="group relative shrink-0">
                 <img
@@ -225,13 +375,14 @@ function PromptInput({
 
         {/* テキスト入力エリア */}
         <textarea
+          ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTextChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder="Ask to make changes..."
+          placeholder="Ask to make changes... (type @ to mention files)"
           className={cn(
             'w-full resize-none bg-transparent px-4 pt-3 pb-2 text-sm',
             'placeholder:text-muted-foreground/60 focus:outline-none',

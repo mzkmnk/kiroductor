@@ -6,9 +6,12 @@ import type { ConfigRepository } from '../config/config.repository';
 import type { RepoMapping } from '../config/config.repository';
 import type { FileSystem } from '../../shared/fs';
 import { generateSessionTitle } from '../session/session-title.generator';
-import type { DiffStats } from '../../../shared/ipc';
+import type { DiffStats, FileEntry } from '../../../shared/ipc';
 
 const log = createDebugLogger('Repo');
+
+/** ファイル一覧から除外するディレクトリ名。 */
+const EXCLUDED_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', '.cache', '.turbo']);
 
 /** パースされたリポジトリ URL の構成要素。 */
 export interface ParsedRepoUrl {
@@ -358,6 +361,50 @@ export class RepoService {
     return this.getDiff(session.cwd, session.sourceBranch);
   }
 
+  /**
+   * 指定ディレクトリ配下のファイル・フォルダ一覧を返す。
+   *
+   * `depth` パラメータで取得階層を制御する。depth=1 で直下のみ、
+   * depth=2 で直下 + サブディレクトリの中身も含むフラットリストを返す。
+   * `.git` や `node_modules` などの一般的な除外対象は結果に含めない。
+   *
+   * @param cwd - プロジェクトルート（worktree パス）
+   * @param dirPath - cwd からの相対ディレクトリパス（`""` でルート）
+   * @param depth - 取得する階層の深さ（デフォルト1、最大3）
+   * @returns {@link FileEntry} の配列（ディレクトリ優先・名前順）
+   */
+  async listFiles(cwd: string, dirPath: string, depth: number = 1): Promise<FileEntry[]> {
+    const clampedDepth = Math.min(Math.max(depth, 1), 3);
+    const targetDir = path.resolve(cwd, dirPath);
+
+    // パストラバーサル防止
+    const resolvedCwd = path.resolve(cwd);
+    if (!targetDir.startsWith(resolvedCwd)) {
+      throw new Error('Directory path is outside the working directory');
+    }
+
+    return this.readDirRecursive(resolvedCwd, targetDir, clampedDepth);
+  }
+
+  /**
+   * セッション ID からファイル一覧を取得する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param dirPath - cwd からの相対ディレクトリパス
+   * @param depth - 取得する階層の深さ
+   * @returns {@link FileEntry} の配列、セッションが見つからない場合は空配列
+   */
+  async listFilesBySession(
+    sessionId: string,
+    dirPath: string,
+    depth?: number,
+  ): Promise<FileEntry[]> {
+    const sessions = await this.configRepo.readSessions();
+    const session = sessions.find((s) => s.acpSessionId === sessionId);
+    if (!session) return [];
+    return this.listFiles(session.cwd, dirPath, depth);
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
@@ -366,6 +413,60 @@ export class RepoService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * ディレクトリを再帰的に読み取り、{@link FileEntry} のフラットリストを返す。
+   *
+   * @param cwd - プロジェクトルートの絶対パス
+   * @param dir - 読み取る絶対ディレクトリパス
+   * @param depth - 残りの再帰深さ
+   * @returns ディレクトリ優先・名前順でソートされた {@link FileEntry} の配列
+   */
+  private async readDirRecursive(cwd: string, dir: string, depth: number): Promise<FileEntry[]> {
+    let names: string[];
+    try {
+      names = await this.fs.readdir(dir);
+    } catch {
+      return [];
+    }
+
+    const entries: FileEntry[] = [];
+
+    // stat を並列で実行して高速化
+    const statResults = await Promise.all(
+      names
+        .filter((name) => !name.startsWith('.') || !EXCLUDED_DIRS.has(name))
+        .filter((name) => !EXCLUDED_DIRS.has(name))
+        .map(async (name) => {
+          const fullPath = path.join(dir, name);
+          try {
+            const s = await this.fs.stat(fullPath);
+            const relativePath = path.relative(cwd, fullPath);
+            return { name, path: relativePath, isDirectory: s.isDirectory() };
+          } catch {
+            return null;
+          }
+        }),
+    );
+
+    // ディレクトリ優先 → 名前順でソート
+    const sorted = statResults
+      .filter((e): e is FileEntry => e !== null)
+      .sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+
+    for (const entry of sorted) {
+      entries.push(entry);
+      if (entry.isDirectory && depth > 1) {
+        const children = await this.readDirRecursive(cwd, path.join(dir, entry.name), depth - 1);
+        entries.push(...children);
+      }
+    }
+
+    return entries;
   }
 
   /** git コマンドを実行し、終了コードが 0 でない場合はエラーを投げる。stdout を返す。 */

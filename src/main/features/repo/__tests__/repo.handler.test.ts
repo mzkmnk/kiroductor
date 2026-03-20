@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { RepoHandler } from '../repo.handler';
 import type { KiroductorSettings, RepoMapping } from '../../config/config.repository';
-import type { DiffStats } from '../../../../shared/ipc';
+import type { DiffStats, FileEntry } from '../../../../shared/ipc';
 
 const { ipcHandle } = vi.hoisted(() => ({ ipcHandle: vi.fn() }));
 
@@ -25,6 +25,9 @@ describe('RepoHandler', () => {
     listBranches: MockedFunction<(repoId: string) => Promise<string[]>>;
     getDiffStatsBySession: MockedFunction<(sessionId: string) => Promise<DiffStats | null>>;
     getDiffBySession: MockedFunction<(sessionId: string) => Promise<string | null>>;
+    listFilesBySession: MockedFunction<
+      (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>
+    >;
   };
   let settingsService: {
     getSettings: MockedFunction<() => Promise<KiroductorSettings>>;
@@ -41,6 +44,7 @@ describe('RepoHandler', () => {
       listBranches: vi.fn().mockResolvedValue(['main', 'dev']),
       getDiffStatsBySession: vi.fn().mockResolvedValue(null),
       getDiffBySession: vi.fn().mockResolvedValue(null),
+      listFilesBySession: vi.fn().mockResolvedValue([]),
     };
     settingsService = {
       getSettings: vi.fn().mockResolvedValue({}),

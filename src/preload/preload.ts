@@ -9,7 +9,13 @@ import type {
 import type { SessionId, SessionNotification } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
-import type { DiffStats, ImageAttachment, IpcInvokeChannels, IpcOnChannels } from '../shared/ipc';
+import type {
+  DiffStats,
+  FileEntry,
+  ImageAttachment,
+  IpcInvokeChannels,
+  IpcOnChannels,
+} from '../shared/ipc';
 
 /**
  * 型付き `ipcRenderer.invoke` ヘルパー。
@@ -165,6 +171,8 @@ export interface RepoAPI {
   getDiffStats: (sessionId: string) => Promise<DiffStats | null>;
   /** 指定セッションの unified diff 本文を取得する。 */
   getDiff: (sessionId: string) => Promise<string | null>;
+  /** 指定セッションの作業ディレクトリ配下のファイル・フォルダ一覧を取得する。 */
+  listFiles: (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>;
 }
 
 /**
@@ -238,6 +246,7 @@ const kiroductorAPI: KiroductorAPI = {
     listBranches: (repoId) => invoke('repo:list-branches', repoId),
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
+    listFiles: (sessionId, dirPath, depth) => invoke('repo:list-files', sessionId, dirPath, depth),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

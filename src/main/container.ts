@@ -62,6 +62,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       fs.promises.mkdir(dirPath, opts),
     access: (targetPath: string): Promise<void> => fs.promises.access(targetPath),
     readdir: (dirPath: string): Promise<string[]> => fs.promises.readdir(dirPath),
+    stat: (targetPath: string) => fs.promises.stat(targetPath),
   };
 
   const configRepo = new ConfigRepository(fsAdapter);
