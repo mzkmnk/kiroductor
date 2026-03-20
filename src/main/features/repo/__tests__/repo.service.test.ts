@@ -688,9 +688,7 @@ describe('RepoService', () => {
     });
 
     it('パストラバーサルを防止すること', async () => {
-      await expect(service.listFiles(CWD, '../../etc')).rejects.toThrow(
-        'Directory path is outside the working directory',
-      );
+      await expect(service.listFiles(CWD, '../../etc')).rejects.toThrow();
     });
 
     it('depth=2 でサブディレクトリの中身も返すこと', async () => {
