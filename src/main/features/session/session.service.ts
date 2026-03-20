@@ -31,12 +31,7 @@ export class SessionService {
     private readonly messageRepo: MessageRepository,
     private readonly connection: Pick<
       ClientSideConnection,
-      | 'newSession'
-      | 'cancel'
-      | 'loadSession'
-      | 'unstable_setSessionModel'
-      | 'setSessionMode'
-      | 'unstable_closeSession'
+      'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel' | 'setSessionMode'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
@@ -92,8 +87,8 @@ export class SessionService {
    * 2. ACP 接続の `loadSession()` を呼んでセッションを復元する
    * 3. 指定した `sessionId` を `SessionRepository` に保存する
    *
-   * セッションが別プロセスにロックされている場合は `unstable_closeSession` で
-   * ロックを解除してからリトライする（クラッシュ後のリカバリ）。
+   * セッションが別プロセスにロックされている場合は、stale プロセスを
+   * kill してからリトライする（クラッシュ後のリカバリ）。
    *
    * @param sessionId - 復元するセッションの ID
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
@@ -107,11 +102,13 @@ export class SessionService {
       const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
       this.applyLoadResponse(sessionId, response);
     } catch (error: unknown) {
-      if (!this.isSessionLockedError(error)) throw error;
+      const stalePid = this.extractStalePid(error);
+      if (stalePid === null) throw error;
 
-      log.info(`セッション ${sessionId} は別プロセスにロックされています。リカバリを試みます`);
-      await this.connection.unstable_closeSession({ sessionId });
-      log.info(`unstable_closeSession 完了 sessionId=${sessionId}`);
+      log.info(
+        `セッション ${sessionId} は PID ${String(stalePid)} にロックされています。リカバリを試みます`,
+      );
+      await this.killStaleProcess(stalePid);
       const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
       this.applyLoadResponse(sessionId, response);
     } finally {
@@ -140,21 +137,59 @@ export class SessionService {
   }
 
   /**
-   * エラーがセッションロック競合（別プロセスがセッションを保持中）かどうかを判定する。
+   * セッションロック競合エラーからロックを保持している PID を抽出する。
+   *
+   * `Error` インスタンスと JSON-RPC エラーオブジェクト（`data` フィールド）の両方に対応する。
    *
    * @param error - 判定するエラー
-   * @returns セッションロック競合の場合は `true`
+   * @returns ロックを保持している PID。セッションロック競合でない場合は `null`
    */
-  private isSessionLockedError(error: unknown): boolean {
-    const needle = 'Session is active in another process';
+  private extractStalePid(error: unknown): number | null {
+    const pattern = /Session is active in another process \(PID (\d+)\)/;
+    let text = '';
     if (error instanceof Error) {
-      return error.message.includes(needle);
-    }
-    if (typeof error === 'object' && error !== null) {
+      text = error.message;
+    } else if (typeof error === 'object' && error !== null) {
       const obj = error as Record<string, unknown>;
-      return String(obj.message ?? '').includes(needle) || String(obj.data ?? '').includes(needle);
+      text = `${String(obj.message ?? '')} ${String(obj.data ?? '')}`;
     }
-    return false;
+    const match = pattern.exec(text);
+    return match ? Number(match[1]) : null;
+  }
+
+  /**
+   * stale プロセスを SIGTERM で kill し、終了するまで待機する。
+   *
+   * プロセスが既に終了している場合は即座に返る。
+   * 最大 5 秒間ポーリングし、タイムアウトした場合はそのまま続行する。
+   *
+   * @param pid - kill 対象のプロセス ID
+   */
+  private async killStaleProcess(pid: number): Promise<void> {
+    try {
+      process.kill(pid, 'SIGTERM');
+      log.info(`stale プロセス PID ${String(pid)} に SIGTERM を送信しました`);
+    } catch {
+      log.info(`PID ${String(pid)} は既に終了しています`);
+      return;
+    }
+
+    // プロセスが終了するまでポーリング（最大 5 秒）
+    const maxWait = 5000;
+    const interval = 200;
+    let elapsed = 0;
+    while (elapsed < maxWait) {
+      await new Promise((resolve) => setTimeout(resolve, interval));
+      elapsed += interval;
+      try {
+        process.kill(pid, 0);
+        // まだ生きている
+      } catch {
+        log.info(`PID ${String(pid)} の終了を確認しました（${String(elapsed)}ms）`);
+        return;
+      }
+    }
+    log.info(`PID ${String(pid)} の終了待ちがタイムアウトしました（${String(maxWait)}ms）`);
   }
 
   /**
