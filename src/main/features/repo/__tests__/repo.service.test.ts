@@ -735,12 +735,12 @@ describe('RepoService', () => {
       (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
         JSON.stringify({ sessions: [SESSION] }),
       );
-      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValueOnce(['file.ts']);
-      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ isDirectory: () => false });
+      const listFilesSpy = vi.spyOn(service, 'listFiles').mockResolvedValue([]);
 
-      const result = await service.listFilesBySession('session-1', '');
+      await service.listFilesBySession('session-1', '');
 
-      expect(result).toEqual([{ name: 'file.ts', path: 'file.ts', isDirectory: false }]);
+      expect(listFilesSpy).toHaveBeenCalledWith(SESSION.cwd, '', undefined);
+      listFilesSpy.mockRestore();
     });
 
     it('セッションが見つからない場合、空配列を返す', async () => {
