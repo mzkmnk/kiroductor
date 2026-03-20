@@ -247,7 +247,17 @@ describe('SessionService', () => {
     let killSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+      // SIGTERM → true, その後の kill(pid, 0) → ESRCH（プロセス終了済み）
+      let killed = false;
+      killSpy = vi.spyOn(process, 'kill').mockImplementation((_pid, signal) => {
+        if (signal === 'SIGTERM') {
+          killed = true;
+          return true;
+        }
+        // signal === 0: プロセス生存チェック
+        if (killed) throw new Error('ESRCH');
+        return true;
+      });
     });
 
     afterEach(() => {

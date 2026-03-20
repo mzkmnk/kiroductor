@@ -108,7 +108,7 @@ export class SessionService {
       log.info(
         `セッション ${sessionId} は PID ${String(stalePid)} にロックされています。リカバリを試みます`,
       );
-      this.killStaleProcess(stalePid);
+      await this.killStaleProcess(stalePid);
       const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
       this.applyLoadResponse(sessionId, response);
     } finally {
@@ -158,17 +158,38 @@ export class SessionService {
   }
 
   /**
-   * stale プロセスを kill する。プロセスが既に終了している場合は何もしない。
+   * stale プロセスを SIGTERM で kill し、終了するまで待機する。
+   *
+   * プロセスが既に終了している場合は即座に返る。
+   * 最大 5 秒間ポーリングし、タイムアウトした場合はそのまま続行する。
    *
    * @param pid - kill 対象のプロセス ID
    */
-  private killStaleProcess(pid: number): void {
+  private async killStaleProcess(pid: number): Promise<void> {
     try {
       process.kill(pid, 'SIGTERM');
-      log.info(`stale プロセス PID ${String(pid)} を kill しました`);
+      log.info(`stale プロセス PID ${String(pid)} に SIGTERM を送信しました`);
     } catch {
       log.info(`PID ${String(pid)} は既に終了しています`);
+      return;
     }
+
+    // プロセスが終了するまでポーリング（最大 5 秒）
+    const maxWait = 5000;
+    const interval = 200;
+    let elapsed = 0;
+    while (elapsed < maxWait) {
+      await new Promise((resolve) => setTimeout(resolve, interval));
+      elapsed += interval;
+      try {
+        process.kill(pid, 0);
+        // まだ生きている
+      } catch {
+        log.info(`PID ${String(pid)} の終了を確認しました（${String(elapsed)}ms）`);
+        return;
+      }
+    }
+    log.info(`PID ${String(pid)} の終了待ちがタイムアウトしました（${String(maxWait)}ms）`);
   }
 
   /**
