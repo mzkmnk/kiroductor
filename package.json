@@ -66,6 +66,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "fix-path": "^5.0.0",
     "lefthook": "^2.1.4",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.1",

@@ -1,32 +1,14 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import fixPath from 'fix-path';
 import { createDebugLogger } from './shared/debug-logger';
 import { buildContainer } from './container';
 import { registerHandlers } from './handlers';
 
-/**
- * macOS では Finder/Applications 起動時にシェルの PATH が継承されない（launchd 起動のため）。
- * ユーザーのログインシェルをログインモードで実行し PATH を取得して補完する。
- * `fix-path` パッケージと同等の処理を Node.js 組み込みの `child_process` で実装。
- */
-function fixMacOSPath(): void {
-  try {
-    const shell = process.env.SHELL ?? '/bin/zsh';
-    const result = execFileSync(shell, ['-l', '-c', 'printf "%s" "$PATH"'], {
-      encoding: 'utf8',
-      timeout: 5000,
-    }).trim();
-    if (result) {
-      process.env.PATH = result;
-    }
-  } catch {
-    // PATH 取得失敗時は無視して起動を続ける
-  }
-}
-
+// macOS では Finder/Applications 起動時にシェルの PATH が継承されない（launchd 起動のため）。
+// fix-path でユーザーのログインシェルから PATH を補完し、kiro-cli を検索可能にする。
 if (process.platform === 'darwin') {
-  fixMacOSPath();
+  fixPath();
 }
 
 const log = createDebugLogger('Main');
