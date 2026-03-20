@@ -436,7 +436,6 @@ export class RepoService {
     // stat を並列で実行して高速化
     const statResults = await Promise.all(
       names
-        .filter((name) => !name.startsWith('.') || !EXCLUDED_DIRS.has(name))
         .filter((name) => !EXCLUDED_DIRS.has(name))
         .map(async (name) => {
           const fullPath = path.join(dir, name);
