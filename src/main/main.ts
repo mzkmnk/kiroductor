@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import fixPath from 'fix-path';
 import { createDebugLogger } from './shared/debug-logger';
@@ -45,6 +45,20 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(path.join(import.meta.dirname, '../renderer/index.html'));
   }
+
+  // 外部リンクをシステムのデフォルトブラウザで開く
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const appUrl = process.env['ELECTRON_RENDERER_URL'] ?? '';
+    if (appUrl && url.startsWith(appUrl)) return;
+    if (url.startsWith('file://')) return;
+    event.preventDefault();
+    shell.openExternal(url);
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 
   mainWindow.webContents.once('did-finish-load', () => {
     const cwd = process.cwd();
