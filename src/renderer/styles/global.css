@@ -1,27 +1,11 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/m-plus-2';
+@import '@fontsource-variable/jetbrains-mono';
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-  font-family: 'Geist';
-  src: url('../assets/fonts/Geist-Variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('../assets/fonts/GeistMono-Variable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 @theme inline {
-  --font-sans: 'Geist', 'M PLUS 2 Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: 'JetBrains Mono Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -200,7 +184,8 @@
     border-radius: 0.25em;
     background: var(--code-bg);
     font-size: 0.875em;
-    font-family: 'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    font-family:
+      'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   }
 
   pre {
@@ -331,7 +316,8 @@
   --diff-background-color: var(--background);
   --diff-text-color: var(--foreground);
   --diff-font-family:
-    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    'JetBrains Mono Variable', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   --diff-gutter-insert-background-color: oklch(0.93 0.05 145);
   --diff-gutter-delete-background-color: oklch(0.93 0.05 15);
   --diff-code-insert-background-color: oklch(0.96 0.03 145);
