@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { TerminalIcon, GitBranchIcon, MessageSquareIcon, PlusIcon } from 'lucide-react';
+import { GitBranchIcon, MessageSquareIcon, TerminalIcon, PlusIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { NewSessionDialog } from './NewSessionDialog';
+import appIcon from '../assets/icon.png';
 
 /** {@link WelcomeScreen} のプロパティ。 */
 interface WelcomeScreenProps {
@@ -42,9 +43,7 @@ export function WelcomeScreen({ onSessionCreated }: WelcomeScreenProps) {
         <div className="w-full max-w-lg space-y-10">
           {/* ロゴ + タイトル */}
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
-              <TerminalIcon className="h-7 w-7" />
-            </div>
+            <img src={appIcon} alt="Kiroductor" className="h-14 w-14 rounded-2xl shadow-lg" />
             <div className="space-y-1.5">
               <h1 className="text-3xl font-bold tracking-tight">Kiroductor</h1>
               <p className="text-sm text-muted-foreground">
