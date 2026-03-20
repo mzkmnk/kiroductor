@@ -146,13 +146,13 @@ export class SessionService {
    * @returns セッションロック競合の場合は `true`
    */
   private isSessionLockedError(error: unknown): boolean {
+    const needle = 'Session is active in another process';
     if (error instanceof Error) {
-      return error.message.includes('Session is active in another process');
+      return error.message.includes(needle);
     }
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      return String((error as { message: unknown }).message).includes(
-        'Session is active in another process',
-      );
+    if (typeof error === 'object' && error !== null) {
+      const obj = error as Record<string, unknown>;
+      return String(obj.message ?? '').includes(needle) || String(obj.data ?? '').includes(needle);
     }
     return false;
   }

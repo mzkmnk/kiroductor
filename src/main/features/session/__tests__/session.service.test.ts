@@ -241,6 +241,12 @@ describe('SessionService', () => {
     const SESSION_LOCKED_ERROR = new Error(
       'Failed to start session: Session is active in another process (PID 17173)',
     );
+    /** kiro-cli が返す JSON-RPC エラー形式（Error インスタンスではない） */
+    const SESSION_LOCKED_JSONRPC = {
+      code: -32603,
+      message: 'Internal error',
+      data: 'Failed to start session: Session is active in another process (PID 22237)',
+    };
 
     it('セッションロックエラー時に unstable_closeSession → リトライで成功すること', async () => {
       connection.loadSession
@@ -287,6 +293,18 @@ describe('SessionService', () => {
       await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow();
 
       expect(sessionRepo.getIsLoading()).toBe(false);
+    });
+
+    it('JSON-RPC エラー形式（data フィールド）でもリカバリが発動すること', async () => {
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_JSONRPC)
+        .mockResolvedValueOnce({ sessionId: 'session-abc' });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(connection.unstable_closeSession).toHaveBeenCalledWith({ sessionId: 'session-abc' });
+      expect(connection.loadSession).toHaveBeenCalledTimes(2);
+      expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
   });
 
