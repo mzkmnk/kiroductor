@@ -24,8 +24,8 @@ export default defineConfig({
       rollupOptions: {
         input: 'src/preload/preload.ts',
         output: {
-          format: 'es',
-          entryFileNames: 'preload.mjs',
+          format: 'cjs',
+          entryFileNames: 'preload.js',
         },
       },
     },

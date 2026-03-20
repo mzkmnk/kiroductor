@@ -34,7 +34,7 @@ function createWindow(): void {
     height: 800,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
-      preload: path.join(import.meta.dirname, '../preload/preload.mjs'),
+      preload: path.join(import.meta.dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
