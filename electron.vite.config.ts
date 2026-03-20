@@ -25,7 +25,7 @@ export default defineConfig({
         input: 'src/preload/preload.ts',
         output: {
           format: 'es',
-          entryFileNames: 'index.mjs',
+          entryFileNames: 'preload.mjs',
         },
       },
     },
