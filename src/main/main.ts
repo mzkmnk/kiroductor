@@ -75,6 +75,13 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', () => {
+  log.info('before-quit: ACP 接続を終了します');
+  acpConnectionService.stop().catch((err: unknown) => {
+    log.error('before-quit: ACP 接続の終了に失敗しました', err);
+  });
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

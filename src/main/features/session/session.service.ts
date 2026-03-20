@@ -31,7 +31,12 @@ export class SessionService {
     private readonly messageRepo: MessageRepository,
     private readonly connection: Pick<
       ClientSideConnection,
-      'newSession' | 'cancel' | 'loadSession' | 'unstable_setSessionModel' | 'setSessionMode'
+      | 'newSession'
+      | 'cancel'
+      | 'loadSession'
+      | 'unstable_setSessionModel'
+      | 'setSessionMode'
+      | 'unstable_closeSession'
     >,
     private readonly notificationService: NotificationService,
     private readonly configRepo: Pick<ConfigRepository, 'upsertSession' | 'readSessions'>,
@@ -87,6 +92,9 @@ export class SessionService {
    * 2. ACP 接続の `loadSession()` を呼んでセッションを復元する
    * 3. 指定した `sessionId` を `SessionRepository` に保存する
    *
+   * セッションが別プロセスにロックされている場合は `unstable_closeSession` で
+   * ロックを解除してからリトライする（クラッシュ後のリカバリ）。
+   *
    * @param sessionId - 復元するセッションの ID
    * @param cwd - セッションの作業ディレクトリ（絶対パス）
    */
@@ -95,7 +103,33 @@ export class SessionService {
     this.sessionRepo.setIsLoading(true);
     this.notificationService.sendToRenderer('acp:session-loading', { loading: true });
     this.messageRepo.initSession(sessionId);
-    const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
+    try {
+      const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
+      this.applyLoadResponse(sessionId, response);
+    } catch (error: unknown) {
+      if (!this.isSessionLockedError(error)) throw error;
+
+      log.info(`セッション ${sessionId} は別プロセスにロックされています。リカバリを試みます`);
+      await this.connection.unstable_closeSession({ sessionId });
+      log.info(`unstable_closeSession 完了 sessionId=${sessionId}`);
+      const response = await this.connection.loadSession({ sessionId, cwd, mcpServers: [] });
+      this.applyLoadResponse(sessionId, response);
+    } finally {
+      this.sessionRepo.setIsLoading(false);
+      this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
+    }
+  }
+
+  /**
+   * `loadSession` のレスポンスをリポジトリに反映する共通処理。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param response - `loadSession` のレスポンス
+   */
+  private applyLoadResponse(
+    sessionId: SessionId,
+    response: { models?: SessionModelState | null; modes?: SessionModeState | null },
+  ): void {
     log.info(`loadSession 完了 sessionId=${sessionId}`);
     this.saveModelState(sessionId, response.models);
     this.saveModeState(sessionId, response.modes);
@@ -103,8 +137,24 @@ export class SessionService {
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.markAcpConnected(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
-    this.sessionRepo.setIsLoading(false);
-    this.notificationService.sendToRenderer('acp:session-loading', { loading: false });
+  }
+
+  /**
+   * エラーがセッションロック競合（別プロセスがセッションを保持中）かどうかを判定する。
+   *
+   * @param error - 判定するエラー
+   * @returns セッションロック競合の場合は `true`
+   */
+  private isSessionLockedError(error: unknown): boolean {
+    const needle = 'Session is active in another process';
+    if (error instanceof Error) {
+      return error.message.includes(needle);
+    }
+    if (typeof error === 'object' && error !== null) {
+      const obj = error as Record<string, unknown>;
+      return String(obj.message ?? '').includes(needle) || String(obj.data ?? '').includes(needle);
+    }
+    return false;
   }
 
   /**

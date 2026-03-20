@@ -49,6 +49,9 @@ describe('SessionService', () => {
     setSessionMode: MockedFunction<
       (params: { sessionId: string; modeId: string }) => Promise<Record<string, never>>
     >;
+    unstable_closeSession: MockedFunction<
+      (params: { sessionId: string }) => Promise<Record<string, never>>
+    >;
   };
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
@@ -68,6 +71,7 @@ describe('SessionService', () => {
       loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
       unstable_setSessionModel: vi.fn().mockResolvedValue({}),
       setSessionMode: vi.fn().mockResolvedValue({}),
+      unstable_closeSession: vi.fn().mockResolvedValue({}),
     };
     notificationService = {
       sendToRenderer: vi.fn(),
@@ -230,6 +234,77 @@ describe('SessionService', () => {
     it('load() 後に sessionRepo.isAcpConnected() が true を返すこと', async () => {
       await service.load('session-abc', '/path/to/project');
       expect(sessionRepo.isAcpConnected('session-abc')).toBe(true);
+    });
+  });
+
+  describe('load() のセッションロック・リカバリ', () => {
+    const SESSION_LOCKED_ERROR = new Error(
+      'Failed to start session: Session is active in another process (PID 17173)',
+    );
+    /** kiro-cli が返す JSON-RPC エラー形式（Error インスタンスではない） */
+    const SESSION_LOCKED_JSONRPC = {
+      code: -32603,
+      message: 'Internal error',
+      data: 'Failed to start session: Session is active in another process (PID 22237)',
+    };
+
+    it('セッションロックエラー時に unstable_closeSession → リトライで成功すること', async () => {
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_ERROR)
+        .mockResolvedValueOnce({ sessionId: 'session-abc' });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(connection.unstable_closeSession).toHaveBeenCalledWith({ sessionId: 'session-abc' });
+      expect(connection.loadSession).toHaveBeenCalledTimes(2);
+      expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
+    });
+
+    it('unstable_closeSession が失敗した場合、エラーが伝播すること', async () => {
+      connection.loadSession.mockRejectedValueOnce(SESSION_LOCKED_ERROR);
+      connection.unstable_closeSession.mockRejectedValueOnce(new Error('close failed'));
+
+      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow('close failed');
+    });
+
+    it('セッションロック以外のエラーはリカバリせずそのままスローすること', async () => {
+      connection.loadSession.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow(
+        'Network error',
+      );
+      expect(connection.unstable_closeSession).not.toHaveBeenCalled();
+    });
+
+    it('リカバリ成功時も isLoading が false に戻ること', async () => {
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_ERROR)
+        .mockResolvedValueOnce({ sessionId: 'session-abc' });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(sessionRepo.getIsLoading()).toBe(false);
+    });
+
+    it('リカバリ失敗時も isLoading が false に戻ること', async () => {
+      connection.loadSession.mockRejectedValueOnce(SESSION_LOCKED_ERROR);
+      connection.unstable_closeSession.mockRejectedValueOnce(new Error('close failed'));
+
+      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow();
+
+      expect(sessionRepo.getIsLoading()).toBe(false);
+    });
+
+    it('JSON-RPC エラー形式（data フィールド）でもリカバリが発動すること', async () => {
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_JSONRPC)
+        .mockResolvedValueOnce({ sessionId: 'session-abc' });
+
+      await service.load('session-abc', '/path/to/project');
+
+      expect(connection.unstable_closeSession).toHaveBeenCalledWith({ sessionId: 'session-abc' });
+      expect(connection.loadSession).toHaveBeenCalledTimes(2);
+      expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
   });
 

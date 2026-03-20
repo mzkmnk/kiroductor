@@ -33,7 +33,7 @@ export interface AppContainer {
   /** リポジトリ操作・設定管理ハンドラ。 */
   repoHandler: RepoHandler;
   /** ACP接続のライフサイクルを管理するサービス。自動初期化に使用する。 */
-  acpConnectionService: Pick<AcpConnectionService, 'start'>;
+  acpConnectionService: Pick<AcpConnectionService, 'start' | 'stop'>;
   /** セッションのライフサイクルを管理するサービス。自動初期化に使用する。 */
   sessionService: Pick<SessionService, 'create' | 'restoreSessions'>;
 }
@@ -109,6 +109,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     | 'loadSession'
     | 'unstable_setSessionModel'
     | 'setSessionMode'
+    | 'unstable_closeSession'
   > = {
     newSession: (params) => {
       const conn = connectionRepo.getConnection();
@@ -139,6 +140,11 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       const conn = connectionRepo.getConnection();
       if (!conn) throw new Error('ACP not connected');
       return conn.setSessionMode(params);
+    },
+    unstable_closeSession: (params) => {
+      const conn = connectionRepo.getConnection();
+      if (!conn) throw new Error('ACP not connected');
+      return conn.unstable_closeSession(params);
     },
   };
 
