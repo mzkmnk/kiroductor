@@ -22,6 +22,16 @@ export interface ImageAttachment {
   data: string;
 }
 
+/** ファイルまたはディレクトリのエントリ情報。 */
+export interface FileEntry {
+  /** エントリ名（例: `"App.tsx"`） */
+  name: string;
+  /** cwd からの相対パス（例: `"src/renderer/App.tsx"`） */
+  path: string;
+  /** ディレクトリかどうか */
+  isDirectory: boolean;
+}
+
 /** `git diff --shortstat` の解析結果。 */
 export interface DiffStats {
   /** 変更されたファイル数 */
@@ -69,6 +79,10 @@ export interface IpcInvokeChannels {
   'repo:list-branches': { args: [repoId: string]; return: string[] };
   'repo:diff-stats': { args: [sessionId: string]; return: DiffStats | null };
   'repo:diff': { args: [sessionId: string]; return: string | null };
+  'repo:list-files': {
+    args: [sessionId: string, dirPath: string, depth?: number];
+    return: FileEntry[];
+  };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

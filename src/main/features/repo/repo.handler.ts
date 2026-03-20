@@ -21,6 +21,7 @@ export class RepoHandler {
       | 'listBranches'
       | 'getDiffStatsBySession'
       | 'getDiffBySession'
+      | 'listFilesBySession'
     >,
     private readonly settingsService: Pick<SettingsService, 'getSettings' | 'updateSettings'>,
   ) {}
@@ -57,6 +58,10 @@ export class RepoHandler {
     );
 
     handle('repo:diff', (_event, sessionId) => this.repoService.getDiffBySession(sessionId));
+
+    handle('repo:list-files', (_event, sessionId, dirPath, depth) =>
+      this.repoService.listFilesBySession(sessionId, dirPath, depth),
+    );
 
     handle('config:get-settings', () => this.settingsService.getSettings());
 

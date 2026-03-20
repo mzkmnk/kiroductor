@@ -47,4 +47,12 @@ export interface FileSystem {
    * @returns エントリ名の配列
    */
   readdir(path: string): Promise<string[]>;
+
+  /**
+   * ファイルまたはディレクトリのメタ情報を返す。
+   *
+   * @param path - 対象のパス
+   * @returns `isDirectory()` メソッドを持つオブジェクト
+   */
+  stat(path: string): Promise<{ isDirectory(): boolean }>;
 }

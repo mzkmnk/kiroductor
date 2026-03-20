@@ -19,6 +19,7 @@ describe('RepoService', () => {
       mkdir: vi.fn().mockResolvedValue(undefined),
       access: vi.fn().mockRejectedValue(new Error('ENOENT')),
       readdir: vi.fn().mockResolvedValue([]),
+      stat: vi.fn().mockRejectedValue(new Error('ENOENT')),
     };
     configRepo = new ConfigRepository(fs, '/home/test/.kiroductor');
     spawnMock = vi.fn();
@@ -628,6 +629,127 @@ describe('RepoService', () => {
       const result = await service.getDiffBySession('nonexistent');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('listFiles(cwd, dirPath, depth)', () => {
+    const CWD = '/worktree/project';
+
+    it('ディレクトリ配下のファイルとフォルダを返すこと', async () => {
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValueOnce(['src', 'README.md']);
+      (fs.stat as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ isDirectory: () => true })
+        .mockResolvedValueOnce({ isDirectory: () => false });
+
+      const result = await service.listFiles(CWD, '');
+
+      expect(result).toEqual([
+        { name: 'src', path: 'src', isDirectory: true },
+        { name: 'README.md', path: 'README.md', isDirectory: false },
+      ]);
+    });
+
+    it('.git と node_modules を除外すること', async () => {
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        '.git',
+        'node_modules',
+        'src',
+        'index.ts',
+      ]);
+      (fs.stat as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ isDirectory: () => true })
+        .mockResolvedValueOnce({ isDirectory: () => false });
+
+      const result = await service.listFiles(CWD, '');
+
+      const names = result.map((e) => e.name);
+      expect(names).not.toContain('.git');
+      expect(names).not.toContain('node_modules');
+      expect(names).toContain('src');
+      expect(names).toContain('index.ts');
+    });
+
+    it('ディレクトリ優先・名前順でソートされること', async () => {
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        'z-file.ts',
+        'a-dir',
+        'b-file.ts',
+        'a-file.ts',
+      ]);
+      (fs.stat as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ isDirectory: () => false })
+        .mockResolvedValueOnce({ isDirectory: () => true })
+        .mockResolvedValueOnce({ isDirectory: () => false })
+        .mockResolvedValueOnce({ isDirectory: () => false });
+
+      const result = await service.listFiles(CWD, '');
+
+      expect(result.map((e) => e.name)).toEqual(['a-dir', 'a-file.ts', 'b-file.ts', 'z-file.ts']);
+    });
+
+    it('パストラバーサルを防止すること', async () => {
+      await expect(service.listFiles(CWD, '../../etc')).rejects.toThrow();
+    });
+
+    it('depth=2 でサブディレクトリの中身も返すこと', async () => {
+      // ルートの readdir
+      (fs.readdir as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(['src'])
+        // src の readdir
+        .mockResolvedValueOnce(['index.ts']);
+      (fs.stat as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ isDirectory: () => true })
+        .mockResolvedValueOnce({ isDirectory: () => false });
+
+      const result = await service.listFiles(CWD, '', 2);
+
+      expect(result).toEqual([
+        { name: 'src', path: 'src', isDirectory: true },
+        { name: 'index.ts', path: 'src/index.ts', isDirectory: false },
+      ]);
+    });
+
+    it('存在しないディレクトリは空配列を返すこと', async () => {
+      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('ENOENT'));
+
+      const result = await service.listFiles(CWD, 'nonexistent');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('listFilesBySession(sessionId, dirPath)', () => {
+    const SESSION: SessionMapping = {
+      acpSessionId: 'session-1',
+      repoId: 'repo-1',
+      cwd: '/worktree/project',
+      title: 'Test',
+      currentBranch: 'kiroductor/test',
+      sourceBranch: 'main',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    it('セッションが見つかった場合、listFiles() に委譲する', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ sessions: [SESSION] }),
+      );
+      const listFilesSpy = vi.spyOn(service, 'listFiles').mockResolvedValue([]);
+
+      await service.listFilesBySession('session-1', '');
+
+      expect(listFilesSpy).toHaveBeenCalledWith(SESSION.cwd, '', undefined);
+      listFilesSpy.mockRestore();
+    });
+
+    it('セッションが見つからない場合、空配列を返す', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ sessions: [] }));
+
+      const result = await service.listFilesBySession('nonexistent', '');
+
+      expect(result).toEqual([]);
     });
   });
 
