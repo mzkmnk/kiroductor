@@ -289,7 +289,7 @@ function App() {
   }
 
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
-  async function handleSwitchSession(sessionId: string, _cwd: string) {
+  async function handleSwitchSession(sessionId: string, cwd: string) {
     if (sessionId === activeSessionId) return;
 
     // 切り替え前に現セッションのスクロール位置を保存
@@ -321,7 +321,7 @@ function App() {
       }
       setIsRestoring(true);
       try {
-        await window.kiroductor.session.load(sessionId, _cwd);
+        await window.kiroductor.session.load(sessionId, cwd);
         const loadedMsgs = await window.kiroductor.session.getMessages(sessionId);
         dispatchChat({ type: 'set', messages: loadedMsgs });
       } catch (err) {
