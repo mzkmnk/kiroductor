@@ -1,8 +1,15 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+import fixPath from 'fix-path';
 import { createDebugLogger } from './shared/debug-logger';
 import { buildContainer } from './container';
 import { registerHandlers } from './handlers';
+
+// macOS では Finder/Applications 起動時にシェルの PATH が継承されない（launchd 起動のため）。
+// fix-path でユーザーのログインシェルから PATH を補完し、kiro-cli を検索可能にする。
+if (process.platform === 'darwin') {
+  fixPath();
+}
 
 const log = createDebugLogger('Main');
 
@@ -27,7 +34,7 @@ function createWindow(): void {
     height: 800,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(import.meta.dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -36,7 +43,7 @@ function createWindow(): void {
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(path.join(import.meta.dirname, '../renderer/index.html'));
   }
 
   mainWindow.webContents.once('did-finish-load', () => {
