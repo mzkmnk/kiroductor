@@ -112,13 +112,9 @@ const MentionDropdown = forwardRef<MentionDropdownHandle, MentionDropdownProps>(
       [dirPath],
     );
 
-    /** エントリを選択する。フォルダなら展開、ファイルならメンション挿入。 */
+    /** エントリを確定する。ファイル・フォルダ問わずメンションとして挿入する。 */
     function selectEntry(entry: FileEntry) {
-      if (entry.isDirectory) {
-        onQueryChange(entry.path + '/');
-      } else {
-        onSelect(entry);
-      }
+      onSelect(entry);
     }
 
     /** キーボードイベントを処理する。PromptInput から呼ばれる。 */
