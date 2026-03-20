@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import type { SessionModelState } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionModeState } from '@agentclientprotocol/sdk/dist/schema/index';
@@ -49,9 +49,6 @@ describe('SessionService', () => {
     setSessionMode: MockedFunction<
       (params: { sessionId: string; modeId: string }) => Promise<Record<string, never>>
     >;
-    unstable_closeSession: MockedFunction<
-      (params: { sessionId: string }) => Promise<Record<string, never>>
-    >;
   };
   let notificationService: {
     sendToRenderer: MockedFunction<NotificationService['sendToRenderer']>;
@@ -71,7 +68,6 @@ describe('SessionService', () => {
       loadSession: vi.fn().mockResolvedValue({ sessionId: 'loaded-session-id' }),
       unstable_setSessionModel: vi.fn().mockResolvedValue({}),
       setSessionMode: vi.fn().mockResolvedValue({}),
-      unstable_closeSession: vi.fn().mockResolvedValue({}),
     };
     notificationService = {
       sendToRenderer: vi.fn(),
@@ -248,23 +244,40 @@ describe('SessionService', () => {
       data: 'Failed to start session: Session is active in another process (PID 22237)',
     };
 
-    it('セッションロックエラー時に unstable_closeSession → リトライで成功すること', async () => {
+    let killSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    });
+
+    afterEach(() => {
+      killSpy.mockRestore();
+    });
+
+    it('セッションロックエラー時に stale プロセスを kill → リトライで成功すること', async () => {
       connection.loadSession
         .mockRejectedValueOnce(SESSION_LOCKED_ERROR)
         .mockResolvedValueOnce({ sessionId: 'session-abc' });
 
       await service.load('session-abc', '/path/to/project');
 
-      expect(connection.unstable_closeSession).toHaveBeenCalledWith({ sessionId: 'session-abc' });
+      expect(killSpy).toHaveBeenCalledWith(17173, 'SIGTERM');
       expect(connection.loadSession).toHaveBeenCalledTimes(2);
       expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
 
-    it('unstable_closeSession が失敗した場合、エラーが伝播すること', async () => {
-      connection.loadSession.mockRejectedValueOnce(SESSION_LOCKED_ERROR);
-      connection.unstable_closeSession.mockRejectedValueOnce(new Error('close failed'));
+    it('stale プロセスが既に終了済みでも kill の例外を無視してリトライすること', async () => {
+      killSpy.mockImplementation(() => {
+        throw new Error('ESRCH');
+      });
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_ERROR)
+        .mockResolvedValueOnce({ sessionId: 'session-abc' });
 
-      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow('close failed');
+      await service.load('session-abc', '/path/to/project');
+
+      expect(killSpy).toHaveBeenCalledWith(17173, 'SIGTERM');
+      expect(connection.loadSession).toHaveBeenCalledTimes(2);
     });
 
     it('セッションロック以外のエラーはリカバリせずそのままスローすること', async () => {
@@ -273,7 +286,7 @@ describe('SessionService', () => {
       await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow(
         'Network error',
       );
-      expect(connection.unstable_closeSession).not.toHaveBeenCalled();
+      expect(killSpy).not.toHaveBeenCalled();
     });
 
     it('リカバリ成功時も isLoading が false に戻ること', async () => {
@@ -286,12 +299,12 @@ describe('SessionService', () => {
       expect(sessionRepo.getIsLoading()).toBe(false);
     });
 
-    it('リカバリ失敗時も isLoading が false に戻ること', async () => {
-      connection.loadSession.mockRejectedValueOnce(SESSION_LOCKED_ERROR);
-      connection.unstable_closeSession.mockRejectedValueOnce(new Error('close failed'));
+    it('リトライも失敗した場合、エラーが伝播し isLoading が false に戻ること', async () => {
+      connection.loadSession
+        .mockRejectedValueOnce(SESSION_LOCKED_ERROR)
+        .mockRejectedValueOnce(new Error('still locked'));
 
-      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow();
-
+      await expect(service.load('session-abc', '/path/to/project')).rejects.toThrow('still locked');
       expect(sessionRepo.getIsLoading()).toBe(false);
     });
 
@@ -302,7 +315,7 @@ describe('SessionService', () => {
 
       await service.load('session-abc', '/path/to/project');
 
-      expect(connection.unstable_closeSession).toHaveBeenCalledWith({ sessionId: 'session-abc' });
+      expect(killSpy).toHaveBeenCalledWith(22237, 'SIGTERM');
       expect(connection.loadSession).toHaveBeenCalledTimes(2);
       expect(sessionRepo.getActiveSessionId()).toBe('session-abc');
     });
