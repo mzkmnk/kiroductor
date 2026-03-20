@@ -13,3 +13,4 @@ mac:
     - dmg
     - zip
   artifactName: '${productName}-${version}-${arch}.${ext}'
+  identity: 'Apple Development: mzk.mnk.dev@gmail.com'

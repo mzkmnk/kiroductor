@@ -56,6 +56,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build & make DMG
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
         run: pnpm make:mac
 
       - name: Create GitHub Release
