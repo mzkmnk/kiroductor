@@ -1,8 +1,6 @@
 import { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { ArrowLeft, GitBranchIcon, GitCompareArrows, Loader2 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Loader2 } from 'lucide-react';
 import type {
   AgentMessage,
   Message,
@@ -38,14 +36,6 @@ interface ChatViewProps {
   animSplits: Record<string, number>;
   /** セッション復元中かどうか。true のときローディング表示になる。 */
   isRestoring?: boolean;
-  /** 現在の作業ブランチ名。 */
-  currentBranch?: string;
-  /** ベースブランチ名。 */
-  sourceBranch?: string;
-  /** diff ボタンクリック時のコールバック。 */
-  onDiffClick?: () => void;
-  /** 差分が存在するかどうか。false の場合ボタンを無効化する。 */
-  hasDiffChanges?: boolean;
   /** 復元するスクロール位置。undefined の場合は最下部へスクロールする。 */
   restoreScrollTop?: number;
   /** AI が処理中かどうか。true のとき ThinkingIndicator を表示する。 */
@@ -60,18 +50,7 @@ interface ChatViewProps {
  * - セッション切り替え時はスクロール位置を保存・復元する。
  */
 const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
-  {
-    sessionId,
-    messages,
-    animSplits,
-    isRestoring = false,
-    currentBranch,
-    sourceBranch,
-    onDiffClick,
-    hasDiffChanges = false,
-    restoreScrollTop,
-    isProcessing = false,
-  },
+  { sessionId, messages, animSplits, isRestoring = false, restoreScrollTop, isProcessing = false },
   ref,
 ) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -140,37 +119,6 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
 
   return (
     <>
-      {currentBranch && sourceBranch ? (
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b px-6 text-xs text-muted-foreground [-webkit-app-region:drag]">
-          <GitBranchIcon className="h-3.5 w-3.5" />
-          <span>{sourceBranch}</span>
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>{currentBranch}</span>
-          {onDiffClick && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="ml-auto [-webkit-app-region:no-drag]">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={onDiffClick}
-                      disabled={!hasDiffChanges}
-                      aria-label="Show diff"
-                    >
-                      <GitCompareArrows className="h-3.5 w-3.5" />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!hasDiffChanges && <TooltipContent>No changes</TooltipContent>}
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      ) : (
-        <div className="h-8 shrink-0 [-webkit-app-region:drag]" />
-      )}
       <div ref={scrollRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-6 py-6">
           {messages.map((m) => {

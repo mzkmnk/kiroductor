@@ -4,6 +4,7 @@ import type { SessionMapping } from '../main/features/config/config.repository';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment } from '../shared/ipc';
+import { BranchHeader } from './components/BranchHeader';
 import { ChatView } from './components/ChatView';
 import type { ChatViewHandle } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
@@ -408,6 +409,14 @@ function App() {
       <SidebarInset>
         {activeSessionId ? (
           <div className="flex h-full flex-col">
+            <BranchHeader
+              currentBranch={activeMapping?.currentBranch}
+              sourceBranch={activeMapping?.sourceBranch}
+              onDiffClick={handleDiffClick}
+              hasDiffChanges={
+                diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
+              }
+            />
             <TabBar
               tabs={tabs}
               activeTabId={activeTabId}
@@ -423,12 +432,6 @@ function App() {
                   animSplits={chatState.animSplits}
                   isRestoring={isRestoring}
                   isProcessing={isProcessing}
-                  currentBranch={activeMapping?.currentBranch}
-                  sourceBranch={activeMapping?.sourceBranch}
-                  onDiffClick={handleDiffClick}
-                  hasDiffChanges={
-                    diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
-                  }
                   restoreScrollTop={restoreScrollTop}
                 />
                 <PromptInput
