@@ -5,6 +5,16 @@
  * 外部スコープへの参照を持たない自己完結した実装にすること。
  */
 
+/** {@link FileEntry} と同形のモック用ファイルエントリ型 */
+export interface MockFileEntry {
+  /** エントリ名（例: `"App.tsx"`） */
+  name: string;
+  /** cwd からの相対パス（例: `"src/renderer/App.tsx"`） */
+  path: string;
+  /** ディレクトリかどうか */
+  isDirectory: boolean;
+}
+
 /** モック用画像添付データ型 */
 export interface MockImageAttachment {
   mimeType: string;
@@ -63,6 +73,13 @@ export interface MockConfig {
   diff?: string | null;
   /** isAcpConnected() の戻り値（省略時: true） */
   acpConnected?: boolean;
+  /**
+   * `listFiles(sessionId, dirPath)` が返すエントリのマップ。
+   *
+   * キーはディレクトリの相対パス（ルートは `""`）、値はその直下のエントリ一覧。
+   * 省略時は {@link DEFAULT_FILE_TREE} を使用する。
+   */
+  files?: Record<string, MockFileEntry[]>;
 }
 
 /** デフォルト 1 セッション設定 */
@@ -73,6 +90,31 @@ export const DEFAULT_SESSION: MockSession = {
   title: 'Mock Session',
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
+};
+
+/**
+ * VRT 用デフォルトファイルツリーデータ。
+ *
+ * キーは `listFiles` の `dirPath` 引数と対応する。
+ * ルート（`""`）とその下の `src` ディレクトリのエントリを含む。
+ */
+export const DEFAULT_FILE_TREE: Record<string, MockFileEntry[]> = {
+  '': [
+    { name: 'src', path: 'src', isDirectory: true },
+    { name: 'package.json', path: 'package.json', isDirectory: false },
+    { name: 'README.md', path: 'README.md', isDirectory: false },
+    { name: 'tsconfig.json', path: 'tsconfig.json', isDirectory: false },
+  ],
+  src: [
+    { name: 'main', path: 'src/main', isDirectory: true },
+    { name: 'renderer', path: 'src/renderer', isDirectory: true },
+    { name: 'shared', path: 'src/shared', isDirectory: true },
+  ],
+  'src/renderer': [
+    { name: 'App.tsx', path: 'src/renderer/App.tsx', isDirectory: false },
+    { name: 'components', path: 'src/renderer/components', isDirectory: true },
+    { name: 'hooks', path: 'src/renderer/hooks', isDirectory: true },
+  ],
 };
 
 /** ブランチ情報付きセッション */
@@ -170,6 +212,27 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         return Promise.resolve(config.diffStats ?? null);
       },
       getDiff: () => Promise.resolve(config.diff ?? null),
+      listFiles: (_sessionId: string, dirPath: string) => {
+        const fileTree: Record<string, MockFileEntry[]> = config.files ?? {
+          '': [
+            { name: 'src', path: 'src', isDirectory: true },
+            { name: 'package.json', path: 'package.json', isDirectory: false },
+            { name: 'README.md', path: 'README.md', isDirectory: false },
+            { name: 'tsconfig.json', path: 'tsconfig.json', isDirectory: false },
+          ],
+          src: [
+            { name: 'main', path: 'src/main', isDirectory: true },
+            { name: 'renderer', path: 'src/renderer', isDirectory: true },
+            { name: 'shared', path: 'src/shared', isDirectory: true },
+          ],
+          'src/renderer': [
+            { name: 'App.tsx', path: 'src/renderer/App.tsx', isDirectory: false },
+            { name: 'components', path: 'src/renderer/components', isDirectory: true },
+            { name: 'hooks', path: 'src/renderer/hooks', isDirectory: true },
+          ],
+        };
+        return Promise.resolve(fileTree[dirPath] ?? []);
+      },
     },
     config: {
       getSettings: () => Promise.resolve({}),

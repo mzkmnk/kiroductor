@@ -10,6 +10,7 @@ import { PromptInput } from './components/PromptInput';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { DiffDialog } from './components/DiffDialog';
+import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 
 /**
@@ -413,6 +414,7 @@ function App() {
           </>
         )}
       </SidebarInset>
+      {activeSessionId && <FileTreeSidebar activeSessionId={activeSessionId} />}
       <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
     </SidebarProvider>
   );
