@@ -791,7 +791,7 @@ describe('RepoService', () => {
       );
 
       await expect(service.readFileBySession('session-1', '../../etc/passwd')).rejects.toThrow(
-        'File path is outside the working directory',
+        'Path is outside the base directory',
       );
     });
   });
