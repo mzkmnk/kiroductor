@@ -123,7 +123,7 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
       />
 
       {/* ヘッダー */}
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-2">
+      <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border px-2">
         <span className="flex-1 text-xs font-medium text-foreground">Files</span>
         <button
           className={cn(

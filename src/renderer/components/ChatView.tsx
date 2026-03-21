@@ -141,7 +141,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
   return (
     <>
       {currentBranch && sourceBranch ? (
-        <div className="flex h-10 shrink-0 items-center gap-2 border-b px-6 text-xs text-muted-foreground [-webkit-app-region:drag]">
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b px-6 text-xs text-muted-foreground [-webkit-app-region:drag]">
           <GitBranchIcon className="h-3.5 w-3.5" />
           <span>{sourceBranch}</span>
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -169,7 +169,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
           )}
         </div>
       ) : (
-        <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
+        <div className="h-8 shrink-0 [-webkit-app-region:drag]" />
       )}
       <div ref={scrollRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-4 px-6 py-6">
