@@ -160,6 +160,14 @@ test.describe('PromptInput', () => {
     await expect(page).toHaveScreenshot('prompt-input-multiline-blurred.png');
   });
 
+  test('コンテキスト使用率が80%以上で警告色になる', async ({ page }) => {
+    const app = new AppPage(page);
+    await app.setup({ contextUsagePercentage: 85 });
+    await app.goto();
+    await app.waitForReady();
+    await expect(page).toHaveScreenshot('prompt-input-context-warning.png');
+  });
+
   test('再フォーカス時に複数行の高さが復元される', async ({ page }) => {
     const app = new AppPage(page);
     await app.setup();

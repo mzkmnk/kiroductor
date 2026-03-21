@@ -14,6 +14,7 @@ import { MentionDropdown } from './MentionDropdown';
 import type { MentionDropdownHandle } from './MentionDropdown';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { FileEntry, ImageAttachment } from '../../shared/ipc';
+import { ContextUsageRing } from './ContextUsageRing';
 
 /** 許可する MIME タイプ一覧。 */
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
@@ -414,14 +415,7 @@ function PromptInput({
               </div>
             )}
             {contextUsagePercentage != null && (
-              <span
-                className={cn(
-                  'text-xs tabular-nums',
-                  contextUsagePercentage >= 80 ? 'text-destructive' : 'text-muted-foreground/60',
-                )}
-              >
-                Context: {Math.round(contextUsagePercentage)}%
-              </span>
+              <ContextUsageRing percentage={contextUsagePercentage} />
             )}
           </div>
 
