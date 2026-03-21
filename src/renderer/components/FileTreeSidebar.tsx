@@ -21,7 +21,7 @@ interface FileTreeSidebarProps {
  *
  * 開閉トグル、隠しファイルの表示切り替え、
  * ファイルツリーのインタラクティブな表示を提供する。
- * 左端のドラッグハンドルで幅を変更できる（最大: 左サイドバーの右端まで）。
+ * 左端のドラッグハンドルで幅を変更できる（最大: 画面幅の半分）。
  *
  * @param activeSessionId - 現在アクティブなセッション ID
  */
@@ -42,9 +42,7 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   } | null>(null);
 
   /** ドラッグ開始時の情報を保持する ref。 */
-  const dragRef = useRef<{ startX: number; startWidth: number; maxWidth: number } | null>(null);
-  /** サイドバー外側要素への ref（ドラッグ時の最大幅計算に使用）。 */
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   /** 現在のセッションに対応する選択中ファイルパス。 */
   const selectedFilePath =
@@ -59,20 +57,15 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   /** ドラッグハンドルの mousedown ハンドラ。 */
   function handleDragStart(e: React.MouseEvent) {
     e.preventDefault();
-    // ドラッグ開始時点のサイドバー左端 x 座標を最大幅とする（左サイドバーを侵食しない）
-    const maxWidth = sidebarRef.current
-      ? Math.floor(sidebarRef.current.getBoundingClientRect().left)
-      : Math.floor(window.innerWidth / 2);
-    dragRef.current = { startX: e.clientX, startWidth: width, maxWidth };
+    dragRef.current = { startX: e.clientX, startWidth: width };
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
 
     function onMouseMove(ev: MouseEvent) {
       if (!dragRef.current) return;
       const delta = dragRef.current.startX - ev.clientX;
-      setWidth(
-        Math.min(dragRef.current.maxWidth, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta)),
-      );
+      const maxWidth = Math.floor(window.innerWidth / 2);
+      setWidth(Math.min(maxWidth, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta)));
     }
 
     function onMouseUp() {
@@ -121,11 +114,7 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   }
 
   return (
-    <div
-      ref={sidebarRef}
-      className={cn('relative flex shrink-0 flex-col border-l border-border')}
-      style={{ width }}
-    >
+    <div className={cn('relative flex shrink-0 flex-col border-l border-border')} style={{ width }}>
       {/* ドラッグハンドル */}
       <div
         className="absolute inset-y-0 left-0 w-1 cursor-col-resize hover:bg-border active:bg-primary/30"
