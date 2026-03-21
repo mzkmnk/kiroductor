@@ -86,6 +86,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
     //       type === 'image' の場合に attachments として復元する
     if (update.content.type !== 'text') return;
 
+    // 新しいユーザーメッセージが来たら、前ターンの streaming エージェントメッセージを完了する
+    this.completeStreamingMessages(sessionId);
+
     const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
     this.messageRepository.addUserMessage(sessionId, text);
   }
