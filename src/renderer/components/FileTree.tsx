@@ -116,7 +116,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
               className={cn(
                 'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm hover:bg-accent',
               )}
-              style={{ paddingLeft: `${depth * 20 + 4}px` }}
+              style={{ paddingLeft: `${depth * 16 + 4}px` }}
               onClick={() => handleToggleDir(entry.path)}
             >
               <span className="shrink-0 text-muted-foreground">
@@ -140,7 +140,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
                 {loadingDirs.has(entry.path) ? (
                   <div
                     className="py-0.5 text-xs text-muted-foreground"
-                    style={{ paddingLeft: `${(depth + 1) * 20 + 4}px` }}
+                    style={{ paddingLeft: `${(depth + 1) * 16 + 4}px` }}
                   >
                     Loading...
                   </div>
@@ -164,7 +164,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
             'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm hover:bg-accent',
             isSelected && 'bg-accent',
           )}
-          style={{ paddingLeft: `${depth * 20 + 4 + 14}px` }}
+          style={{ paddingLeft: `${depth * 16 + 4 + 14}px` }}
           onClick={() => onFileSelect(entry.path)}
         >
           <span className="shrink-0" style={{ width: 14, display: 'inline-flex' }}>
