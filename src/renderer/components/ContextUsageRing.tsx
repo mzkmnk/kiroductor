@@ -1,8 +1,8 @@
 import { cn } from '../lib/utils';
 
 /** 円形プログレスリングのサイズ設定。 */
-const SIZE = 16;
-const STROKE_WIDTH = 2;
+const SIZE = 12;
+const STROKE_WIDTH = 1.5;
 const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
