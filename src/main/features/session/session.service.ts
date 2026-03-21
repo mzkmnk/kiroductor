@@ -134,18 +134,6 @@ export class SessionService {
     this.sessionRepo.addSession(sessionId);
     this.sessionRepo.markAcpConnected(sessionId);
     this.sessionRepo.setActiveSession(sessionId);
-
-    // 復元されたメッセージのサマリーをログに出力する
-    const messages = this.messageRepo.getAll(sessionId);
-    const typeCounts = { user: 0, agent: 0, tool_call: 0 };
-    for (const msg of messages) {
-      typeCounts[msg.type]++;
-    }
-    log.info(
-      `loadSession 復元メッセージ: 合計=${String(messages.length)} ` +
-        `user=${String(typeCounts.user)} agent=${String(typeCounts.agent)} ` +
-        `tool_call=${String(typeCounts.tool_call)}`,
-    );
   }
 
   /**
