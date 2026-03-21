@@ -399,13 +399,17 @@ function App() {
     setActiveTabId(tabId);
   }
 
-  /** タブを閉じる。チャットタブは閉じられない。 */
+  /** タブを閉じる。チャットタブは閉じられない。未保存変更がある場合は確認する。 */
   function handleTabClose(tabId: string) {
-    setTabs((prev) => {
-      const tab = prev.find((t) => t.id === tabId);
-      if (!tab || tab.type === 'chat') return prev;
-      return prev.filter((t) => t.id !== tabId);
-    });
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab || tab.type === 'chat') return;
+    if (tab.type === 'file' && tab.isModified) {
+      const confirmed = window.confirm(
+        `"${tab.label}" に未保存の変更があります。閉じてもよろしいですか？`,
+      );
+      if (!confirmed) return;
+    }
+    setTabs((prev) => prev.filter((t) => t.id !== tabId));
     // 閉じたタブがアクティブだった場合、チャットタブに戻す
     if (activeTabId === tabId) {
       setActiveTabId(AGENT_CHAT_TAB_ID);
@@ -424,6 +428,14 @@ function App() {
     const newTab: Tab = { id: tabId, label, type: 'file', filePath } as Tab;
     setTabs((prev) => [...prev, newTab]);
     setActiveTabId(tabId);
+  }
+
+  /** ファイルの変更状態を更新する。 */
+  function handleModifiedChange(filePath: string, isModified: boolean) {
+    const tabId = `file:${filePath}`;
+    setTabs((prev) =>
+      prev.map((t) => (t.id === tabId && t.type === 'file' ? { ...t, isModified } : t)),
+    );
   }
 
   const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
@@ -485,7 +497,11 @@ function App() {
                 const activeTab = tabs.find((t) => t.id === activeTabId);
                 const fileTab = activeTab && activeTab.type === 'file' ? activeTab : null;
                 return fileTab ? (
-                  <FileEditor sessionId={activeSessionId} filePath={fileTab.filePath} />
+                  <FileEditor
+                    sessionId={activeSessionId}
+                    filePath={fileTab.filePath}
+                    onModifiedChange={handleModifiedChange}
+                  />
                 ) : null;
               })()
             )}

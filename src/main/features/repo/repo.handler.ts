@@ -23,6 +23,7 @@ export class RepoHandler {
       | 'getDiffBySession'
       | 'listFilesBySession'
       | 'readFileBySession'
+      | 'writeFileBySession'
     >,
     private readonly settingsService: Pick<SettingsService, 'getSettings' | 'updateSettings'>,
   ) {}
@@ -66,6 +67,10 @@ export class RepoHandler {
 
     handle('repo:read-file', (_event, sessionId, filePath) =>
       this.repoService.readFileBySession(sessionId, filePath),
+    );
+
+    handle('repo:write-file', (_event, sessionId, filePath, content) =>
+      this.repoService.writeFileBySession(sessionId, filePath, content),
     );
 
     handle('config:get-settings', () => this.settingsService.getSettings());

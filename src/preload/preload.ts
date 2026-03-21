@@ -186,6 +186,8 @@ export interface RepoAPI {
   listFiles: (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>;
   /** 指定セッションの作業ディレクトリ内のファイル内容を読み取る。 */
   readFile: (sessionId: string, filePath: string) => Promise<string>;
+  /** 指定セッションの作業ディレクトリ内のファイルに内容を書き込む。 */
+  writeFile: (sessionId: string, filePath: string, content: string) => Promise<void>;
 }
 
 /**
@@ -264,6 +266,8 @@ const kiroductorAPI: KiroductorAPI = {
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
     listFiles: (sessionId, dirPath, depth) => invoke('repo:list-files', sessionId, dirPath, depth),
     readFile: (sessionId, filePath) => invoke('repo:read-file', sessionId, filePath),
+    writeFile: (sessionId, filePath, content) =>
+      invoke('repo:write-file', sessionId, filePath, content),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

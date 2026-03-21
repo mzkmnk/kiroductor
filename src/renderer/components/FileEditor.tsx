@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
+import { keymap } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { javascript } from '@codemirror/lang-javascript';
@@ -24,6 +25,8 @@ interface FileEditorProps {
   sessionId: string;
   /** 表示対象のファイルパス（cwd からの相対パス）。 */
   filePath: string;
+  /** ファイルの変更状態が変わったときのコールバック。 */
+  onModifiedChange?: (filePath: string, isModified: boolean) => void;
 }
 
 /**
@@ -93,19 +96,44 @@ function getExtension(filePath: string): string {
 }
 
 /**
- * CodeMirror 6 ベースの read-only ファイルエディタ。
+ * CodeMirror 6 ベースのファイルエディタ。
  *
  * 指定されたセッションとファイルパスからファイル内容を読み込み、
- * シンタックスハイライト付きで表示する。
+ * シンタックスハイライト付きで表示・編集できる。
+ * `Cmd+S` / `Ctrl+S` でファイルを保存する。
  *
  * @param sessionId - 対象セッション ID
  * @param filePath - 表示対象のファイルパス
+ * @param onModifiedChange - 変更状態通知コールバック
  */
-export function FileEditor({ sessionId, filePath }: FileEditorProps) {
+export function FileEditor({ sessionId, filePath, onModifiedChange }: FileEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  /** 読み込み時の原文。変更検出の基準。 */
+  const originalContentRef = useRef<string>('');
+  /** 最新の modified 状態。重複通知を防ぐ。 */
+  const isModifiedRef = useRef(false);
+
+  /** ファイルを保存する。 */
+  const saveFile = useCallback(async () => {
+    const view = viewRef.current;
+    if (!view) return;
+    setSaving(true);
+    try {
+      const content = view.state.doc.toString();
+      await window.kiroductor.repo.writeFile(sessionId, filePath, content);
+      originalContentRef.current = content;
+      isModifiedRef.current = false;
+      onModifiedChange?.(filePath, false);
+    } catch (err) {
+      console.error('Failed to save file:', err);
+    } finally {
+      setSaving(false);
+    }
+  }, [sessionId, filePath, onModifiedChange]);
 
   useEffect(() => {
     let disposed = false;
@@ -125,14 +153,40 @@ export function FileEditor({ sessionId, filePath }: FileEditorProps) {
           viewRef.current = null;
         }
 
+        originalContentRef.current = content;
+        isModifiedRef.current = false;
+
         const ext = getExtension(filePath);
         const langExtension = getLanguageExtension(ext);
+
+        // saveFile を ref 経由で参照（クロージャ内で最新値を使うため）
+        const saveKeymap = keymap.of([
+          {
+            key: 'Mod-s',
+            run: () => {
+              void saveFile();
+              return true;
+            },
+          },
+        ]);
+
+        const updateListener = EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            const currentContent = update.state.doc.toString();
+            const modified = currentContent !== originalContentRef.current;
+            if (modified !== isModifiedRef.current) {
+              isModifiedRef.current = modified;
+              onModifiedChange?.(filePath, modified);
+            }
+          }
+        });
 
         const state = EditorState.create({
           doc: content,
           extensions: [
             basicSetup,
-            EditorState.readOnly.of(true),
+            saveKeymap,
+            updateListener,
             oneDark,
             EditorView.theme({
               '&': { height: '100%', fontSize: '13px' },
@@ -169,7 +223,7 @@ export function FileEditor({ sessionId, filePath }: FileEditorProps) {
         viewRef.current = null;
       }
     };
-  }, [sessionId, filePath]);
+  }, [sessionId, filePath, saveFile, onModifiedChange]);
 
   if (error) {
     return (
@@ -184,6 +238,11 @@ export function FileEditor({ sessionId, filePath }: FileEditorProps) {
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
           <span className="text-xs text-muted-foreground">Loading...</span>
+        </div>
+      )}
+      {saving && (
+        <div className="absolute right-2 top-2 z-10 rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+          Saving...
         </div>
       )}
       <div ref={containerRef} className="flex-1 overflow-hidden" />

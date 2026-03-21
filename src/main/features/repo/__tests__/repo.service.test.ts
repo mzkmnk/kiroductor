@@ -798,6 +798,54 @@ describe('RepoService', () => {
     });
   });
 
+  describe('writeFileBySession(sessionId, filePath, content)', () => {
+    const SESSION: SessionMapping = {
+      acpSessionId: 'session-1',
+      repoId: 'repo-1',
+      cwd: '/worktree/project',
+      title: 'Test',
+      currentBranch: 'kiroductor/test',
+      sourceBranch: 'main',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    it('セッションが見つかった場合、ファイルに書き込む', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ sessions: [SESSION] }),
+      );
+
+      await service.writeFileBySession('session-1', 'src/index.ts', 'const y = 2;');
+
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        '/worktree/project/src/index.ts',
+        'const y = 2;',
+        'utf-8',
+      );
+    });
+
+    it('セッションが見つからない場合、エラーを投げる', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ sessions: [] }));
+
+      await expect(service.writeFileBySession('nonexistent', 'file.ts', 'content')).rejects.toThrow(
+        'Session not found',
+      );
+    });
+
+    it('パストラバーサルを試みた場合、エラーを投げる', async () => {
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(
+        JSON.stringify({ sessions: [SESSION] }),
+      );
+
+      await expect(
+        service.writeFileBySession('session-1', '../../etc/passwd', 'malicious'),
+      ).rejects.toThrow('File path is outside the working directory');
+    });
+  });
+
   describe('listClonedRepos()', () => {
     it('repos.json からリポジトリ一覧を返すこと', async () => {
       const repos: RepoMapping[] = [
