@@ -164,7 +164,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
             'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm hover:bg-accent',
             isSelected && 'bg-accent',
           )}
-          style={{ paddingLeft: `${depth * 16 + 4 + 14}px` }}
+          style={{ paddingLeft: `${depth * 16 + 4 + 18}px` }}
           onClick={() => onFileSelect(entry.path)}
         >
           <span className="shrink-0" style={{ width: 14, display: 'inline-flex' }}>
