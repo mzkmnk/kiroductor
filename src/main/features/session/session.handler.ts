@@ -61,7 +61,11 @@ export class SessionHandler {
     handle('session:new', (_event, cwd, currentBranch, sourceBranch) =>
       this.sessionService.create(cwd, currentBranch, sourceBranch),
     );
-    handle('session:load', (_event, sessionId, cwd) => this.sessionService.load(sessionId, cwd));
+    handle('session:load', async (_event, sessionId, cwd) => {
+      log.info(`session:load sessionId=${sessionId} cwd=${cwd}`);
+      await this.sessionService.load(sessionId, cwd);
+      log.info(`session:load 完了 sessionId=${sessionId}`);
+    });
     handle('session:prompt', async (_event, sessionId, text, images) => {
       this.sessionService.addProcessing(sessionId);
       try {
@@ -76,7 +80,9 @@ export class SessionHandler {
       return this.sessionService.cancel(sessionId);
     });
     handle('session:messages', (_event, sessionId) => {
-      return this.sessionService.getMessages(sessionId);
+      const messages = this.sessionService.getMessages(sessionId);
+      log.info(`session:messages sessionId=${sessionId} count=${String(messages.length)}`);
+      return messages;
     });
     handle('session:switch', (_event, sessionId) => {
       this.sessionService.switchSession(sessionId);

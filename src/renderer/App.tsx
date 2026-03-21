@@ -119,6 +119,8 @@ function App() {
   /** セッションIDごとのスクロール位置。 */
   const scrollPositionsRef = useRef<Map<string, number>>(new Map());
   const [restoreScrollTop, setRestoreScrollTop] = useState<number | undefined>(undefined);
+  /** onPromptCompleted コールバックから drainNext を呼ぶための ref。 */
+  const drainNextRef = useRef<() => void>(() => {});
 
   /** アクティブセッションの diff stats を取得する。 */
   async function fetchDiffStats(sessionId: string) {
@@ -231,19 +233,23 @@ function App() {
       }
     });
 
-    // プロンプト完了通知 — processing 状態を解除
+    // プロンプト完了通知 — processing 状態を解除し、キュー先頭を自動送信
     const unsubCompleted = window.kiroductor.session.onPromptCompleted(({ sessionId }) => {
       setProcessingSessionIds((prev) => {
         const next = new Set(prev);
         next.delete(sessionId);
         return next;
       });
-      // 完了したのがアクティブセッションなら最終メッセージを反映
+      // 完了したのがアクティブセッションなら最終メッセージを反映し、
+      // getMessages 完了後にキュー先頭を送信する（楽観的メッセージが上書きされないようにするため）
       if (sessionId === activeSessionIdRef.current) {
-        window.kiroductor.session
-          .getMessages(sessionId)
-          .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        window.kiroductor.session.getMessages(sessionId).then((msgs) => {
+          dispatchChat({ type: 'set', messages: msgs });
+          drainNextRef.current();
+        });
         fetchDiffStats(sessionId);
+      } else {
+        drainNextRef.current();
       }
       setPromptCompletedCount((c) => c + 1);
     });
@@ -317,10 +323,10 @@ function App() {
     onSend: sendPrompt,
   });
 
-  // プロンプト完了時にキュー先頭を自動送信する
+  // onPromptCompleted コールバックから drainNext を呼べるよう ref に保存
   useEffect(() => {
-    drainNext();
-  }, [promptCompletedCount, drainNext]);
+    drainNextRef.current = drainNext;
+  }, [drainNext]);
 
   /** ユーザーからの送信を処理する。処理中ならキューに追加する。 */
   function handleSubmit(text: string, images?: ImageAttachment[]) {
