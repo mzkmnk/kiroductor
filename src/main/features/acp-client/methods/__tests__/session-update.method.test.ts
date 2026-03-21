@@ -398,6 +398,9 @@ describe('SessionUpdateMethod', () => {
 
       assert(messages[5].type === 'agent');
       expect(messages[5].text).toBe('You are welcome');
+      // 最後のエージェントメッセージは後続の user_message_chunk がないため streaming のまま
+      // （completeAllStreamingMessages は session.service.ts 側の責務）
+      expect(messages[5].status).toBe('streaming');
     });
   });
 
