@@ -82,6 +82,13 @@ export interface MockConfig {
    * 省略時は {@link DEFAULT_FILE_TREE} を使用する。
    */
   files?: Record<string, MockFileEntry[]>;
+  /**
+   * `readFile(sessionId, filePath)` が返すファイル内容のマップ。
+   *
+   * キーはファイルの相対パス、値はファイル内容の文字列。
+   * 省略時は {@link DEFAULT_FILE_CONTENTS} を使用する。
+   */
+  fileContents?: Record<string, string>;
 }
 
 /** デフォルト 1 セッション設定 */
@@ -117,6 +124,44 @@ export const DEFAULT_FILE_TREE: Record<string, MockFileEntry[]> = {
     { name: 'components', path: 'src/renderer/components', isDirectory: true },
     { name: 'hooks', path: 'src/renderer/hooks', isDirectory: true },
   ],
+};
+
+/**
+ * VRT 用デフォルトファイル内容データ。
+ *
+ * キーは `readFile` の `filePath` 引数と対応する。
+ */
+export const DEFAULT_FILE_CONTENTS: Record<string, string> = {
+  'src/renderer/App.tsx': `import { useState } from 'react';
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div className="flex flex-col items-center gap-4 p-8">
+      <h1 className="text-2xl font-bold">Counter App</h1>
+      <p className="text-lg">Count: {count}</p>
+      <button onClick={() => setCount((c) => c + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}
+
+export default App;`,
+  'package.json': `{
+  "name": "kiroductor",
+  "version": "0.0.4",
+  "private": true,
+  "scripts": {
+    "start": "electron-vite dev",
+    "build": "electron-vite build",
+    "test": "vitest run"
+  }
+}`,
+  'README.md': `# kiroductor
+
+kiro-cli の ACP クライアントとして動作する Electron アプリ。`,
 };
 
 /** ブランチ情報付きセッション */
@@ -216,6 +261,38 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         return Promise.resolve(config.diffStats ?? null);
       },
       getDiff: () => Promise.resolve(config.diff ?? null),
+      readFile: (_sessionId: string, filePath: string) => {
+        const defaultContents: Record<string, string> = {
+          'src/renderer/App.tsx': [
+            "import { useState } from 'react';",
+            '',
+            'function App() {',
+            '  const [count, setCount] = useState(0);',
+            '',
+            '  return (',
+            '    <div className="flex flex-col items-center gap-4 p-8">',
+            '      <h1 className="text-2xl font-bold">Counter App</h1>',
+            '      <p className="text-lg">Count: {count}</p>',
+            '      <button onClick={() => setCount((c) => c + 1)}>',
+            '        Increment',
+            '      </button>',
+            '    </div>',
+            '  );',
+            '}',
+            '',
+            'export default App;',
+          ].join('\n'),
+          'package.json': '{\n  "name": "kiroductor",\n  "version": "0.0.4",\n  "private": true\n}',
+          'README.md': '# kiroductor\n\nkiro-cli の ACP クライアント。',
+        };
+        const contents = config.fileContents ?? defaultContents;
+        const content = contents[filePath];
+        if (content !== undefined) {
+          return Promise.resolve(content);
+        }
+        return Promise.reject(new Error(`File not found: ${filePath}`));
+      },
+      writeFile: () => Promise.resolve(),
       listFiles: (_sessionId: string, dirPath: string) => {
         const fileTree: Record<string, MockFileEntry[]> = config.files ?? {
           '': [
