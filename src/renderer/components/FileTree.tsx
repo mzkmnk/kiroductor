@@ -1,9 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Icon } from '@iconify/react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { FileIcon, defaultStyles } from 'react-file-icon';
+import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { FileEntry } from '../../shared/ipc';
-import { getFileIconName, getFolderIconName } from './file-tree-icons';
+
+/**
+ * ファイル名から拡張子を取得する。
+ *
+ * @param name - ファイル名
+ * @returns 小文字の拡張子（例: `"ts"`, `"tsx"`）。拡張子なしの場合は空文字列。
+ */
+function getExtension(name: string): string {
+  const dotIndex = name.lastIndexOf('.');
+  return dotIndex !== -1 ? name.slice(dotIndex + 1).toLowerCase() : '';
+}
 
 /**
  * ファイルツリーコンポーネントの Props。
@@ -116,8 +126,12 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
                   <ChevronRight className="h-3.5 w-3.5" />
                 )}
               </span>
-              <span className="shrink-0">
-                <Icon icon={getFolderIconName(entry.name, isExpanded)} width={14} height={14} />
+              <span className="shrink-0 text-muted-foreground">
+                {isExpanded ? (
+                  <FolderOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <Folder className="h-3.5 w-3.5" />
+                )}
               </span>
               <span className="truncate">{entry.name}</span>
             </button>
@@ -139,6 +153,10 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
         );
       }
 
+      const ext = getExtension(entry.name);
+      const iconStyles =
+        ext && ext in defaultStyles ? defaultStyles[ext as keyof typeof defaultStyles] : {};
+
       return (
         <button
           key={entry.path}
@@ -149,8 +167,8 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
           style={{ paddingLeft: `${depth * 12 + 4 + 14}px` }}
           onClick={() => onFileSelect(entry.path)}
         >
-          <span className="shrink-0">
-            <Icon icon={getFileIconName(entry.name)} width={14} height={14} />
+          <span className="shrink-0" style={{ width: 14, display: 'inline-flex' }}>
+            <FileIcon extension={ext} {...iconStyles} />
           </span>
           <span className="truncate">{entry.name}</span>
         </button>
