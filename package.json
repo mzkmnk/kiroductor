@@ -26,6 +26,8 @@
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.16.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@iconify-json/catppuccin": "^1.2.17",
+    "@iconify/react": "^6.0.2",
     "@lobehub/icons": "^5.0.1",
     "@shikijs/rehype": "^4.0.2",
     "class-variance-authority": "^0.7.1",

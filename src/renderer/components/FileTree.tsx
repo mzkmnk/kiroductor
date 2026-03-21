@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, File } from 'lucide-react';
+import { Icon } from '@iconify/react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { FileEntry } from '../../shared/ipc';
+import { getFileIconName, getFolderIconName } from './file-tree-icons';
 
 /**
  * ファイルツリーコンポーネントの Props。
@@ -114,12 +116,8 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
                   <ChevronRight className="h-3.5 w-3.5" />
                 )}
               </span>
-              <span className="shrink-0 text-muted-foreground">
-                {isExpanded ? (
-                  <FolderOpen className="h-3.5 w-3.5" />
-                ) : (
-                  <Folder className="h-3.5 w-3.5" />
-                )}
+              <span className="shrink-0">
+                <Icon icon={getFolderIconName(entry.name, isExpanded)} width={14} height={14} />
               </span>
               <span className="truncate">{entry.name}</span>
             </button>
@@ -151,8 +149,8 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
           style={{ paddingLeft: `${depth * 12 + 4 + 14}px` }}
           onClick={() => onFileSelect(entry.path)}
         >
-          <span className="shrink-0 text-muted-foreground">
-            <File className="h-3.5 w-3.5" />
+          <span className="shrink-0">
+            <Icon icon={getFileIconName(entry.name)} width={14} height={14} />
           </span>
           <span className="truncate">{entry.name}</span>
         </button>
