@@ -405,9 +405,11 @@ const DiffDialog = memo(function DiffDialog({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
 
-  useEffect(() => {
-    dragStateRef.current = dragState;
-  }, [dragState]);
+  /** dragState と dragStateRef を同時に更新する。 */
+  const updateDragState = useCallback((next: DragState | null) => {
+    dragStateRef.current = next;
+    setDragState(next);
+  }, []);
 
   // selectedFile が現在の files にあればそれを、なければ先頭ファイルをアクティブとする
   const activeFile = useMemo(() => {
@@ -451,25 +453,29 @@ const DiffDialog = memo(function DiffDialog({
   }, [files]);
 
   // ドラッグ終了時の処理（window の mouseup）
+  // 単一クリックは onClick で処理するため、ここでは範囲ドラッグのみ処理する
   useEffect(() => {
     function handleMouseUp() {
       const drag = dragStateRef.current;
       if (!drag) return;
 
-      const startLine = Math.min(drag.startLine, drag.currentLine);
-      const endLine = Math.max(drag.startLine, drag.currentLine);
-      setActiveCommentInput({
-        filePath: drag.filePath,
-        startLine,
-        endLine,
-        side: drag.side,
-      });
-      setDragState(null);
+      // ドラッグで行範囲が変わった場合のみフォームを開く（単一クリックは onClick で処理）
+      if (drag.startLine !== drag.currentLine) {
+        const startLine = Math.min(drag.startLine, drag.currentLine);
+        const endLine = Math.max(drag.startLine, drag.currentLine);
+        setActiveCommentInput({
+          filePath: drag.filePath,
+          startLine,
+          endLine,
+          side: drag.side,
+        });
+      }
+      updateDragState(null);
     }
 
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
-  }, []);
+  }, [updateDragState]);
 
   const handleSelectFile = useCallback((path: string) => {
     setSelectedFile(path);
@@ -711,20 +717,21 @@ const DiffDialog = memo(function DiffDialog({
                           widgets={widgets}
                           renderGutter={({ change, side, inHoverState, renderDefault }) => {
                             if (inHoverState && !dragState) {
+                              const effectiveSide =
+                                change.type === 'insert'
+                                  ? 'new'
+                                  : change.type === 'delete'
+                                    ? 'old'
+                                    : (side ?? 'new');
+                              const lineNum = getLineNumber(change, effectiveSide);
                               return (
                                 <span className="diff-comment-gutter flex items-center">
                                   <button
                                     className="mr-0.5 flex size-4 items-center justify-center rounded bg-blue-500 text-white opacity-80 hover:opacity-100"
                                     onMouseDown={(e) => {
                                       e.preventDefault();
-                                      const effectiveSide =
-                                        change.type === 'insert'
-                                          ? 'new'
-                                          : change.type === 'delete'
-                                            ? 'old'
-                                            : (side ?? 'new');
-                                      const lineNum = getLineNumber(change, effectiveSide);
-                                      setDragState({
+                                      // ドラッグ選択用: mousedown で dragState を開始
+                                      updateDragState({
                                         filePath,
                                         side: effectiveSide,
                                         startLine: lineNum,
@@ -742,25 +749,40 @@ const DiffDialog = memo(function DiffDialog({
                             return renderDefault();
                           }}
                           gutterEvents={{
-                            onMouseEnter: ({ change, side: eventSide }) => {
-                              if (!dragState || !change) return;
-                              const effectiveSide = eventSide ?? dragState.side;
-                              if (effectiveSide !== dragState.side) return;
+                            onClick: ({ change, side: eventSide }) => {
+                              // 単一クリック: ガターをクリックでコメント入力フォームを開く
+                              if (!change) return;
+                              const effectiveSide =
+                                change.type === 'insert'
+                                  ? 'new'
+                                  : change.type === 'delete'
+                                    ? 'old'
+                                    : (eventSide ?? 'new');
                               const lineNum = getLineNumber(change, effectiveSide);
-                              setDragState((prev) =>
-                                prev ? { ...prev, currentLine: lineNum } : null,
-                              );
+                              setActiveCommentInput({
+                                filePath,
+                                startLine: lineNum,
+                                endLine: lineNum,
+                                side: effectiveSide,
+                              });
+                            },
+                            onMouseEnter: ({ change, side: eventSide }) => {
+                              const drag = dragStateRef.current;
+                              if (!drag || !change) return;
+                              const effectiveSide = eventSide ?? drag.side;
+                              if (effectiveSide !== drag.side) return;
+                              const lineNum = getLineNumber(change, effectiveSide);
+                              updateDragState({ ...drag, currentLine: lineNum });
                             },
                           }}
                           codeEvents={{
                             onMouseEnter: ({ change, side: eventSide }) => {
-                              if (!dragState || !change) return;
-                              const effectiveSide = eventSide ?? dragState.side;
-                              if (effectiveSide !== dragState.side) return;
+                              const drag = dragStateRef.current;
+                              if (!drag || !change) return;
+                              const effectiveSide = eventSide ?? drag.side;
+                              if (effectiveSide !== drag.side) return;
                               const lineNum = getLineNumber(change, effectiveSide);
-                              setDragState((prev) =>
-                                prev ? { ...prev, currentLine: lineNum } : null,
-                              );
+                              updateDragState({ ...drag, currentLine: lineNum });
                             },
                           }}
                           generateLineClassName={({ changes, defaultGenerate }) => {
