@@ -292,7 +292,6 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         }
         return Promise.reject(new Error(`File not found: ${filePath}`));
       },
-      writeFile: () => Promise.resolve(),
       listFiles: (_sessionId: string, dirPath: string) => {
         const fileTree: Record<string, MockFileEntry[]> = config.files ?? {
           '': [

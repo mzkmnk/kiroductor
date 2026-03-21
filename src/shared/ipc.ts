@@ -88,10 +88,6 @@ export interface IpcInvokeChannels {
     args: [sessionId: string, filePath: string];
     return: string;
   };
-  'repo:write-file': {
-    args: [sessionId: string, filePath: string, content: string];
-    return: void;
-  };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

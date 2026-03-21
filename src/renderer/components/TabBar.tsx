@@ -28,7 +28,6 @@ export function TabBar({ tabs, activeTabId, onTabClick, onTabClose }: TabBarProp
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         const isClosable = tab.type !== 'chat';
-        const isModified = tab.type === 'file' && tab.isModified;
 
         return (
           <button
@@ -43,10 +42,7 @@ export function TabBar({ tabs, activeTabId, onTabClick, onTabClose }: TabBarProp
             )}
           >
             <TabIcon type={tab.type} className="h-3.5 w-3.5 shrink-0" />
-            <span className="max-w-32 truncate">
-              {isModified && <span className="mr-0.5 text-foreground">●</span>}
-              {tab.label}
-            </span>
+            <span className="max-w-32 truncate">{tab.label}</span>
             {isClosable && (
               <span
                 role="button"

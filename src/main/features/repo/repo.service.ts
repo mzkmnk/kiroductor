@@ -427,28 +427,6 @@ export class RepoService {
     return this.fs.readFile(resolvedFile, 'utf-8');
   }
 
-  /**
-   * セッション ID からファイルに内容を書き込む。
-   *
-   * @param sessionId - 対象セッション ID
-   * @param filePath - cwd からの相対ファイルパス
-   * @param content - 書き込む内容
-   * @throws セッションが見つからない場合、またはパスが cwd 外の場合
-   */
-  async writeFileBySession(sessionId: string, filePath: string, content: string): Promise<void> {
-    const sessions = await this.configRepo.readSessions();
-    const session = sessions.find((s) => s.acpSessionId === sessionId);
-    if (!session) {
-      throw new Error(`Session not found: ${sessionId}`);
-    }
-    const resolvedCwd = path.resolve(session.cwd);
-    const resolvedFile = path.resolve(session.cwd, filePath);
-    if (!resolvedFile.startsWith(resolvedCwd + path.sep) && resolvedFile !== resolvedCwd) {
-      throw new Error('File path is outside the working directory');
-    }
-    await this.fs.writeFile(resolvedFile, content, 'utf-8');
-  }
-
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {

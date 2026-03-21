@@ -29,9 +29,6 @@ describe('RepoHandler', () => {
       (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>
     >;
     readFileBySession: MockedFunction<(sessionId: string, filePath: string) => Promise<string>>;
-    writeFileBySession: MockedFunction<
-      (sessionId: string, filePath: string, content: string) => Promise<void>
-    >;
   };
   let settingsService: {
     getSettings: MockedFunction<() => Promise<KiroductorSettings>>;
@@ -50,7 +47,6 @@ describe('RepoHandler', () => {
       getDiffBySession: vi.fn().mockResolvedValue(null),
       listFilesBySession: vi.fn().mockResolvedValue([]),
       readFileBySession: vi.fn().mockResolvedValue(''),
-      writeFileBySession: vi.fn().mockResolvedValue(undefined),
     };
     settingsService = {
       getSettings: vi.fn().mockResolvedValue({}),

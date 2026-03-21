@@ -22,8 +22,6 @@ export interface FileTab extends TabBase {
   type: 'file';
   /** 表示対象のファイルパス。 */
   filePath: string;
-  /** 未保存の変更があるかどうか。 */
-  isModified?: boolean;
 }
 
 /**
