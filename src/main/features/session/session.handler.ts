@@ -27,6 +27,7 @@ export class SessionHandler {
       | 'getModelState'
       | 'setMode'
       | 'getModeState'
+      | 'getContextUsagePercentage'
       | 'getMessages'
       | 'switchSession'
       | 'getActiveSessionId'
@@ -115,6 +116,9 @@ export class SessionHandler {
       await this.sessionService.setMode(sessionId, modeId);
       this.notificationService.sendToRenderer('acp:mode-changed', { sessionId, modeId });
       log.info(`session:set-mode 完了 → acp:mode-changed 通知済み`);
+    });
+    handle('session:get-context-usage', (_event, sessionId) => {
+      return this.sessionService.getContextUsagePercentage(sessionId);
     });
   }
 }

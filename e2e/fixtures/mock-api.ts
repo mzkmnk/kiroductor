@@ -73,6 +73,8 @@ export interface MockConfig {
   diff?: string | null;
   /** isAcpConnected() の戻り値（省略時: true） */
   acpConnected?: boolean;
+  /** getContextUsage() の戻り値（省略時: null） */
+  contextUsagePercentage?: number | null;
   /**
    * `listFiles(sessionId, dirPath)` が返すエントリのマップ。
    *
@@ -188,6 +190,8 @@ export function installMockKiroductorAPI(config: MockConfig): void {
           ],
         }),
       setModel: () => Promise.resolve(),
+      getContextUsage: () => Promise.resolve(config.contextUsagePercentage ?? 42),
+      onMetadataChanged: () => () => {},
       onModelChanged: () => () => {},
       getModes: () =>
         Promise.resolve({

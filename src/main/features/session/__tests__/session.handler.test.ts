@@ -33,6 +33,7 @@ describe('SessionHandler', () => {
     getModelState: MockedFunction<(sessionId: SessionId) => SessionModelState>;
     setMode: MockedFunction<(sessionId: SessionId, modeId: string) => Promise<void>>;
     getModeState: MockedFunction<(sessionId: SessionId) => SessionModeState>;
+    getContextUsagePercentage: MockedFunction<(sessionId: SessionId) => number | null>;
     getMessages: MockedFunction<(sessionId: SessionId) => Message[]>;
     switchSession: MockedFunction<(sessionId: SessionId) => void>;
     getActiveSessionId: MockedFunction<() => SessionId | null>;
@@ -63,6 +64,7 @@ describe('SessionHandler', () => {
       getModelState: vi.fn(),
       setMode: vi.fn().mockResolvedValue(undefined),
       getModeState: vi.fn(),
+      getContextUsagePercentage: vi.fn().mockReturnValue(null),
       getMessages: vi.fn().mockReturnValue([]),
       switchSession: vi.fn(),
       getActiveSessionId: vi.fn().mockReturnValue(SESSION_ID),

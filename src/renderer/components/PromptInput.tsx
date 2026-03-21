@@ -14,6 +14,7 @@ import { MentionDropdown } from './MentionDropdown';
 import type { MentionDropdownHandle } from './MentionDropdown';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { FileEntry, ImageAttachment } from '../../shared/ipc';
+import { ContextUsageRing } from './ContextUsageRing';
 
 /** 許可する MIME タイプ一覧。 */
 const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
@@ -86,6 +87,8 @@ interface PromptInputProps {
   onModeChange?: (modeId: string) => void;
   /** アクティブセッション ID（@ メンション機能に使用）。 */
   sessionId?: string | null;
+  /** コンテキスト使用率（experimental、0〜100）。 */
+  contextUsagePercentage?: number | null;
 }
 
 /**
@@ -133,6 +136,7 @@ function PromptInput({
   availableModes = [],
   onModeChange,
   sessionId,
+  contextUsagePercentage,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -409,6 +413,9 @@ function PromptInput({
                 <SparklesIcon className="size-3.5" />
                 <span>Agent</span>
               </div>
+            )}
+            {contextUsagePercentage != null && (
+              <ContextUsageRing percentage={contextUsagePercentage} />
             )}
           </div>
 

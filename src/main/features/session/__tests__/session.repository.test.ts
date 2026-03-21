@@ -217,6 +217,30 @@ describe('SessionRepository', () => {
     });
   });
 
+  describe('contextUsagePercentage', () => {
+    it('初期状態で getContextUsagePercentage() は null を返す', () => {
+      expect(repo.getContextUsagePercentage('session-1')).toBeNull();
+    });
+
+    it('setContextUsagePercentage() で設定した値を getContextUsagePercentage() で取得できる', () => {
+      repo.setContextUsagePercentage('session-1', 42.5);
+      expect(repo.getContextUsagePercentage('session-1')).toBe(42.5);
+    });
+
+    it('異なるセッションの contextUsagePercentage は独立して管理される', () => {
+      repo.setContextUsagePercentage('session-1', 10);
+      repo.setContextUsagePercentage('session-2', 90);
+      expect(repo.getContextUsagePercentage('session-1')).toBe(10);
+      expect(repo.getContextUsagePercentage('session-2')).toBe(90);
+    });
+
+    it('値を上書きできる', () => {
+      repo.setContextUsagePercentage('session-1', 30);
+      repo.setContextUsagePercentage('session-1', 60);
+      expect(repo.getContextUsagePercentage('session-1')).toBe(60);
+    });
+  });
+
   describe('isLoading', () => {
     it('初期状態で getIsLoading() は false を返す', () => {
       expect(repo.getIsLoading()).toBe(false);

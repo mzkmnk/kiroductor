@@ -70,6 +70,7 @@ export interface IpcInvokeChannels {
   'session:set-model': { args: [sessionId: SessionId, modelId: string]; return: void };
   'session:get-modes': { args: [sessionId: SessionId]; return: SessionModeState };
   'session:set-mode': { args: [sessionId: SessionId, modeId: string]; return: void };
+  'session:get-context-usage': { args: [sessionId: SessionId]; return: number | null };
   'repo:clone': { args: [url: string]; return: { repoId: string } };
   'repo:list': { args: []; return: RepoMapping[] };
   'repo:create-worktree': {
@@ -105,4 +106,5 @@ export interface IpcOnChannels {
     toolCall: ToolCallUpdate;
     selectedOptionId: PermissionOptionId;
   };
+  'acp:metadata': { sessionId: SessionId; contextUsagePercentage: number };
 }

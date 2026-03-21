@@ -29,6 +29,9 @@ export class SessionRepository {
   /** セッションごとの mode 状態。 */
   private modeStates: Map<SessionId, SessionModeState> = new Map();
 
+  /** セッションごとのコンテキスト使用率（experimental）。 */
+  private contextUsagePercentages: Map<SessionId, number> = new Map();
+
   /**
    * セッションを追加する。
    *
@@ -241,5 +244,27 @@ export class SessionRepository {
       throw new Error(`Mode state for session "${sessionId}" is not set.`);
     }
     this.modeStates.set(sessionId, { ...state, currentModeId: modeId });
+  }
+
+  /**
+   * セッションのコンテキスト使用率を設定する（experimental）。
+   *
+   * `_kiro.dev/metadata` 通知から受け取った値を保持する。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param percentage - コンテキスト使用率（0〜100）
+   */
+  setContextUsagePercentage(sessionId: SessionId, percentage: number): void {
+    this.contextUsagePercentages.set(sessionId, percentage);
+  }
+
+  /**
+   * セッションのコンテキスト使用率を取得する（experimental）。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns コンテキスト使用率。未設定の場合は `null`。
+   */
+  getContextUsagePercentage(sessionId: SessionId): number | null {
+    return this.contextUsagePercentages.get(sessionId) ?? null;
   }
 }

@@ -109,6 +109,7 @@ function App() {
     { id: AGENT_CHAT_TAB_ID, label: 'Agent', type: 'chat' },
   ]);
   const [activeTabId, setActiveTabId] = useState<string>(AGENT_CHAT_TAB_ID);
+  const [contextUsagePercentage, setContextUsagePercentage] = useState<number | null>(null);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -174,6 +175,7 @@ function App() {
         fetchDiffStats(id);
         fetchModels(id);
         fetchModes(id);
+        window.kiroductor.session.getContextUsage(id).then(setContextUsagePercentage);
       }
     });
 
@@ -201,6 +203,7 @@ function App() {
       fetchDiffStats(sessionId);
       fetchModels(sessionId);
       fetchModes(sessionId);
+      window.kiroductor.session.getContextUsage(sessionId).then(setContextUsagePercentage);
     });
 
     // モデル変更通知
@@ -209,6 +212,15 @@ function App() {
         setCurrentModelId(modelId);
       }
     });
+
+    // コンテキスト使用率変更通知（experimental）
+    const unsubMetadata = window.kiroductor.session.onMetadataChanged(
+      ({ sessionId, contextUsagePercentage: pct }) => {
+        if (sessionId === activeSessionIdRef.current) {
+          setContextUsagePercentage(pct);
+        }
+      },
+    );
 
     // mode 変更通知
     const unsubModeChanged = window.kiroductor.session.onModeChanged(({ sessionId, modeId }) => {
@@ -241,6 +253,7 @@ function App() {
       unsubCompleted();
       unsubModelChanged();
       unsubModeChanged();
+      unsubMetadata();
     };
   }, []);
 
@@ -312,6 +325,7 @@ function App() {
     activeSessionIdRef.current = sessionId;
     dispatchChat({ type: 'clear' });
     setDiffStats(null);
+    setContextUsagePercentage(null);
     fetchDiffStats(sessionId);
     // タブをリセット（セッション固有のファイルタブをクリアする）
     setTabs([{ id: AGENT_CHAT_TAB_ID, label: 'Agent', type: 'chat' }]);
@@ -345,6 +359,7 @@ function App() {
     // load 完了後にモデル・mode 情報を取得（load パスでは loadSession が状態を保存した後に呼ぶ必要がある）
     fetchModels(sessionId);
     fetchModes(sessionId);
+    window.kiroductor.session.getContextUsage(sessionId).then(setContextUsagePercentage);
   }
 
   /** 新規セッション作成後にアクティブセッションを更新する。 */
@@ -362,6 +377,7 @@ function App() {
       fetchDiffStats(id);
       fetchModels(id);
       fetchModes(id);
+      window.kiroductor.session.getContextUsage(id).then(setContextUsagePercentage);
     }
   }
 
@@ -446,6 +462,7 @@ function App() {
                   availableModes={availableModes}
                   onModeChange={handleSetMode}
                   sessionId={activeSessionId}
+                  contextUsagePercentage={contextUsagePercentage}
                 />
               </>
             ) : (

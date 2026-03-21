@@ -12,12 +12,14 @@ import type { IReadTextFileMethod } from './methods/read-text-file.method';
 import type { IWriteTextFileMethod } from './methods/write-text-file.method';
 import type { IRequestPermissionMethod } from './methods/request-permission.method';
 import type { ISessionUpdateMethod } from './methods/session-update.method';
+import type { IMetadataMethod, MetadataParams } from '../kiro-ext/metadata.method';
 
 export type {
   IReadTextFileMethod,
   IWriteTextFileMethod,
   IRequestPermissionMethod,
   ISessionUpdateMethod,
+  IMetadataMethod,
 };
 
 /**
@@ -32,12 +34,14 @@ export class KiroductorClientHandler implements Client {
    * @param writeTextFileMethod - `fs/writeTextFile` リクエストを処理するメソッド
    * @param requestPermissionMethod - `client/requestPermission` リクエストを処理するメソッド
    * @param sessionUpdateMethod - `session/update` 通知を処理するメソッド
+   * @param metadataMethod - `_kiro.dev/metadata` 拡張通知を処理するメソッド
    */
   constructor(
     private readonly readTextFileMethod: IReadTextFileMethod,
     private readonly writeTextFileMethod: IWriteTextFileMethod,
     private readonly requestPermissionMethod: IRequestPermissionMethod,
     private readonly sessionUpdateMethod: ISessionUpdateMethod,
+    private readonly metadataMethod: IMetadataMethod,
   ) {}
 
   /**
@@ -80,16 +84,21 @@ export class KiroductorClientHandler implements Client {
   }
 
   /**
-   * kiro-cli が送信する `_kiro.dev/` 拡張通知を無視する。
+   * kiro-cli が送信する `_kiro.dev/` 拡張通知を処理する。
    *
-   * 未実装のままだと SDK が `-32601 Method not found` をログ出力し続けるため、
-   * 何もせず正常終了する。
+   * `_kiro.dev/metadata` は {@link MetadataMethod} へ委譲する。
+   * それ以外の拡張通知は無視する（未実装のままだと SDK が `-32601 Method not found` をログ出力し続けるため）。
    *
-   * @param _method - 通知メソッド名（未使用）
-   * @param _params - 通知パラメータ（未使用）
+   * @param method - 通知メソッド名
+   * @param params - 通知パラメータ
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async extNotification(_method: string, _params: Record<string, unknown>): Promise<void> {
-    // _kiro.dev/* 拡張通知は MVP では無視する
+  async extNotification(method: string, params: Record<string, unknown>): Promise<void> {
+    switch (method) {
+      case '_kiro.dev/metadata':
+        await this.metadataMethod.handle(params as unknown as MetadataParams);
+        break;
+      default:
+        break;
+    }
   }
 }
