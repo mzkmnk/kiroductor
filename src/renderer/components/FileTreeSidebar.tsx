@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, PanelRight, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FileTree } from './FileTree';
+
+/** サイドバーのデフォルト幅（px）。 */
+const DEFAULT_WIDTH = 288;
+/** サイドバーの最小幅（px）。 */
+const MIN_WIDTH = 160;
 
 /**
  * 右サイドバーコンポーネントの Props。
@@ -16,6 +21,7 @@ interface FileTreeSidebarProps {
  *
  * 開閉トグル、隠しファイルの表示切り替え、
  * ファイルツリーのインタラクティブな表示を提供する。
+ * 左端のドラッグハンドルで幅を変更できる（最大: 画面幅の半分）。
  *
  * @param activeSessionId - 現在アクティブなセッション ID
  */
@@ -24,6 +30,8 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   /** 隠しファイルを表示するかどうか。 */
   const [showHidden, setShowHidden] = useState(false);
+  /** サイドバーの幅（px）。 */
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
   /**
    * 選択中ファイルの情報。sessionId とセットで保持し、
    * セッションが変わったときに自動的に選択をリセットする。
@@ -33,6 +41,9 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
     filePath: string;
   } | null>(null);
 
+  /** ドラッグ開始時の情報を保持する ref。 */
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
   /** 現在のセッションに対応する選択中ファイルパス。 */
   const selectedFilePath =
     selectedState?.sessionId === activeSessionId ? selectedState.filePath : null;
@@ -41,6 +52,32 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   function handleFileSelect(filePath: string) {
     if (!activeSessionId) return;
     setSelectedState({ sessionId: activeSessionId, filePath });
+  }
+
+  /** ドラッグハンドルの mousedown ハンドラ。 */
+  function handleDragStart(e: React.MouseEvent) {
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startWidth: width };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMouseMove(ev: MouseEvent) {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startX - ev.clientX;
+      const maxWidth = Math.floor(window.innerWidth / 2);
+      setWidth(Math.min(maxWidth, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta)));
+    }
+
+    function onMouseUp() {
+      dragRef.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   }
 
   // セッションがない場合は開くボタンのみ表示
@@ -77,7 +114,14 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   }
 
   return (
-    <div className={cn('flex w-72 shrink-0 flex-col border-l border-border')}>
+    <div className={cn('relative flex shrink-0 flex-col border-l border-border')} style={{ width }}>
+      {/* ドラッグハンドル */}
+      <div
+        className="absolute inset-y-0 left-0 w-1 cursor-col-resize hover:bg-border active:bg-primary/30"
+        onMouseDown={handleDragStart}
+        title="ドラッグして幅を変更"
+      />
+
       {/* ヘッダー */}
       <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-2">
         <span className="flex-1 text-xs font-medium text-foreground">Files</span>
