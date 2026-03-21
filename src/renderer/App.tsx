@@ -435,7 +435,7 @@ function App() {
         onSwitchSession={handleSwitchSession}
         onSessionCreated={handleSessionCreated}
       />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         {activeSessionId ? (
           <div className="flex h-full flex-col">
             <BranchHeader
