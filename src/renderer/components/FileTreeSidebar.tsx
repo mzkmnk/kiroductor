@@ -15,6 +15,8 @@ const MIN_WIDTH = 160;
 interface FileTreeSidebarProps {
   /** 現在アクティブなセッション ID。 */
   activeSessionId: SessionId;
+  /** ファイルをタブで開くときのコールバック。 */
+  onFileOpen: (filePath: string) => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface FileTreeSidebarProps {
  *
  * @param activeSessionId - 現在アクティブなセッション ID
  */
-export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
+export function FileTreeSidebar({ activeSessionId, onFileOpen }: FileTreeSidebarProps) {
   /** サイドバーの開閉状態。 */
   const [isOpen, setIsOpen] = useState(true);
   /** 隠しファイルを表示するかどうか。 */
@@ -49,9 +51,10 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
   const selectedFilePath =
     selectedState?.sessionId === activeSessionId ? selectedState.filePath : null;
 
-  /** ファイル選択ハンドラ。 */
+  /** ファイル選択ハンドラ。選択状態の更新とタブでのファイルオープンを行う。 */
   function handleFileSelect(filePath: string) {
     setSelectedState({ sessionId: activeSessionId, filePath });
+    onFileOpen(filePath);
   }
 
   /** ドラッグハンドルの mousedown ハンドラ。 */
