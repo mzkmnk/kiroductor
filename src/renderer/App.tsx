@@ -4,14 +4,18 @@ import type { SessionMapping } from '../main/features/config/config.repository';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
 import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, ImageAttachment } from '../shared/ipc';
+import { BranchHeader } from './components/BranchHeader';
 import { ChatView } from './components/ChatView';
 import type { ChatViewHandle } from './components/ChatView';
 import { PromptInput } from './components/PromptInput';
+import { TabBar } from './components/TabBar';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { DiffDialog } from './components/DiffDialog';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
+import type { Tab } from './types/tab';
+import { AGENT_CHAT_TAB_ID } from './types/tab';
 
 /**
  * チャット UI の状態。
@@ -101,6 +105,10 @@ function App() {
   const [currentModeId, setCurrentModeId] = useState<string | null>(null);
   const [availableModes, setAvailableModes] = useState<SessionMode[]>([]);
   const [acpStatus, setAcpStatus] = useState<AcpStatus>('connecting');
+  const [tabs, setTabs] = useState<Tab[]>([
+    { id: AGENT_CHAT_TAB_ID, label: 'Agent', type: 'chat' },
+  ]);
+  const [activeTabId, setActiveTabId] = useState<string>(AGENT_CHAT_TAB_ID);
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -305,6 +313,9 @@ function App() {
     dispatchChat({ type: 'clear' });
     setDiffStats(null);
     fetchDiffStats(sessionId);
+    // タブをリセット（セッション固有のファイルタブをクリアする）
+    setTabs([{ id: AGENT_CHAT_TAB_ID, label: 'Agent', type: 'chat' }]);
+    setActiveTabId(AGENT_CHAT_TAB_ID);
 
     // 切り替え先セッションが処理中かどうかで isProcessing を更新
     setIsProcessing(processingSessionIds.has(sessionId));
@@ -342,6 +353,8 @@ function App() {
     setActiveSessionId(id);
     activeSessionIdRef.current = id;
     setDiffStats(null);
+    setTabs([{ id: AGENT_CHAT_TAB_ID, label: 'Agent', type: 'chat' }]);
+    setActiveTabId(AGENT_CHAT_TAB_ID);
     window.kiroductor.session.list().then(setSessionMappings);
     if (id) {
       const msgs = await window.kiroductor.session.getMessages(id);
@@ -364,6 +377,24 @@ function App() {
     await window.kiroductor.session.setMode(activeSessionId, modeId);
   }
 
+  /** タブをクリックしてアクティブにする。 */
+  function handleTabClick(tabId: string) {
+    setActiveTabId(tabId);
+  }
+
+  /** タブを閉じる。チャットタブは閉じられない。 */
+  function handleTabClose(tabId: string) {
+    setTabs((prev) => {
+      const tab = prev.find((t) => t.id === tabId);
+      if (!tab || tab.type === 'chat') return prev;
+      return prev.filter((t) => t.id !== tabId);
+    });
+    // 閉じたタブがアクティブだった場合、チャットタブに戻す
+    if (activeTabId === tabId) {
+      setActiveTabId(AGENT_CHAT_TAB_ID);
+    }
+  }
+
   const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
 
   return (
@@ -378,34 +409,50 @@ function App() {
       <SidebarInset>
         {activeSessionId ? (
           <div className="flex h-full flex-col">
-            <ChatView
-              ref={chatViewRef}
-              sessionId={activeSessionId}
-              messages={chatState.messages}
-              animSplits={chatState.animSplits}
-              isRestoring={isRestoring}
-              isProcessing={isProcessing}
+            <BranchHeader
               currentBranch={activeMapping?.currentBranch}
               sourceBranch={activeMapping?.sourceBranch}
               onDiffClick={handleDiffClick}
               hasDiffChanges={
                 diffStats !== null && (diffStats.insertions > 0 || diffStats.deletions > 0)
               }
-              restoreScrollTop={restoreScrollTop}
             />
-            <PromptInput
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              isProcessing={isProcessing}
-              disabled={isProcessing || isRestoring}
-              currentModelId={currentModelId}
-              availableModels={availableModels}
-              onModelChange={handleSetModel}
-              currentModeId={currentModeId}
-              availableModes={availableModes}
-              onModeChange={handleSetMode}
-              sessionId={activeSessionId}
+            <TabBar
+              tabs={tabs}
+              activeTabId={activeTabId}
+              onTabClick={handleTabClick}
+              onTabClose={handleTabClose}
             />
+            {activeTabId === AGENT_CHAT_TAB_ID ? (
+              <>
+                <ChatView
+                  ref={chatViewRef}
+                  sessionId={activeSessionId}
+                  messages={chatState.messages}
+                  animSplits={chatState.animSplits}
+                  isRestoring={isRestoring}
+                  isProcessing={isProcessing}
+                  restoreScrollTop={restoreScrollTop}
+                />
+                <PromptInput
+                  onSubmit={handleSubmit}
+                  onCancel={handleCancel}
+                  isProcessing={isProcessing}
+                  disabled={isProcessing || isRestoring}
+                  currentModelId={currentModelId}
+                  availableModels={availableModels}
+                  onModelChange={handleSetModel}
+                  currentModeId={currentModeId}
+                  availableModes={availableModes}
+                  onModeChange={handleSetMode}
+                  sessionId={activeSessionId}
+                />
+              </>
+            ) : (
+              <div className="flex flex-1 items-center justify-center text-muted-foreground">
+                {/* 将来: ファイルビューコンテンツ */}
+              </div>
+            )}
           </div>
         ) : (
           <>
