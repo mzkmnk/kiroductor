@@ -109,6 +109,17 @@ export interface SessionAPI {
   onModelChanged: (
     callback: (payload: { sessionId: SessionId; modelId: string }) => void,
   ) => () => void;
+  /** セッションのコンテキスト使用率を取得する（experimental）。 */
+  getContextUsage: (sessionId: SessionId) => Promise<number | null>;
+  /**
+   * コンテキスト使用率の変更通知を購読する（experimental）。
+   *
+   * @param callback - セッション ID とコンテキスト使用率を受け取るコールバック
+   * @returns 購読を解除するクリーンアップ関数
+   */
+  onMetadataChanged: (
+    callback: (payload: { sessionId: SessionId; contextUsagePercentage: number }) => void,
+  ) => () => void;
   /** セッションの mode 状態を取得する。 */
   getModes: (sessionId: SessionId) => Promise<SessionModeState>;
   /** セッションの mode を切り替える。 */
@@ -227,6 +238,9 @@ const kiroductorAPI: KiroductorAPI = {
     setModel: (sessionId, modelId) => invoke('session:set-model', sessionId, modelId),
     onModelChanged: (callback) =>
       typedOn('acp:model-changed', (_event, payload) => callback(payload)),
+    getContextUsage: (sessionId) => invoke('session:get-context-usage', sessionId),
+    onMetadataChanged: (callback) =>
+      typedOn('acp:metadata', (_event, payload) => callback(payload)),
     getModes: (sessionId) => invoke('session:get-modes', sessionId),
     setMode: (sessionId, modeId) => invoke('session:set-mode', sessionId, modeId),
     onModeChanged: (callback) =>

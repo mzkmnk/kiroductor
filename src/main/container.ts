@@ -20,6 +20,7 @@ import { ReadTextFileMethod } from './features/acp-client/methods/read-text-file
 import { WriteTextFileMethod } from './features/acp-client/methods/write-text-file.method';
 import { RequestPermissionMethod } from './features/acp-client/methods/request-permission.method';
 import { SessionUpdateMethod } from './features/acp-client/methods/session-update.method';
+import { MetadataMethod } from './features/kiro-ext/metadata.method';
 import { AcpHandler } from './features/acp-connection/acp.handler';
 import { SessionHandler } from './features/session/session.handler';
 import { RepoHandler } from './features/repo/repo.handler';
@@ -79,6 +80,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
     notificationService,
     sessionRepo,
   );
+  const metadataMethod = new MetadataMethod(sessionRepo, notificationService);
 
   const clientHandlerFactory: ClientHandlerFactory = () =>
     new KiroductorClientHandler(
@@ -86,6 +88,7 @@ export function buildContainer(getMainWindow: () => BrowserWindow | null): AppCo
       writeTextFileMethod,
       requestPermissionMethod,
       sessionUpdateMethod,
+      metadataMethod,
     );
 
   const acpConnectionService = new AcpConnectionService(

@@ -5,6 +5,7 @@ import {
   type IWriteTextFileMethod,
   type IRequestPermissionMethod,
   type ISessionUpdateMethod,
+  type IMetadataMethod,
 } from '../client-handler';
 import type {
   ReadTextFileRequest,
@@ -21,17 +22,21 @@ const makeRequestPermissionMethod = (): IRequestPermissionMethod => ({ handle: v
 
 const makeSessionUpdateMethod = (): ISessionUpdateMethod => ({ handle: vi.fn() });
 
+const makeMetadataMethod = (): IMetadataMethod => ({ handle: vi.fn() });
+
 const makeHandler = (overrides?: {
   readTextFileMethod?: IReadTextFileMethod;
   writeTextFileMethod?: IWriteTextFileMethod;
   requestPermissionMethod?: IRequestPermissionMethod;
   sessionUpdateMethod?: ISessionUpdateMethod;
+  metadataMethod?: IMetadataMethod;
 }) =>
   new KiroductorClientHandler(
     overrides?.readTextFileMethod ?? makeReadTextFileMethod(),
     overrides?.writeTextFileMethod ?? makeWriteTextFileMethod(),
     overrides?.requestPermissionMethod ?? makeRequestPermissionMethod(),
     overrides?.sessionUpdateMethod ?? makeSessionUpdateMethod(),
+    overrides?.metadataMethod ?? makeMetadataMethod(),
   );
 
 describe('KiroductorClientHandler', () => {
@@ -107,20 +112,25 @@ describe('KiroductorClientHandler', () => {
   });
 
   describe('extNotification', () => {
-    it('エラーを投げないこと', async () => {
-      const handler = makeHandler();
+    it('MetadataMethod へ委譲すること', async () => {
+      const metadataMethod = makeMetadataMethod();
+      const handler = makeHandler({ metadataMethod });
 
-      await expect(
-        handler.extNotification('_kiro.dev/mcp/server_initialized', {}),
-      ).resolves.toBeUndefined();
+      const params = { sessionId: 'session-1', contextUsagePercentage: 42.5 };
+      await handler.extNotification('_kiro.dev/metadata', params);
+
+      expect(metadataMethod.handle).toHaveBeenCalledWith('_kiro.dev/metadata', params);
     });
 
-    it('任意のメソッド名で呼ばれてもエラーを投げないこと', async () => {
-      const handler = makeHandler();
+    it('任意のメソッド名でも MetadataMethod へ委譲すること', async () => {
+      const metadataMethod = makeMetadataMethod();
+      const handler = makeHandler({ metadataMethod });
 
-      await expect(
-        handler.extNotification('_kiro.dev/commands/available', { commands: [] }),
-      ).resolves.toBeUndefined();
+      await handler.extNotification('_kiro.dev/commands/available', { commands: [] });
+
+      expect(metadataMethod.handle).toHaveBeenCalledWith('_kiro.dev/commands/available', {
+        commands: [],
+      });
     });
   });
 });

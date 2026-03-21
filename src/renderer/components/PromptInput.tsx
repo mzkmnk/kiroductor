@@ -86,6 +86,8 @@ interface PromptInputProps {
   onModeChange?: (modeId: string) => void;
   /** アクティブセッション ID（@ メンション機能に使用）。 */
   sessionId?: string | null;
+  /** コンテキスト使用率（experimental、0〜100）。 */
+  contextUsagePercentage?: number | null;
 }
 
 /**
@@ -133,6 +135,7 @@ function PromptInput({
   availableModes = [],
   onModeChange,
   sessionId,
+  contextUsagePercentage,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -409,6 +412,16 @@ function PromptInput({
                 <SparklesIcon className="size-3.5" />
                 <span>Agent</span>
               </div>
+            )}
+            {contextUsagePercentage != null && (
+              <span
+                className={cn(
+                  'text-xs tabular-nums',
+                  contextUsagePercentage >= 80 ? 'text-destructive' : 'text-muted-foreground/60',
+                )}
+              >
+                Context: {Math.round(contextUsagePercentage)}%
+              </span>
             )}
           </div>
 

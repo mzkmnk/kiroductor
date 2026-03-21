@@ -284,6 +284,16 @@ export class SessionService {
   }
 
   /**
+   * 指定セッションのコンテキスト使用率を取得する（experimental）。
+   *
+   * @param sessionId - 対象セッション ID
+   * @returns コンテキスト使用率。未設定の場合は `null`。
+   */
+  getContextUsagePercentage(sessionId: SessionId): number | null {
+    return this.sessionRepo.getContextUsagePercentage(sessionId);
+  }
+
+  /**
    * 指定セッションのメッセージ一覧を返す。
    *
    * @param sessionId - 対象セッション ID
