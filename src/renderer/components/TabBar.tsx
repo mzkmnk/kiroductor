@@ -24,7 +24,10 @@ interface TabBarProps {
  */
 export function TabBar({ tabs, activeTabId, onTabClick, onTabClose }: TabBarProps) {
   return (
-    <div className="flex h-9 shrink-0 items-end gap-0 overflow-x-auto border-b bg-muted/30 scrollbar-hide [-webkit-app-region:drag]">
+    <div
+      role="tablist"
+      className="flex h-9 shrink-0 items-end gap-0 overflow-x-auto border-b bg-muted/30 scrollbar-hide [-webkit-app-region:drag]"
+    >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         const isClosable = tab.type !== 'chat';
@@ -32,6 +35,8 @@ export function TabBar({ tabs, activeTabId, onTabClick, onTabClose }: TabBarProp
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={isActive}
             type="button"
             onClick={() => onTabClick(tab.id)}
             className={cn(

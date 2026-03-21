@@ -22,7 +22,7 @@ test.describe('FileEditor', () => {
     await page.getByText('App.tsx').click();
 
     // タブが表示されるのを待つ
-    await expect(page.getByRole('button', { name: /App\.tsx/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /App\.tsx/ })).toBeVisible();
 
     // CodeMirror エディタのコンテンツが表示されるのを待つ
     await expect(page.locator('.cm-editor')).toBeVisible();
@@ -52,15 +52,15 @@ test.describe('FileEditor', () => {
 
     // package.json を開く
     await page.getByText('package.json').click();
-    await expect(page.getByRole('button', { name: /package\.json/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /package\.json/ })).toBeVisible();
 
     // README.md を開く
     await page.getByText('README.md').click();
-    await expect(page.getByRole('button', { name: /README\.md/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /README\.md/ })).toBeVisible();
 
     // 両方のタブが表示されている
-    await expect(page.getByRole('button', { name: /package\.json/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /README\.md/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /package\.json/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /README\.md/ })).toBeVisible();
 
     await expect(page).toHaveScreenshot('file-editor-multiple-tabs.png');
   });
