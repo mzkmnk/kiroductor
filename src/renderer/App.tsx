@@ -120,7 +120,7 @@ function App() {
   const scrollPositionsRef = useRef<Map<string, number>>(new Map());
   const [restoreScrollTop, setRestoreScrollTop] = useState<number | undefined>(undefined);
   /** onPromptCompleted コールバックから drainNext を呼ぶための ref。 */
-  const drainNextRef = useRef<() => void>(() => {});
+  const drainNextRef = useRef<() => boolean>(() => false);
 
   /** アクティブセッションの diff stats を取得する。 */
   async function fetchDiffStats(sessionId: string) {
@@ -245,11 +245,15 @@ function App() {
       if (sessionId === activeSessionIdRef.current) {
         window.kiroductor.session.getMessages(sessionId).then((msgs) => {
           dispatchChat({ type: 'set', messages: msgs });
-          drainNextRef.current();
+          // drainNext → sendPrompt が呼ばれれば setIsProcessing(true) が即座に実行される。
+          // キューが空なら isProcessing を false にする。
+          const drained = drainNextRef.current();
+          if (!drained) setIsProcessing(false);
         });
         fetchDiffStats(sessionId);
       } else {
-        drainNextRef.current();
+        const drained = drainNextRef.current();
+        if (!drained) setIsProcessing(false);
       }
       setPromptCompletedCount((c) => c + 1);
     });
@@ -300,17 +304,9 @@ function App() {
     setIsProcessing(true);
     setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
     await window.kiroductor.session.prompt(text, submittedSessionId, images);
-
-    // まだ同じセッションを表示中の場合のみ UI を更新する
-    if (activeSessionIdRef.current === submittedSessionId) {
-      const msgs = await window.kiroductor.session.getMessages(submittedSessionId);
-      dispatchChat({ type: 'set', messages: msgs });
-      setIsProcessing(false);
-    }
-    // 切り替え済みの場合:
-    // - メッセージは main の MessageRepository に蓄積済み（戻れば見える）
-    // - isProcessing は切り替え時に handleSwitchSession で制御済み
-    // - processingSessionIds は onPromptCompleted で削除済み
+    // メッセージ同期と isProcessing の解除は onPromptCompleted で行う。
+    // ここで getMessages → set すると、onPromptCompleted → drainNext で
+    // 追加された次の楽観的ユーザーメッセージを上書きしてしまうため。
   }, []);
 
   const {

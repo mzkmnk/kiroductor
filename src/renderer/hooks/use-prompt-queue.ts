@@ -27,8 +27,8 @@ interface UsePromptQueueReturn {
   clearQueue: () => void;
   /** 指定 ID のアイテムをキューから削除する。 */
   removeFromQueue: (id: string) => void;
-  /** キュー先頭を取り出して送信する。キューが空なら何もしない。 */
-  drainNext: () => void;
+  /** キュー先頭を取り出して送信する。送信したら `true`、キューが空なら `false` を返す。 */
+  drainNext: () => boolean;
 }
 
 /**
@@ -72,12 +72,13 @@ export function usePromptQueue({ onSend }: UsePromptQueueOptions): UsePromptQueu
     setQueue((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
-  const drainNext = useCallback(() => {
+  const drainNext = useCallback((): boolean => {
     const current = queueRef.current;
-    if (current.length === 0) return;
+    if (current.length === 0) return false;
     const [next, ...rest] = current;
     setQueue(rest);
     onSendRef.current(next.text, next.images);
+    return true;
   }, []);
 
   return { queue, submitOrEnqueue, clearQueue, removeFromQueue, drainNext };
