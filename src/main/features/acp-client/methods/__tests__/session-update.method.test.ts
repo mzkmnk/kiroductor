@@ -211,6 +211,18 @@ describe('SessionUpdateMethod', () => {
       expect(notificationService.sendToRenderer).toHaveBeenCalled();
     });
 
+    it('user_message_chunk 受信時に streaming 中のエージェントメッセージが completed になる', async () => {
+      repo.addAgentMessage(SESSION_ID, 'msg-1');
+      repo.appendAgentChunk(SESSION_ID, 'msg-1', 'Hello');
+
+      await method.handle(makeUserMessageChunkParams('User reply'));
+
+      const messages = repo.getAll(SESSION_ID);
+      const agentMsg = messages.find((m) => m.id === 'msg-1');
+      assert(agentMsg?.type === 'agent');
+      expect(agentMsg.status).toBe('completed');
+    });
+
     it('content.type が text 以外の場合、ユーザーメッセージは追加されない', async () => {
       const params: SessionNotification = {
         sessionId: SESSION_ID,
@@ -314,6 +326,81 @@ describe('SessionUpdateMethod', () => {
       await method.handle(params);
 
       expect(notificationService.sendToRenderer).toHaveBeenCalledWith('acp:session-update', params);
+    });
+  });
+
+  describe('セッション復元シーケンス（user → agent → user → agent）', () => {
+    const makeUserChunk = (text: string): SessionNotification => ({
+      sessionId: SESSION_ID,
+      update: { sessionUpdate: 'user_message_chunk', content: { type: 'text', text } },
+    });
+
+    it('複数ターンのリプレイで各メッセージが独立して生成されること', async () => {
+      // ターン1: user → agent
+      await method.handle(makeUserChunk('test'));
+      await method.handle(makeAgentMessageChunkParams('Agent reply 1'));
+
+      // ターン2: user → agent
+      await method.handle(makeUserChunk('test2'));
+      await method.handle(makeAgentMessageChunkParams('Agent reply 2'));
+
+      const messages = repo.getAll(SESSION_ID);
+      expect(messages).toHaveLength(4);
+
+      expect(messages[0].type).toBe('user');
+      assert(messages[0].type === 'user');
+      expect(messages[0].text).toBe('test');
+
+      expect(messages[1].type).toBe('agent');
+      assert(messages[1].type === 'agent');
+      expect(messages[1].text).toBe('Agent reply 1');
+      expect(messages[1].status).toBe('completed');
+
+      expect(messages[2].type).toBe('user');
+      assert(messages[2].type === 'user');
+      expect(messages[2].text).toBe('test2');
+
+      expect(messages[3].type).toBe('agent');
+      assert(messages[3].type === 'agent');
+      expect(messages[3].text).toBe('Agent reply 2');
+    });
+
+    it('tool_call を含む複数ターンのリプレイでも正しくメッセージが分離されること', async () => {
+      // ターン1: user → agent → tool_call → agent
+      await method.handle(makeUserChunk('explain this code'));
+      await method.handle(makeAgentMessageChunkParams('Let me read the file'));
+      await method.handle(makeToolCallParams('tc-1', 'readFile', { path: '/src/main.ts' }));
+      await method.handle(makeAgentMessageChunkParams('Here is the explanation'));
+
+      // ターン2: user → agent
+      await method.handle(makeUserChunk('thanks'));
+      await method.handle(makeAgentMessageChunkParams('You are welcome'));
+
+      const messages = repo.getAll(SESSION_ID);
+      expect(messages).toHaveLength(6);
+
+      assert(messages[0].type === 'user');
+      expect(messages[0].text).toBe('explain this code');
+
+      assert(messages[1].type === 'agent');
+      expect(messages[1].text).toBe('Let me read the file');
+      expect(messages[1].status).toBe('completed');
+
+      assert(messages[2].type === 'tool_call');
+      expect(messages[2].name).toBe('readFile');
+
+      assert(messages[3].type === 'agent');
+      expect(messages[3].text).toBe('Here is the explanation');
+      expect(messages[3].status).toBe('completed');
+
+      assert(messages[4].type === 'user');
+      expect(messages[4].text).toBe('thanks');
+
+      assert(messages[5].type === 'agent');
+      expect(messages[5].text).toBe('You are welcome');
+      // 最後のエージェントメッセージは後続の user_message_chunk がないため streaming のまま
+      // （completeAllStreamingMessages は session.service.ts 側の責務）
+      expect(messages[5].status).toBe('streaming');
     });
   });
 

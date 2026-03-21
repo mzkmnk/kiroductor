@@ -45,7 +45,8 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
    */
   async handle(params: SessionNotification): Promise<void> {
     const { sessionId, update } = params;
-    log.info(`sessionUpdate=${update.sessionUpdate}`);
+    log.info(`sessionUpdate=${update.sessionUpdate} sessionId=${sessionId}`);
+    log.info(`update payload: ${JSON.stringify(update)}`);
 
     switch (update.sessionUpdate) {
       case 'user_message_chunk':
@@ -84,6 +85,9 @@ export class SessionUpdateMethod implements ISessionUpdateMethod {
     // TODO: kiro CLI ACP が image content をサポートしたら、
     //       type === 'image' の場合に attachments として復元する
     if (update.content.type !== 'text') return;
+
+    // 新しいユーザーメッセージが来たら、前ターンの streaming エージェントメッセージを完了する
+    this.completeStreamingMessages(sessionId);
 
     const text = (update.content as Extract<ContentChunk['content'], { type: 'text' }>).text;
     this.messageRepository.addUserMessage(sessionId, text);
