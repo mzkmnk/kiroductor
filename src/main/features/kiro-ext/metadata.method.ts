@@ -4,8 +4,8 @@ import type { NotificationService } from '../../shared/interfaces/notification.s
 
 /** `_kiro.dev/metadata` 拡張通知を処理できるオブジェクトの最小インターフェース。 */
 export interface IMetadataMethod {
-  /** 拡張通知を処理する。 */
-  handle(method: string, params: Record<string, unknown>): Promise<void>;
+  /** `_kiro.dev/metadata` 通知パラメータを処理する。 */
+  handle(params: Record<string, unknown>): Promise<void>;
 }
 
 /**
@@ -25,16 +25,11 @@ export class MetadataMethod implements IMetadataMethod {
   ) {}
 
   /**
-   * `_kiro.dev/metadata` 通知を処理する。
+   * `_kiro.dev/metadata` 通知パラメータを処理する。
    *
-   * それ以外のメソッド名の場合は何もしない。
-   *
-   * @param method - 拡張通知メソッド名
    * @param params - 通知パラメータ
    */
-  async handle(method: string, params: Record<string, unknown>): Promise<void> {
-    if (method !== '_kiro.dev/metadata') return;
-
+  async handle(params: Record<string, unknown>): Promise<void> {
     const sessionId = params.sessionId as SessionId;
     const contextUsagePercentage = params.contextUsagePercentage as number;
 

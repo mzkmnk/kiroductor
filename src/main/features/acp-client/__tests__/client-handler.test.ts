@@ -112,25 +112,23 @@ describe('KiroductorClientHandler', () => {
   });
 
   describe('extNotification', () => {
-    it('MetadataMethod へ委譲すること', async () => {
+    it('_kiro.dev/metadata を MetadataMethod へ委譲すること', async () => {
       const metadataMethod = makeMetadataMethod();
       const handler = makeHandler({ metadataMethod });
 
       const params = { sessionId: 'session-1', contextUsagePercentage: 42.5 };
       await handler.extNotification('_kiro.dev/metadata', params);
 
-      expect(metadataMethod.handle).toHaveBeenCalledWith('_kiro.dev/metadata', params);
+      expect(metadataMethod.handle).toHaveBeenCalledWith(params);
     });
 
-    it('任意のメソッド名でも MetadataMethod へ委譲すること', async () => {
+    it('未知のメソッド名では MetadataMethod を呼ばないこと', async () => {
       const metadataMethod = makeMetadataMethod();
       const handler = makeHandler({ metadataMethod });
 
       await handler.extNotification('_kiro.dev/commands/available', { commands: [] });
 
-      expect(metadataMethod.handle).toHaveBeenCalledWith('_kiro.dev/commands/available', {
-        commands: [],
-      });
+      expect(metadataMethod.handle).not.toHaveBeenCalled();
     });
   });
 });

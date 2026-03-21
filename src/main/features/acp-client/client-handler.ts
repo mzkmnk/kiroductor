@@ -93,6 +93,12 @@ export class KiroductorClientHandler implements Client {
    * @param params - 通知パラメータ
    */
   async extNotification(method: string, params: Record<string, unknown>): Promise<void> {
-    await this.metadataMethod.handle(method, params);
+    switch (method) {
+      case '_kiro.dev/metadata':
+        await this.metadataMethod.handle(params);
+        break;
+      default:
+        break;
+    }
   }
 }
