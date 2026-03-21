@@ -84,6 +84,10 @@ export interface IpcInvokeChannels {
     args: [sessionId: string, dirPath: string, depth?: number];
     return: FileEntry[];
   };
+  'repo:read-file': {
+    args: [sessionId: string, filePath: string];
+    return: string;
+  };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
 }

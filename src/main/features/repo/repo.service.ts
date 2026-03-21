@@ -405,6 +405,28 @@ export class RepoService {
     return this.listFiles(session.cwd, dirPath, depth);
   }
 
+  /**
+   * セッション ID からファイルの内容を読み取る。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param filePath - cwd からの相対ファイルパス
+   * @returns ファイルの内容（UTF-8）
+   * @throws セッションが見つからない場合、またはパスが cwd 外の場合
+   */
+  async readFileBySession(sessionId: string, filePath: string): Promise<string> {
+    const sessions = await this.configRepo.readSessions();
+    const session = sessions.find((s) => s.acpSessionId === sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+    const resolvedCwd = path.resolve(session.cwd);
+    const resolvedFile = path.resolve(session.cwd, filePath);
+    if (!resolvedFile.startsWith(resolvedCwd + path.sep) && resolvedFile !== resolvedCwd) {
+      throw new Error('File path is outside the working directory');
+    }
+    return this.fs.readFile(resolvedFile, 'utf-8');
+  }
+
   /** パスが存在するか確認する。 */
   private async pathExists(targetPath: string): Promise<boolean> {
     try {

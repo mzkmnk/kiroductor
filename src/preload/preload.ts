@@ -184,6 +184,8 @@ export interface RepoAPI {
   getDiff: (sessionId: string) => Promise<string | null>;
   /** 指定セッションの作業ディレクトリ配下のファイル・フォルダ一覧を取得する。 */
   listFiles: (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>;
+  /** 指定セッションの作業ディレクトリ内のファイル内容を読み取る。 */
+  readFile: (sessionId: string, filePath: string) => Promise<string>;
 }
 
 /**
@@ -261,6 +263,7 @@ const kiroductorAPI: KiroductorAPI = {
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
     listFiles: (sessionId, dirPath, depth) => invoke('repo:list-files', sessionId, dirPath, depth),
+    readFile: (sessionId, filePath) => invoke('repo:read-file', sessionId, filePath),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),
