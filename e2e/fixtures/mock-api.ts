@@ -190,7 +190,7 @@ export function installMockKiroductorAPI(config: MockConfig): void {
           ],
         }),
       setModel: () => Promise.resolve(),
-      getContextUsage: () => Promise.resolve(config.contextUsagePercentage ?? null),
+      getContextUsage: () => Promise.resolve(config.contextUsagePercentage ?? 42),
       onMetadataChanged: () => () => {},
       onModelChanged: () => () => {},
       getModes: () =>
