@@ -170,6 +170,7 @@ export function installMockKiroductorAPI(config: MockConfig): void {
         return Promise.resolve(config.diffStats ?? null);
       },
       getDiff: () => Promise.resolve(config.diff ?? null),
+      listFiles: () => Promise.resolve([]),
     },
     config: {
       getSettings: () => Promise.resolve({}),
