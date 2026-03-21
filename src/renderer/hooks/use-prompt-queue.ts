@@ -42,11 +42,16 @@ interface UsePromptQueueReturn {
  */
 export function usePromptQueue({ onSend }: UsePromptQueueOptions): UsePromptQueueReturn {
   const [queue, setQueue] = useState<QueuedPrompt[]>([]);
+  const queueRef = useRef(queue);
   const onSendRef = useRef(onSend);
 
   useEffect(() => {
     onSendRef.current = onSend;
   }, [onSend]);
+
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
 
   const submitOrEnqueue = useCallback(
     (text: string, isProcessing: boolean, images?: ImageAttachment[]) => {
@@ -68,12 +73,11 @@ export function usePromptQueue({ onSend }: UsePromptQueueOptions): UsePromptQueu
   }, []);
 
   const drainNext = useCallback(() => {
-    setQueue((prev) => {
-      if (prev.length === 0) return prev;
-      const [next, ...rest] = prev;
-      onSendRef.current(next.text, next.images);
-      return rest;
-    });
+    const current = queueRef.current;
+    if (current.length === 0) return;
+    const [next, ...rest] = current;
+    setQueue(rest);
+    onSendRef.current(next.text, next.images);
   }, []);
 
   return { queue, submitOrEnqueue, clearQueue, removeFromQueue, drainNext };
