@@ -1,4 +1,4 @@
-import { useState, useReducer, useEffect, useRef } from 'react';
+import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
@@ -16,6 +16,8 @@ import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 import type { Tab } from './types/tab';
 import { AGENT_CHAT_TAB_ID } from './types/tab';
+import { usePromptQueue } from './hooks/use-prompt-queue';
+import { QueuePreview } from './components/QueuePreview';
 
 /**
  * チャット UI の状態。
@@ -264,20 +266,23 @@ function App() {
    */
   function handleCancel() {
     if (!activeSessionId) return;
+    clearQueue();
     window.kiroductor.session.cancel(activeSessionId);
   }
 
   /**
-   * ユーザーのプロンプトを送信する。
+   * プロンプトを実際に送信する。
    *
    * ユーザーメッセージを楽観的に即時表示してから IPC を呼ぶ。
    * onUpdate が届いたタイミングで main リポジトリの実データに置き換わる。
    *
    * @param text - 送信するテキスト
+   * @param images - 添付画像（任意）
    */
-  async function handleSubmit(text: string, images?: ImageAttachment[]) {
-    if (!activeSessionId) return;
-    const submittedSessionId = activeSessionId;
+  const sendPrompt = useCallback(async (text: string, images?: ImageAttachment[]) => {
+    const sessionId = activeSessionIdRef.current;
+    if (!sessionId) return;
+    const submittedSessionId = sessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
     const optimisticMessage: UserMessage = {
       id: crypto.randomUUID(),
@@ -300,6 +305,26 @@ function App() {
     // - メッセージは main の MessageRepository に蓄積済み（戻れば見える）
     // - isProcessing は切り替え時に handleSwitchSession で制御済み
     // - processingSessionIds は onPromptCompleted で削除済み
+  }, []);
+
+  const {
+    queue: promptQueue,
+    submitOrEnqueue,
+    clearQueue,
+    removeFromQueue,
+    drainNext,
+  } = usePromptQueue({
+    onSend: sendPrompt,
+  });
+
+  // プロンプト完了時にキュー先頭を自動送信する
+  useEffect(() => {
+    drainNext();
+  }, [promptCompletedCount, drainNext]);
+
+  /** ユーザーからの送信を処理する。処理中ならキューに追加する。 */
+  function handleSubmit(text: string, images?: ImageAttachment[]) {
+    submitOrEnqueue(text, isProcessing, images);
   }
 
   /** diff ダイアログを開き、差分データを取得する。 */
@@ -313,6 +338,7 @@ function App() {
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, cwd: string) {
     if (sessionId === activeSessionId) return;
+    clearQueue();
 
     // 切り替え前に現セッションのスクロール位置を保存
     if (activeSessionId && chatViewRef.current) {
@@ -450,11 +476,13 @@ function App() {
                   isProcessing={isProcessing}
                   restoreScrollTop={restoreScrollTop}
                 />
+                <QueuePreview queue={promptQueue} onRemove={removeFromQueue} />
                 <PromptInput
                   onSubmit={handleSubmit}
                   onCancel={handleCancel}
                   isProcessing={isProcessing}
-                  disabled={isProcessing || isRestoring}
+                  disabled={isRestoring}
+                  queueSize={promptQueue.length}
                   currentModelId={currentModelId}
                   availableModels={availableModels}
                   onModelChange={handleSetModel}
