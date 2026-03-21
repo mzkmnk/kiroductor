@@ -12,8 +12,8 @@ const MIN_WIDTH = 160;
  * 右サイドバーコンポーネントの Props。
  */
 interface FileTreeSidebarProps {
-  /** 現在アクティブなセッション ID。`null` の場合はセッションなし。 */
-  activeSessionId: string | null;
+  /** 現在アクティブなセッション ID。 */
+  activeSessionId: string;
 }
 
 /**
@@ -50,7 +50,6 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
 
   /** ファイル選択ハンドラ。 */
   function handleFileSelect(filePath: string) {
-    if (!activeSessionId) return;
     setSelectedState({ sessionId: activeSessionId, filePath });
   }
 
@@ -78,23 +77,6 @@ export function FileTreeSidebar({ activeSessionId }: FileTreeSidebarProps) {
 
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }
-
-  // セッションがない場合は開くボタンのみ表示
-  if (!activeSessionId) {
-    return (
-      <div className="flex shrink-0 flex-col border-l border-border">
-        <div className="flex h-10 items-center justify-center px-2">
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => setIsOpen(!isOpen)}
-            title="ファイルツリー"
-          >
-            <PanelRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    );
   }
 
   if (!isOpen) {

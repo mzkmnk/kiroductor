@@ -414,7 +414,7 @@ function App() {
           </>
         )}
       </SidebarInset>
-      <FileTreeSidebar activeSessionId={activeSessionId} />
+      {activeSessionId && <FileTreeSidebar activeSessionId={activeSessionId} />}
       <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
     </SidebarProvider>
   );
