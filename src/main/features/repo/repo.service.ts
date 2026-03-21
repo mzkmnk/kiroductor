@@ -6,6 +6,7 @@ import type { ConfigRepository } from '../config/config.repository';
 import type { RepoMapping } from '../config/config.repository';
 import type { FileSystem } from '../../shared/fs';
 import { generateSessionTitle } from '../session/session-title.generator';
+import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, FileEntry } from '../../../shared/ipc';
 
 const log = createDebugLogger('Repo');
@@ -339,7 +340,7 @@ export class RepoService {
    * @param sessionId - 対象セッション ID
    * @returns {@link DiffStats} または `null`
    */
-  async getDiffStatsBySession(sessionId: string): Promise<DiffStats | null> {
+  async getDiffStatsBySession(sessionId: SessionId): Promise<DiffStats | null> {
     const sessions = await this.configRepo.readSessions();
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) return null;
@@ -354,7 +355,7 @@ export class RepoService {
    * @param sessionId - 対象セッション ID
    * @returns unified diff 文字列または `null`
    */
-  async getDiffBySession(sessionId: string): Promise<string | null> {
+  async getDiffBySession(sessionId: SessionId): Promise<string | null> {
     const sessions = await this.configRepo.readSessions();
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) return null;
@@ -395,7 +396,7 @@ export class RepoService {
    * @returns {@link FileEntry} の配列、セッションが見つからない場合は空配列
    */
   async listFilesBySession(
-    sessionId: string,
+    sessionId: SessionId,
     dirPath: string,
     depth?: number,
   ): Promise<FileEntry[]> {
@@ -413,7 +414,7 @@ export class RepoService {
    * @returns ファイルの内容（UTF-8）
    * @throws セッションが見つからない場合、またはパスが cwd 外の場合
    */
-  async readFileBySession(sessionId: string, filePath: string): Promise<string> {
+  async readFileBySession(sessionId: SessionId, filePath: string): Promise<string> {
     const sessions = await this.configRepo.readSessions();
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) {

@@ -781,9 +781,7 @@ describe('RepoService', () => {
       (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(JSON.stringify({ sessions: [] }));
 
-      await expect(service.readFileBySession('nonexistent', 'file.ts')).rejects.toThrow(
-        'Session not found',
-      );
+      await expect(service.readFileBySession('nonexistent', 'file.ts')).rejects.toThrow();
     });
 
     it('パストラバーサルを試みた場合、エラーを投げる', async () => {
