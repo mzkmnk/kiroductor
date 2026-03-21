@@ -141,10 +141,10 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
   return (
     <>
       {currentBranch && sourceBranch ? (
-        <div className="flex h-10 shrink-0 items-center gap-2 border-b px-6 text-sm text-muted-foreground [-webkit-app-region:drag]">
-          <GitBranchIcon className="size-4" />
+        <div className="flex h-10 shrink-0 items-center gap-2 border-b px-6 text-[10px] text-muted-foreground [-webkit-app-region:drag]">
+          <GitBranchIcon className="size-3" />
           <span>{sourceBranch}</span>
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-3" />
           <span>{currentBranch}</span>
           {onDiffClick && (
             <TooltipProvider>
@@ -158,7 +158,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
                       disabled={!hasDiffChanges}
                       aria-label="Show diff"
                     >
-                      <GitCompareArrows className="size-4" />
+                      <GitCompareArrows className="size-3" />
                     </Button>
                   </span>
                 </TooltipTrigger>
