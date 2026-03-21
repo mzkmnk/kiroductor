@@ -2,10 +2,18 @@ import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { SessionRepository } from '../session/session.repository';
 import type { NotificationService } from '../../shared/interfaces/notification.service';
 
+/** `_kiro.dev/metadata` 通知パラメータ。 */
+export interface MetadataParams {
+  /** セッション ID */
+  sessionId: SessionId;
+  /** コンテキスト使用率（0〜100） */
+  contextUsagePercentage: number;
+}
+
 /** `_kiro.dev/metadata` 拡張通知を処理できるオブジェクトの最小インターフェース。 */
 export interface IMetadataMethod {
   /** `_kiro.dev/metadata` 通知パラメータを処理する。 */
-  handle(params: Record<string, unknown>): Promise<void>;
+  handle(params: MetadataParams): Promise<void>;
 }
 
 /**
@@ -29,14 +37,14 @@ export class MetadataMethod implements IMetadataMethod {
    *
    * @param params - 通知パラメータ
    */
-  async handle(params: Record<string, unknown>): Promise<void> {
-    const sessionId = params.sessionId as SessionId;
-    const contextUsagePercentage = params.contextUsagePercentage as number;
-
-    this.sessionRepository.setContextUsagePercentage(sessionId, contextUsagePercentage);
+  async handle(params: MetadataParams): Promise<void> {
+    this.sessionRepository.setContextUsagePercentage(
+      params.sessionId,
+      params.contextUsagePercentage,
+    );
     this.notificationService.sendToRenderer('acp:metadata', {
-      sessionId,
-      contextUsagePercentage,
+      sessionId: params.sessionId,
+      contextUsagePercentage: params.contextUsagePercentage,
     });
     // TODO: contextUsagePercentage が閾値（90%）を超えた場合に /compact を推奨するトーストを表示する
   }

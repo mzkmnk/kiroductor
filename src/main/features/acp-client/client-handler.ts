@@ -12,7 +12,7 @@ import type { IReadTextFileMethod } from './methods/read-text-file.method';
 import type { IWriteTextFileMethod } from './methods/write-text-file.method';
 import type { IRequestPermissionMethod } from './methods/request-permission.method';
 import type { ISessionUpdateMethod } from './methods/session-update.method';
-import type { IMetadataMethod } from '../kiro-ext/metadata.method';
+import type { IMetadataMethod, MetadataParams } from '../kiro-ext/metadata.method';
 
 export type {
   IReadTextFileMethod,
@@ -95,7 +95,7 @@ export class KiroductorClientHandler implements Client {
   async extNotification(method: string, params: Record<string, unknown>): Promise<void> {
     switch (method) {
       case '_kiro.dev/metadata':
-        await this.metadataMethod.handle(params);
+        await this.metadataMethod.handle(params as unknown as MetadataParams);
         break;
       default:
         break;
