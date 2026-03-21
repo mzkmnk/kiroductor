@@ -451,3 +451,18 @@
 .diff-gutter {
   font-size: 11px;
 }
+
+/* react-diff-view: ドラッグ選択中の行ハイライト */
+.diff-line-drag-highlight .diff-code,
+.diff-line-drag-highlight .diff-gutter {
+  background-color: oklch(0.88 0.06 250) !important;
+}
+.dark .diff-line-drag-highlight .diff-code,
+.dark .diff-line-drag-highlight .diff-gutter {
+  background-color: oklch(0.3 0.06 250) !important;
+}
+
+/* react-diff-view: コメントガターボタンの配置 */
+.diff-comment-gutter {
+  position: relative;
+}

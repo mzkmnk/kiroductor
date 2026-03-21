@@ -1,6 +1,6 @@
-import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { parseDiff, Diff, Hunk, tokenize } from 'react-diff-view';
-import type { FileData, HunkTokens } from 'react-diff-view';
+import { memo, useMemo, useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { parseDiff, Diff, Hunk, tokenize, getChangeKey } from 'react-diff-view';
+import type { FileData, HunkTokens, ChangeData } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import refractor from 'refractor';
 import {
@@ -11,10 +11,19 @@ import {
   FilePen,
   FileSymlink,
   Copy,
+  Plus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '../lib/utils';
+import { DiffCommentInput } from './DiffCommentInput';
+import { DiffCommentBadge } from './DiffCommentBadge';
+import { CommentChips } from './CommentChips';
+import { PromptInput } from './PromptInput';
+import { buildReviewPrompt } from '../lib/build-review-prompt';
+import type { DiffComment } from '../types/diff-comment';
+import type { ModelInfo, SessionMode } from '@agentclientprotocol/sdk/dist/schema/index';
+import type { ImageAttachment } from '../../shared/ipc';
 
 // =================== Language Detection ===================
 
@@ -91,6 +100,44 @@ interface DiffDialogProps {
   onOpenChange: (open: boolean) => void;
   /** unified diff 文字列。null の場合は「差分なし」を表示する。 */
   diff: string | null;
+  /** diff 上のコメント一覧。 */
+  comments: DiffComment[];
+  /** コメント追加時のコールバック。 */
+  onAddComment: (
+    filePath: string,
+    startLine: number,
+    endLine: number,
+    side: 'old' | 'new',
+    content: string,
+  ) => void;
+  /** コメント削除時のコールバック。 */
+  onRemoveComment: (id: string) => void;
+  /** 全コメント削除時のコールバック。 */
+  onClearComments: () => void;
+  /** プロンプト送信時のコールバック。 */
+  onSubmit: (text: string, images?: ImageAttachment[]) => void;
+  /** プロンプトキャンセル時のコールバック。 */
+  onCancel?: () => void;
+  /** エージェントがプロンプトを処理中かどうか。 */
+  isProcessing?: boolean;
+  /** 入力を無効化するかどうか。 */
+  disabled?: boolean;
+  /** 現在選択中のモデル ID。 */
+  currentModelId?: string | null;
+  /** 利用可能なモデル一覧。 */
+  availableModels?: ModelInfo[];
+  /** モデル変更時のコールバック。 */
+  onModelChange?: (modelId: string) => void;
+  /** 現在選択中の mode ID。 */
+  currentModeId?: string | null;
+  /** 利用可能な mode 一覧。 */
+  availableModes?: SessionMode[];
+  /** mode 変更時のコールバック。 */
+  onModeChange?: (modeId: string) => void;
+  /** アクティブセッション ID。 */
+  sessionId?: string | null;
+  /** コンテキスト使用率。 */
+  contextUsagePercentage?: number | null;
 }
 
 /**
@@ -107,6 +154,34 @@ interface TreeNode {
   children: TreeNode[];
   /** ファイルノードの場合の元データ。 */
   fileData?: FileData;
+}
+
+/**
+ * コメント入力中の行情報。
+ */
+interface ActiveCommentInput {
+  /** 対象ファイルパス。 */
+  filePath: string;
+  /** 開始行番号。 */
+  startLine: number;
+  /** 終了行番号。 */
+  endLine: number;
+  /** diff の側。 */
+  side: 'old' | 'new';
+}
+
+/**
+ * ガタードラッグ中の状態。
+ */
+interface DragState {
+  /** 対象ファイルパス。 */
+  filePath: string;
+  /** diff の側。 */
+  side: 'old' | 'new';
+  /** ドラッグ開始行番号。 */
+  startLine: number;
+  /** 現在のドラッグ位置の行番号。 */
+  currentLine: number;
 }
 
 /**
@@ -186,6 +261,20 @@ function buildTree(files: FileData[]): TreeNode[] {
   }
 
   return root.children;
+}
+
+/**
+ * change オブジェクトから指定 side の行番号を取得する。
+ *
+ * @param change - diff の変更データ
+ * @param side - diff の側
+ * @returns 行番号
+ */
+function getLineNumber(change: ChangeData, side: 'old' | 'new'): number {
+  if (change.type === 'normal') {
+    return side === 'old' ? change.oldLineNumber : change.newLineNumber;
+  }
+  return change.lineNumber;
 }
 
 // =================== Sub-components ===================
@@ -278,14 +367,47 @@ function TreeNodeItem({ node, activeFile, onSelect, depth = 0 }: TreeNodeItemPro
  * 左ペインにファイルツリー、右ペインに `react-diff-view` の split diff を表示する。
  * ファイルツリーのアイテムをクリックすると対応する diff セクションにスクロールし、
  * スクロール中は {@link IntersectionObserver} でアクティブファイルを自動更新する。
+ * diff の行にホバーで「+」ボタンを表示し、行単位コメントを追加できる。
+ * ダイアログ下部にプロンプト入力欄を配置し、コメント付きレビューを AI に送信できる。
  */
-const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDialogProps) {
+const DiffDialog = memo(function DiffDialog({
+  open,
+  onOpenChange,
+  diff,
+  comments,
+  onAddComment,
+  onRemoveComment,
+  onClearComments,
+  onSubmit,
+  onCancel,
+  isProcessing = false,
+  disabled = false,
+  currentModelId,
+  availableModels,
+  onModelChange,
+  currentModeId,
+  availableModes,
+  onModeChange,
+  sessionId,
+  contextUsagePercentage,
+}: DiffDialogProps) {
   const files = useMemo(() => (diff ? parseDiff(diff) : []), [diff]);
   const tree = useMemo(() => buildTree(files), [files]);
   // ユーザーが明示的に選択したファイルパス（null = 未選択）
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // コメント入力中の行情報
+  const [activeCommentInput, setActiveCommentInput] = useState<ActiveCommentInput | null>(null);
+
+  // ガタードラッグ状態
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const dragStateRef = useRef<DragState | null>(null);
+
+  useEffect(() => {
+    dragStateRef.current = dragState;
+  }, [dragState]);
 
   // selectedFile が現在の files にあればそれを、なければ先頭ファイルをアクティブとする
   const activeFile = useMemo(() => {
@@ -328,10 +450,48 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
     return () => observer.disconnect();
   }, [files]);
 
+  // ドラッグ終了時の処理（window の mouseup）
+  useEffect(() => {
+    function handleMouseUp() {
+      const drag = dragStateRef.current;
+      if (!drag) return;
+
+      const startLine = Math.min(drag.startLine, drag.currentLine);
+      const endLine = Math.max(drag.startLine, drag.currentLine);
+      setActiveCommentInput({
+        filePath: drag.filePath,
+        startLine,
+        endLine,
+        side: drag.side,
+      });
+      setDragState(null);
+    }
+
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, []);
+
   const handleSelectFile = useCallback((path: string) => {
     setSelectedFile(path);
     fileRefs.current[path]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  /** チップクリック時に該当ファイルにスクロールする。 */
+  const handleChipClick = useCallback(
+    (comment: DiffComment) => {
+      handleSelectFile(comment.filePath);
+    },
+    [handleSelectFile],
+  );
+
+  /** コメント付きプロンプトを組み立てて送信する。 */
+  const handlePromptSubmit = useCallback(
+    (text: string, images?: ImageAttachment[]) => {
+      const builtText = buildReviewPrompt(comments, text);
+      onSubmit(builtText, images);
+    },
+    [comments, onSubmit],
+  );
 
   const totalStats = useMemo(
     () =>
@@ -344,6 +504,121 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
       ),
     [files],
   );
+
+  /**
+   * ファイルごとのコメントをルックアップする。
+   * キー: `${side}:${line}` → コメント配列
+   */
+  const commentsByFileAndLine = useMemo(() => {
+    const map = new Map<string, Map<string, DiffComment[]>>();
+    for (const comment of comments) {
+      let fileMap = map.get(comment.filePath);
+      if (!fileMap) {
+        fileMap = new Map();
+        map.set(comment.filePath, fileMap);
+      }
+      // endLine の行にウィジェットを配置
+      const key = `${comment.side}:${comment.endLine}`;
+      const arr = fileMap.get(key) ?? [];
+      arr.push(comment);
+      fileMap.set(key, arr);
+    }
+    return map;
+  }, [comments]);
+
+  /**
+   * ファイルの widgets マップを構築する。
+   */
+  function buildWidgets(file: FileData, filePath: string): Record<string, ReactNode> {
+    const widgets: Record<string, ReactNode> = {};
+    const fileComments = commentsByFileAndLine.get(filePath);
+
+    // 全 change を走査して、コメントまたは入力フォームがある行のウィジェットを構築
+    for (const hunk of file.hunks) {
+      for (const change of hunk.changes) {
+        const changeKey = getChangeKey(change);
+
+        // この change に対応するウィジェット要素を収集
+        const elements: ReactNode[] = [];
+
+        // 既存コメントのバッジ
+        if (fileComments) {
+          for (const side of ['old', 'new'] as const) {
+            const lineNum = getLineNumber(change, side);
+            const lineComments = fileComments.get(`${side}:${lineNum}`);
+            if (lineComments) {
+              for (const comment of lineComments) {
+                elements.push(
+                  <DiffCommentBadge
+                    key={comment.id}
+                    comment={comment}
+                    onDelete={onRemoveComment}
+                  />,
+                );
+              }
+            }
+          }
+        }
+
+        // アクティブなコメント入力フォーム
+        if (
+          activeCommentInput &&
+          activeCommentInput.filePath === filePath &&
+          activeCommentInput.endLine === getLineNumber(change, activeCommentInput.side)
+        ) {
+          // change の type と side が一致するか確認
+          const matchesSide =
+            (activeCommentInput.side === 'new' && change.type !== 'delete') ||
+            (activeCommentInput.side === 'old' && change.type !== 'insert');
+
+          if (matchesSide) {
+            elements.push(
+              <DiffCommentInput
+                key="input"
+                startLine={activeCommentInput.startLine}
+                endLine={activeCommentInput.endLine}
+                onSubmit={(content) => {
+                  onAddComment(
+                    activeCommentInput.filePath,
+                    activeCommentInput.startLine,
+                    activeCommentInput.endLine,
+                    activeCommentInput.side,
+                    content,
+                  );
+                  setActiveCommentInput(null);
+                }}
+                onCancel={() => setActiveCommentInput(null)}
+              />,
+            );
+          }
+        }
+
+        if (elements.length > 0) {
+          widgets[changeKey] = <>{elements}</>;
+        }
+      }
+    }
+
+    return widgets;
+  }
+
+  /**
+   * ドラッグ中のハイライト行かどうかを判定する。
+   */
+  function isHighlightedLine(filePath: string, change: ChangeData): boolean {
+    if (!dragState || dragState.filePath !== filePath) return false;
+
+    const lineNum = getLineNumber(change, dragState.side);
+    const min = Math.min(dragState.startLine, dragState.currentLine);
+    const max = Math.max(dragState.startLine, dragState.currentLine);
+
+    // change の type と side が一致するか確認
+    const matchesSide =
+      (dragState.side === 'new' && change.type !== 'delete') ||
+      (dragState.side === 'old' && change.type !== 'insert');
+
+    return matchesSide && lineNum >= min && lineNum <= max;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -395,6 +670,7 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                   const filePath = resolveFilePath(file);
                   const { additions, deletions } = countChanges(file);
                   const typeConfig = DIFF_TYPE_CONFIG[file.type];
+                  const widgets = buildWidgets(file, filePath);
 
                   return (
                     <div
@@ -432,6 +708,71 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                           diffType={file.type}
                           hunks={file.hunks}
                           tokens={getTokens(file)}
+                          widgets={widgets}
+                          renderGutter={({ change, side, inHoverState, renderDefault }) => {
+                            if (inHoverState && !dragState) {
+                              return (
+                                <span className="diff-comment-gutter flex items-center">
+                                  <button
+                                    className="mr-0.5 flex size-4 items-center justify-center rounded bg-blue-500 text-white opacity-80 hover:opacity-100"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const effectiveSide =
+                                        change.type === 'insert'
+                                          ? 'new'
+                                          : change.type === 'delete'
+                                            ? 'old'
+                                            : (side ?? 'new');
+                                      const lineNum = getLineNumber(change, effectiveSide);
+                                      setDragState({
+                                        filePath,
+                                        side: effectiveSide,
+                                        startLine: lineNum,
+                                        currentLine: lineNum,
+                                      });
+                                    }}
+                                    aria-label="Add comment"
+                                  >
+                                    <Plus className="size-3" />
+                                  </button>
+                                  {renderDefault()}
+                                </span>
+                              );
+                            }
+                            return renderDefault();
+                          }}
+                          gutterEvents={{
+                            onMouseEnter: ({ change, side: eventSide }) => {
+                              if (!dragState || !change) return;
+                              const effectiveSide = eventSide ?? dragState.side;
+                              if (effectiveSide !== dragState.side) return;
+                              const lineNum = getLineNumber(change, effectiveSide);
+                              setDragState((prev) =>
+                                prev ? { ...prev, currentLine: lineNum } : null,
+                              );
+                            },
+                          }}
+                          codeEvents={{
+                            onMouseEnter: ({ change, side: eventSide }) => {
+                              if (!dragState || !change) return;
+                              const effectiveSide = eventSide ?? dragState.side;
+                              if (effectiveSide !== dragState.side) return;
+                              const lineNum = getLineNumber(change, effectiveSide);
+                              setDragState((prev) =>
+                                prev ? { ...prev, currentLine: lineNum } : null,
+                              );
+                            },
+                          }}
+                          generateLineClassName={({ changes, defaultGenerate }) => {
+                            const base = defaultGenerate();
+                            const hasHighlight = changes.some((c) =>
+                              isHighlightedLine(filePath, c),
+                            );
+                            if (hasHighlight) {
+                              return `${base ?? ''} diff-line-drag-highlight`;
+                            }
+                            return base;
+                          }}
                         >
                           {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
                         </Diff>
@@ -441,6 +782,32 @@ const DiffDialog = memo(function DiffDialog({ open, onOpenChange, diff }: DiffDi
                 })}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── Footer: Comment Chips + Prompt Input ── */}
+        {files.length > 0 && (
+          <div className="shrink-0 border-t">
+            <CommentChips
+              comments={comments}
+              onChipClick={handleChipClick}
+              onRemove={onRemoveComment}
+              onClearAll={onClearComments}
+            />
+            <PromptInput
+              onSubmit={handlePromptSubmit}
+              onCancel={onCancel}
+              isProcessing={isProcessing}
+              disabled={disabled}
+              currentModelId={currentModelId}
+              availableModels={availableModels}
+              onModelChange={onModelChange}
+              currentModeId={currentModeId}
+              availableModes={availableModes}
+              onModeChange={onModeChange}
+              sessionId={sessionId}
+              contextUsagePercentage={contextUsagePercentage}
+            />
           </div>
         )}
       </DialogContent>
