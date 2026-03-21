@@ -114,7 +114,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
           <div key={entry.path}>
             <button
               className={cn(
-                'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm hover:bg-accent',
+                'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-xs hover:bg-accent',
               )}
               style={{ paddingLeft: `${depth * 16 + 4}px` }}
               onClick={() => handleToggleDir(entry.path)}
@@ -161,7 +161,7 @@ export function FileTree({ sessionId, showHidden, selectedFilePath, onFileSelect
         <button
           key={entry.path}
           className={cn(
-            'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-sm hover:bg-accent',
+            'flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left text-xs hover:bg-accent',
             isSelected && 'bg-accent',
           )}
           style={{ paddingLeft: `${depth * 16 + 4 + 18}px` }}
