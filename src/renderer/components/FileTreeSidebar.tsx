@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, PanelRight, Eye, EyeOff } from 'lucide-react';
+import type { SessionId } from '@agentclientprotocol/sdk';
 import { cn } from '../lib/utils';
 import { FileTree } from './FileTree';
 
@@ -13,7 +14,7 @@ const MIN_WIDTH = 160;
  */
 interface FileTreeSidebarProps {
   /** 現在アクティブなセッション ID。 */
-  activeSessionId: string;
+  activeSessionId: SessionId;
 }
 
 /**
