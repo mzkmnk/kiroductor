@@ -179,11 +179,13 @@ export interface RepoAPI {
   /** 指定リポジトリのリモートブランチ一覧を返す。 */
   listBranches: (repoId: string) => Promise<string[]>;
   /** 指定セッションの git diff 統計情報を取得する。 */
-  getDiffStats: (sessionId: string) => Promise<DiffStats | null>;
+  getDiffStats: (sessionId: SessionId) => Promise<DiffStats | null>;
   /** 指定セッションの unified diff 本文を取得する。 */
-  getDiff: (sessionId: string) => Promise<string | null>;
+  getDiff: (sessionId: SessionId) => Promise<string | null>;
   /** 指定セッションの作業ディレクトリ配下のファイル・フォルダ一覧を取得する。 */
-  listFiles: (sessionId: string, dirPath: string, depth?: number) => Promise<FileEntry[]>;
+  listFiles: (sessionId: SessionId, dirPath: string, depth?: number) => Promise<FileEntry[]>;
+  /** 指定セッションの作業ディレクトリ内のファイル内容を読み取る。 */
+  readFile: (sessionId: SessionId, filePath: string) => Promise<string>;
 }
 
 /**
@@ -261,6 +263,7 @@ const kiroductorAPI: KiroductorAPI = {
     getDiffStats: (sessionId) => invoke('repo:diff-stats', sessionId),
     getDiff: (sessionId) => invoke('repo:diff', sessionId),
     listFiles: (sessionId, dirPath, depth) => invoke('repo:list-files', sessionId, dirPath, depth),
+    readFile: (sessionId, filePath) => invoke('repo:read-file', sessionId, filePath),
   },
   config: {
     getSettings: () => invoke('config:get-settings'),

@@ -6,6 +6,7 @@ import type { ConfigRepository } from '../config/config.repository';
 import type { RepoMapping } from '../config/config.repository';
 import type { FileSystem } from '../../shared/fs';
 import { generateSessionTitle } from '../session/session-title.generator';
+import type { SessionId } from '@agentclientprotocol/sdk/dist/schema/index';
 import type { DiffStats, FileEntry } from '../../../shared/ipc';
 
 const log = createDebugLogger('Repo');
@@ -339,7 +340,7 @@ export class RepoService {
    * @param sessionId - 対象セッション ID
    * @returns {@link DiffStats} または `null`
    */
-  async getDiffStatsBySession(sessionId: string): Promise<DiffStats | null> {
+  async getDiffStatsBySession(sessionId: SessionId): Promise<DiffStats | null> {
     const sessions = await this.configRepo.readSessions();
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) return null;
@@ -354,7 +355,7 @@ export class RepoService {
    * @param sessionId - 対象セッション ID
    * @returns unified diff 文字列または `null`
    */
-  async getDiffBySession(sessionId: string): Promise<string | null> {
+  async getDiffBySession(sessionId: SessionId): Promise<string | null> {
     const sessions = await this.configRepo.readSessions();
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) return null;
@@ -395,7 +396,7 @@ export class RepoService {
    * @returns {@link FileEntry} の配列、セッションが見つからない場合は空配列
    */
   async listFilesBySession(
-    sessionId: string,
+    sessionId: SessionId,
     dirPath: string,
     depth?: number,
   ): Promise<FileEntry[]> {
@@ -403,6 +404,28 @@ export class RepoService {
     const session = sessions.find((s) => s.acpSessionId === sessionId);
     if (!session) return [];
     return this.listFiles(session.cwd, dirPath, depth);
+  }
+
+  /**
+   * セッション ID からファイルの内容を読み取る。
+   *
+   * @param sessionId - 対象セッション ID
+   * @param filePath - cwd からの相対ファイルパス
+   * @returns ファイルの内容（UTF-8）
+   * @throws セッションが見つからない場合、またはパスが cwd 外の場合
+   */
+  async readFileBySession(sessionId: SessionId, filePath: string): Promise<string> {
+    const sessions = await this.configRepo.readSessions();
+    const session = sessions.find((s) => s.acpSessionId === sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+    const resolvedCwd = path.resolve(session.cwd);
+    const resolvedFile = path.resolve(session.cwd, filePath);
+    if (!resolvedFile.startsWith(resolvedCwd + path.sep) && resolvedFile !== resolvedCwd) {
+      throw new Error('File path is outside the working directory');
+    }
+    return this.fs.readFile(resolvedFile, 'utf-8');
   }
 
   /** パスが存在するか確認する。 */

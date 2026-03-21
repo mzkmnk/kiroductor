@@ -435,6 +435,15 @@
   }
 }
 
+/* スクロールバー非表示ユーティリティ（TabBar など） */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* react-diff-view: フォントサイズ */
 .diff-line {
   font-size: 12px;

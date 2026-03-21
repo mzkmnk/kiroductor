@@ -13,6 +13,7 @@ import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { DiffDialog } from './components/DiffDialog';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
+import { FileEditor } from './components/FileEditor';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 import type { Tab } from './types/tab';
 import { AGENT_CHAT_TAB_ID } from './types/tab';
@@ -400,15 +401,27 @@ function App() {
 
   /** タブを閉じる。チャットタブは閉じられない。 */
   function handleTabClose(tabId: string) {
-    setTabs((prev) => {
-      const tab = prev.find((t) => t.id === tabId);
-      if (!tab || tab.type === 'chat') return prev;
-      return prev.filter((t) => t.id !== tabId);
-    });
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab || tab.type === 'chat') return;
+    setTabs((prev) => prev.filter((t) => t.id !== tabId));
     // 閉じたタブがアクティブだった場合、チャットタブに戻す
     if (activeTabId === tabId) {
       setActiveTabId(AGENT_CHAT_TAB_ID);
     }
+  }
+
+  /** ファイルツリーからファイルをタブで開く。既存タブがあれば activate する。 */
+  function handleFileOpen(filePath: string) {
+    const tabId = `file:${filePath}`;
+    const existing = tabs.find((t) => t.id === tabId);
+    if (existing) {
+      setActiveTabId(tabId);
+      return;
+    }
+    const label = filePath.split('/').pop() ?? filePath;
+    const newTab: Tab = { id: tabId, label, type: 'file', filePath } as Tab;
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(tabId);
   }
 
   const activeMapping = sessionMappings.find((s) => s.acpSessionId === activeSessionId);
@@ -422,7 +435,7 @@ function App() {
         onSwitchSession={handleSwitchSession}
         onSessionCreated={handleSessionCreated}
       />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         {activeSessionId ? (
           <div className="flex h-full flex-col">
             <BranchHeader
@@ -466,9 +479,13 @@ function App() {
                 />
               </>
             ) : (
-              <div className="flex flex-1 items-center justify-center text-muted-foreground">
-                {/* 将来: ファイルビューコンテンツ */}
-              </div>
+              (() => {
+                const activeTab = tabs.find((t) => t.id === activeTabId);
+                const fileTab = activeTab && activeTab.type === 'file' ? activeTab : null;
+                return fileTab ? (
+                  <FileEditor sessionId={activeSessionId} filePath={fileTab.filePath} />
+                ) : null;
+              })()
             )}
           </div>
         ) : (
@@ -478,7 +495,9 @@ function App() {
           </>
         )}
       </SidebarInset>
-      {activeSessionId && <FileTreeSidebar activeSessionId={activeSessionId} />}
+      {activeSessionId && (
+        <FileTreeSidebar activeSessionId={activeSessionId} onFileOpen={handleFileOpen} />
+      )}
       <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
     </SidebarProvider>
   );

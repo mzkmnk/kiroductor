@@ -78,11 +78,15 @@ export interface IpcInvokeChannels {
     return: { cwd: string; branch: string; sourceBranch: string };
   };
   'repo:list-branches': { args: [repoId: string]; return: string[] };
-  'repo:diff-stats': { args: [sessionId: string]; return: DiffStats | null };
-  'repo:diff': { args: [sessionId: string]; return: string | null };
+  'repo:diff-stats': { args: [sessionId: SessionId]; return: DiffStats | null };
+  'repo:diff': { args: [sessionId: SessionId]; return: string | null };
   'repo:list-files': {
-    args: [sessionId: string, dirPath: string, depth?: number];
+    args: [sessionId: SessionId, dirPath: string, depth?: number];
     return: FileEntry[];
+  };
+  'repo:read-file': {
+    args: [sessionId: SessionId, filePath: string];
+    return: string;
   };
   'config:get-settings': { args: []; return: KiroductorSettings };
   'config:update-settings': { args: [settings: Partial<KiroductorSettings>]; return: void };
