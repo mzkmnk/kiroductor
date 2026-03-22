@@ -612,8 +612,8 @@ const DiffDialog = memo(function DiffDialog({
   /**
    * ドラッグ中のハイライト行かどうかを判定する。
    */
-  function isHighlightedLine(filePath: string, change: ChangeData): boolean {
-    if (!dragState || dragState.filePath !== filePath) return false;
+  function isHighlightedLine(filePath: string, change: ChangeData | null): boolean {
+    if (!change || !dragState || dragState.filePath !== filePath) return false;
 
     const lineNum = getLineNumber(change, dragState.side);
     const min = Math.min(dragState.startLine, dragState.currentLine);
