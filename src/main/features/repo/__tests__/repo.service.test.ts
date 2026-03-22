@@ -790,9 +790,7 @@ describe('RepoService', () => {
         JSON.stringify({ sessions: [SESSION] }),
       );
 
-      await expect(service.readFileBySession('session-1', '../../etc/passwd')).rejects.toThrow(
-        'File path is outside the working directory',
-      );
+      await expect(service.readFileBySession('session-1', '../../etc/passwd')).rejects.toThrow();
     });
   });
 

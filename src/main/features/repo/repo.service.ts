@@ -2,6 +2,7 @@ import path from 'path';
 import type { spawn } from 'child_process';
 import { nanoid } from 'nanoid';
 import { createDebugLogger } from '../../shared/debug-logger';
+import { resolveSafePath } from '../../shared/resolve-safe-path';
 import type { ConfigRepository } from '../config/config.repository';
 import type { RepoMapping } from '../config/config.repository';
 import type { FileSystem } from '../../shared/fs';
@@ -376,13 +377,8 @@ export class RepoService {
    */
   async listFiles(cwd: string, dirPath: string, depth: number = 1): Promise<FileEntry[]> {
     const clampedDepth = Math.min(Math.max(depth, 1), 3);
-    const targetDir = path.resolve(cwd, dirPath);
-
-    // パストラバーサル防止
     const resolvedCwd = path.resolve(cwd);
-    if (!targetDir.startsWith(resolvedCwd)) {
-      throw new Error('Directory path is outside the working directory');
-    }
+    const targetDir = resolveSafePath(cwd, dirPath);
 
     return this.readDirRecursive(resolvedCwd, targetDir, clampedDepth);
   }
@@ -420,11 +416,7 @@ export class RepoService {
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
     }
-    const resolvedCwd = path.resolve(session.cwd);
-    const resolvedFile = path.resolve(session.cwd, filePath);
-    if (!resolvedFile.startsWith(resolvedCwd + path.sep) && resolvedFile !== resolvedCwd) {
-      throw new Error('File path is outside the working directory');
-    }
+    const resolvedFile = resolveSafePath(session.cwd, filePath);
     return this.fs.readFile(resolvedFile, 'utf-8');
   }
 
