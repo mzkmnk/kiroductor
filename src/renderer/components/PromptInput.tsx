@@ -290,7 +290,7 @@ function PromptInput({
   const hasContent = text.trim().length > 0 || images.length > 0;
 
   return (
-    <div>
+    <div className="px-4 pb-4">
       <div className="relative rounded-2xl border border-border bg-card shadow-sm">
         {/* メンションドロップダウン */}
         {sessionId && (

@@ -108,7 +108,7 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
 
   if (isRestoring) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <Loader2 className="size-6 animate-spin" />
           <span className="text-sm">Restoring session...</span>
@@ -118,24 +118,26 @@ const ChatView = forwardRef<ChatViewHandle, ChatViewProps>(function ChatView(
   }
 
   return (
-    <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto">
-      <div className="space-y-4 px-6 py-6">
-        {messages.map((m) => {
-          if (m.type === 'tool_call') {
-            return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
-          }
-          return (
-            <MessageBubble
-              key={m.id}
-              message={m as UserMessage | AgentMessage}
-              animSplit={animSplits[m.id]}
-            />
-          );
-        })}
-        <AnimatePresence>{isProcessing && <ThinkingIndicator key="thinking" />}</AnimatePresence>
-        <div ref={bottomRef} />
+    <>
+      <div ref={scrollRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="space-y-4 px-6 py-6">
+          {messages.map((m) => {
+            if (m.type === 'tool_call') {
+              return <ToolCallCard key={m.id} message={m as ToolCallMessage} />;
+            }
+            return (
+              <MessageBubble
+                key={m.id}
+                message={m as UserMessage | AgentMessage}
+                animSplit={animSplits[m.id]}
+              />
+            );
+          })}
+          <AnimatePresence>{isProcessing && <ThinkingIndicator key="thinking" />}</AnimatePresence>
+          <div ref={bottomRef} />
+        </div>
       </div>
-    </div>
+    </>
   );
 });
 
