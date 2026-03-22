@@ -12,6 +12,7 @@ import { TabBar } from './components/TabBar';
 import { SessionSidebar } from './components/SessionSidebar';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { DiffDialog } from './components/DiffDialog';
+import { useDiffComments } from './hooks/use-diff-comments';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { FileEditor } from './components/FileEditor';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
@@ -111,6 +112,13 @@ function App() {
   ]);
   const [activeTabId, setActiveTabId] = useState<string>(AGENT_CHAT_TAB_ID);
   const [contextUsagePercentage, setContextUsagePercentage] = useState<number | null>(null);
+
+  const {
+    comments: diffComments,
+    addComment: addDiffComment,
+    removeComment: removeDiffComment,
+    clearComments: clearDiffComments,
+  } = useDiffComments();
 
   // ref でアクティブセッション ID を追跡（コールバック内で最新値を参照するため）
   const activeSessionIdRef = useRef(activeSessionId);
@@ -311,6 +319,20 @@ function App() {
     setDiffData(diff);
   }
 
+  /**
+   * DiffDialog 内のプロンプト送信ハンドラ。
+   *
+   * コメント付きレビュープロンプトを組み立て、ダイアログを閉じてから送信する。
+   *
+   * @param text - ユーザーが入力したテキスト（buildReviewPrompt 済み）
+   * @param images - 添付画像
+   */
+  async function handleDiffSubmit(text: string, images?: ImageAttachment[]) {
+    setDiffDialogOpen(false);
+    clearDiffComments();
+    await handleSubmit(text, images);
+  }
+
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, cwd: string) {
     if (sessionId === activeSessionId) return;
@@ -498,7 +520,27 @@ function App() {
       {activeSessionId && (
         <FileTreeSidebar activeSessionId={activeSessionId} onFileOpen={handleFileOpen} />
       )}
-      <DiffDialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen} diff={diffData} />
+      <DiffDialog
+        open={diffDialogOpen}
+        onOpenChange={setDiffDialogOpen}
+        diff={diffData}
+        comments={diffComments}
+        onAddComment={addDiffComment}
+        onRemoveComment={removeDiffComment}
+        onClearComments={clearDiffComments}
+        onSubmit={handleDiffSubmit}
+        onCancel={handleCancel}
+        isProcessing={isProcessing}
+        disabled={isProcessing || isRestoring}
+        currentModelId={currentModelId}
+        availableModels={availableModels}
+        onModelChange={handleSetModel}
+        currentModeId={currentModeId}
+        availableModes={availableModes}
+        onModeChange={handleSetMode}
+        sessionId={activeSessionId}
+        contextUsagePercentage={contextUsagePercentage}
+      />
     </SidebarProvider>
   );
 }

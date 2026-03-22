@@ -89,6 +89,8 @@ interface PromptInputProps {
   sessionId?: string | null;
   /** コンテキスト使用率（experimental、0〜100）。 */
   contextUsagePercentage?: number | null;
+  /** 外側ラッパーに適用する追加クラス名。 */
+  className?: string;
 }
 
 /**
@@ -137,6 +139,7 @@ function PromptInput({
   onModeChange,
   sessionId,
   contextUsagePercentage,
+  className,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -290,7 +293,7 @@ function PromptInput({
   const hasContent = text.trim().length > 0 || images.length > 0;
 
   return (
-    <div className="px-4 pb-4">
+    <div className={cn('px-4 pb-4', className)}>
       <div className="relative rounded-2xl border border-border bg-card shadow-sm">
         {/* メンションドロップダウン */}
         {sessionId && (
