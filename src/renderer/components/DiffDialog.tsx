@@ -12,9 +12,10 @@ import {
   FileSymlink,
   Copy,
   Plus,
+  XIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '../lib/utils';
 import { DiffCommentInput } from './DiffCommentInput';
 import { DiffCommentBadge } from './DiffCommentBadge';
@@ -628,9 +629,17 @@ const DiffDialog = memo(function DiffDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[95vw] flex-col gap-3 overflow-hidden border-none bg-transparent p-3 shadow-none">
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[95vw] flex-col gap-3 overflow-hidden border-none bg-transparent p-3 shadow-none"
+      >
         {/* ── Diff Card ── */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          {/* ── Close Button ── */}
+          <DialogClose className="absolute top-3 right-3 z-10 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </DialogClose>
           {/* ── Header ── */}
           <DialogHeader className="flex shrink-0 flex-row items-center gap-3 border-b px-4 py-3 pr-12">
             <DialogTitle className="text-sm font-semibold">Diff</DialogTitle>
@@ -812,9 +821,9 @@ const DiffDialog = memo(function DiffDialog({
           )}
         </div>
 
-        {/* ── Prompt Card: Comment Chips + Prompt Input ── */}
+        {/* ── Prompt Area: Comment Chips + Prompt Input ── */}
         {files.length > 0 && (
-          <div className="shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="shrink-0">
             <CommentChips
               comments={comments}
               onChipClick={handleChipClick}
