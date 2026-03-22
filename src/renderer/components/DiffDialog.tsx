@@ -628,188 +628,193 @@ const DiffDialog = memo(function DiffDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[95vw] flex-col gap-0 overflow-hidden p-0">
-        {/* ── Header ── */}
-        <DialogHeader className="flex shrink-0 flex-row items-center gap-3 border-b px-4 py-3 pr-12">
-          <DialogTitle className="text-sm font-semibold">Diff</DialogTitle>
-          {files.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>
-                {files.length} file{files.length !== 1 ? 's' : ''} changed
-              </span>
-              <span className="h-3 w-px bg-border" />
-              <span className="text-emerald-500 dark:text-emerald-400">
-                +{totalStats.additions}
-              </span>
-              <span className="text-red-500 dark:text-red-400">-{totalStats.deletions}</span>
-            </div>
-          )}
-        </DialogHeader>
-
-        {files.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm text-muted-foreground">No changes</p>
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1">
-            {/* ── Left: File Tree ── */}
-            <div className="flex w-56 shrink-0 flex-col border-r bg-sidebar">
-              <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                Files changed
+      <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[95vw] flex-col gap-3 overflow-hidden border-none bg-transparent p-3 shadow-none">
+        {/* ── Diff Card ── */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          {/* ── Header ── */}
+          <DialogHeader className="flex shrink-0 flex-row items-center gap-3 border-b px-4 py-3 pr-12">
+            <DialogTitle className="text-sm font-semibold">Diff</DialogTitle>
+            {files.length > 0 && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  {files.length} file{files.length !== 1 ? 's' : ''} changed
+                </span>
+                <span className="h-3 w-px bg-border" />
+                <span className="text-emerald-500 dark:text-emerald-400">
+                  +{totalStats.additions}
+                </span>
+                <span className="text-red-500 dark:text-red-400">-{totalStats.deletions}</span>
               </div>
-              <div className="flex-1 overflow-y-auto px-1 pb-2">
-                {tree.map((node) => (
-                  <TreeNodeItem
-                    key={node.path}
-                    node={node}
-                    activeFile={activeFile}
-                    onSelect={handleSelectFile}
-                  />
-                ))}
-              </div>
+            )}
+          </DialogHeader>
+
+          {files.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-sm text-muted-foreground">No changes</p>
             </div>
+          ) : (
+            <div className="flex min-h-0 flex-1">
+              {/* ── Left: File Tree ── */}
+              <div className="flex w-56 shrink-0 flex-col border-r bg-sidebar">
+                <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  Files changed
+                </div>
+                <div className="flex-1 overflow-y-auto px-1 pb-2">
+                  {tree.map((node) => (
+                    <TreeNodeItem
+                      key={node.path}
+                      node={node}
+                      activeFile={activeFile}
+                      onSelect={handleSelectFile}
+                    />
+                  ))}
+                </div>
+              </div>
 
-            {/* ── Right: Diff Viewer ── */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-              <div className="space-y-5 p-5">
-                {files.map((file) => {
-                  const filePath = resolveFilePath(file);
-                  const { additions, deletions } = countChanges(file);
-                  const typeConfig = DIFF_TYPE_CONFIG[file.type];
-                  const widgets = buildWidgets(file, filePath);
+              {/* ── Right: Diff Viewer ── */}
+              <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+                <div className="space-y-5 p-5">
+                  {files.map((file) => {
+                    const filePath = resolveFilePath(file);
+                    const { additions, deletions } = countChanges(file);
+                    const typeConfig = DIFF_TYPE_CONFIG[file.type];
+                    const widgets = buildWidgets(file, filePath);
 
-                  return (
-                    <div
-                      key={filePath}
-                      ref={(el) => {
-                        fileRefs.current[filePath] = el;
-                      }}
-                      data-file-path={filePath}
-                      className="overflow-hidden rounded-lg border shadow-xs"
-                    >
-                      {/* File header */}
-                      <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2">
-                        <typeConfig.icon
-                          className={cn('size-3.5 shrink-0', typeConfig.className)}
-                        />
-                        <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">
-                          {filePath}
-                        </span>
-                        <div className="flex shrink-0 items-center gap-1.5 text-xs tabular-nums">
-                          {additions > 0 && (
-                            <span className="text-emerald-500 dark:text-emerald-400">
-                              +{additions}
-                            </span>
-                          )}
-                          {deletions > 0 && (
-                            <span className="text-red-500 dark:text-red-400">-{deletions}</span>
-                          )}
+                    return (
+                      <div
+                        key={filePath}
+                        ref={(el) => {
+                          fileRefs.current[filePath] = el;
+                        }}
+                        data-file-path={filePath}
+                        className="overflow-hidden rounded-lg border shadow-xs"
+                      >
+                        {/* File header */}
+                        <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2">
+                          <typeConfig.icon
+                            className={cn('size-3.5 shrink-0', typeConfig.className)}
+                          />
+                          <span className="min-w-0 flex-1 truncate font-mono text-xs font-medium">
+                            {filePath}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-1.5 text-xs tabular-nums">
+                            {additions > 0 && (
+                              <span className="text-emerald-500 dark:text-emerald-400">
+                                +{additions}
+                              </span>
+                            )}
+                            {deletions > 0 && (
+                              <span className="text-red-500 dark:text-red-400">-{deletions}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Diff table */}
+                        <div className="overflow-x-auto">
+                          <Diff
+                            viewType="split"
+                            diffType={file.type}
+                            hunks={file.hunks}
+                            tokens={getTokens(file)}
+                            widgets={widgets}
+                            renderGutter={({ change, side, inHoverState, renderDefault }) => {
+                              if (inHoverState && !dragState) {
+                                const effectiveSide =
+                                  change.type === 'insert'
+                                    ? 'new'
+                                    : change.type === 'delete'
+                                      ? 'old'
+                                      : (side ?? 'new');
+                                const lineNum = getLineNumber(change, effectiveSide);
+                                return (
+                                  <span className="diff-comment-gutter flex items-center">
+                                    <button
+                                      className="mr-0.5 flex size-4 items-center justify-center rounded bg-blue-500 text-white opacity-80 hover:opacity-100"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        // ドラッグ選択用: mousedown で dragState を開始
+                                        updateDragState({
+                                          filePath,
+                                          side: effectiveSide,
+                                          startLine: lineNum,
+                                          currentLine: lineNum,
+                                        });
+                                      }}
+                                      aria-label="Add comment"
+                                    >
+                                      <Plus className="size-3" />
+                                    </button>
+                                    {renderDefault()}
+                                  </span>
+                                );
+                              }
+                              return renderDefault();
+                            }}
+                            gutterEvents={{
+                              onClick: ({ change, side: eventSide }) => {
+                                // 単一クリック: ガターをクリックでコメント入力フォームを開く
+                                if (!change) return;
+                                const effectiveSide =
+                                  change.type === 'insert'
+                                    ? 'new'
+                                    : change.type === 'delete'
+                                      ? 'old'
+                                      : (eventSide ?? 'new');
+                                const lineNum = getLineNumber(change, effectiveSide);
+                                setActiveCommentInput({
+                                  filePath,
+                                  startLine: lineNum,
+                                  endLine: lineNum,
+                                  side: effectiveSide,
+                                });
+                              },
+                              onMouseEnter: ({ change, side: eventSide }) => {
+                                const drag = dragStateRef.current;
+                                if (!drag || !change) return;
+                                const effectiveSide = eventSide ?? drag.side;
+                                if (effectiveSide !== drag.side) return;
+                                const lineNum = getLineNumber(change, effectiveSide);
+                                updateDragState({ ...drag, currentLine: lineNum });
+                              },
+                            }}
+                            codeEvents={{
+                              onMouseEnter: ({ change, side: eventSide }) => {
+                                const drag = dragStateRef.current;
+                                if (!drag || !change) return;
+                                const effectiveSide = eventSide ?? drag.side;
+                                if (effectiveSide !== drag.side) return;
+                                const lineNum = getLineNumber(change, effectiveSide);
+                                updateDragState({ ...drag, currentLine: lineNum });
+                              },
+                            }}
+                            generateLineClassName={({ changes, defaultGenerate }) => {
+                              const base = defaultGenerate();
+                              const hasHighlight = changes.some((c) =>
+                                isHighlightedLine(filePath, c),
+                              );
+                              if (hasHighlight) {
+                                return `${base ?? ''} diff-line-drag-highlight`;
+                              }
+                              return base;
+                            }}
+                          >
+                            {(hunks) =>
+                              hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)
+                            }
+                          </Diff>
                         </div>
                       </div>
-
-                      {/* Diff table */}
-                      <div className="overflow-x-auto">
-                        <Diff
-                          viewType="split"
-                          diffType={file.type}
-                          hunks={file.hunks}
-                          tokens={getTokens(file)}
-                          widgets={widgets}
-                          renderGutter={({ change, side, inHoverState, renderDefault }) => {
-                            if (inHoverState && !dragState) {
-                              const effectiveSide =
-                                change.type === 'insert'
-                                  ? 'new'
-                                  : change.type === 'delete'
-                                    ? 'old'
-                                    : (side ?? 'new');
-                              const lineNum = getLineNumber(change, effectiveSide);
-                              return (
-                                <span className="diff-comment-gutter flex items-center">
-                                  <button
-                                    className="mr-0.5 flex size-4 items-center justify-center rounded bg-blue-500 text-white opacity-80 hover:opacity-100"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      // ドラッグ選択用: mousedown で dragState を開始
-                                      updateDragState({
-                                        filePath,
-                                        side: effectiveSide,
-                                        startLine: lineNum,
-                                        currentLine: lineNum,
-                                      });
-                                    }}
-                                    aria-label="Add comment"
-                                  >
-                                    <Plus className="size-3" />
-                                  </button>
-                                  {renderDefault()}
-                                </span>
-                              );
-                            }
-                            return renderDefault();
-                          }}
-                          gutterEvents={{
-                            onClick: ({ change, side: eventSide }) => {
-                              // 単一クリック: ガターをクリックでコメント入力フォームを開く
-                              if (!change) return;
-                              const effectiveSide =
-                                change.type === 'insert'
-                                  ? 'new'
-                                  : change.type === 'delete'
-                                    ? 'old'
-                                    : (eventSide ?? 'new');
-                              const lineNum = getLineNumber(change, effectiveSide);
-                              setActiveCommentInput({
-                                filePath,
-                                startLine: lineNum,
-                                endLine: lineNum,
-                                side: effectiveSide,
-                              });
-                            },
-                            onMouseEnter: ({ change, side: eventSide }) => {
-                              const drag = dragStateRef.current;
-                              if (!drag || !change) return;
-                              const effectiveSide = eventSide ?? drag.side;
-                              if (effectiveSide !== drag.side) return;
-                              const lineNum = getLineNumber(change, effectiveSide);
-                              updateDragState({ ...drag, currentLine: lineNum });
-                            },
-                          }}
-                          codeEvents={{
-                            onMouseEnter: ({ change, side: eventSide }) => {
-                              const drag = dragStateRef.current;
-                              if (!drag || !change) return;
-                              const effectiveSide = eventSide ?? drag.side;
-                              if (effectiveSide !== drag.side) return;
-                              const lineNum = getLineNumber(change, effectiveSide);
-                              updateDragState({ ...drag, currentLine: lineNum });
-                            },
-                          }}
-                          generateLineClassName={({ changes, defaultGenerate }) => {
-                            const base = defaultGenerate();
-                            const hasHighlight = changes.some((c) =>
-                              isHighlightedLine(filePath, c),
-                            );
-                            if (hasHighlight) {
-                              return `${base ?? ''} diff-line-drag-highlight`;
-                            }
-                            return base;
-                          }}
-                        >
-                          {(hunks) => hunks.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
-                        </Diff>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* ── Footer: Comment Chips + Prompt Input ── */}
+        {/* ── Prompt Card: Comment Chips + Prompt Input ── */}
         {files.length > 0 && (
-          <div className="shrink-0 border-t">
+          <div className="shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <CommentChips
               comments={comments}
               onChipClick={handleChipClick}
