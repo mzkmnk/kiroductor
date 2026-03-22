@@ -475,16 +475,18 @@ function App() {
               onTabClose={handleTabClose}
             />
             {activeTabId === AGENT_CHAT_TAB_ID ? (
-              <>
-                <ChatView
-                  ref={chatViewRef}
-                  sessionId={activeSessionId}
-                  messages={chatState.messages}
-                  animSplits={chatState.animSplits}
-                  isRestoring={isRestoring}
-                  isProcessing={isProcessing}
-                  restoreScrollTop={restoreScrollTop}
-                />
+              <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+                <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                  <ChatView
+                    ref={chatViewRef}
+                    sessionId={activeSessionId}
+                    messages={chatState.messages}
+                    animSplits={chatState.animSplits}
+                    isRestoring={isRestoring}
+                    isProcessing={isProcessing}
+                    restoreScrollTop={restoreScrollTop}
+                  />
+                </div>
                 <PromptInput
                   onSubmit={handleSubmit}
                   onCancel={handleCancel}
@@ -499,7 +501,7 @@ function App() {
                   sessionId={activeSessionId}
                   contextUsagePercentage={contextUsagePercentage}
                 />
-              </>
+              </div>
             ) : (
               (() => {
                 const activeTab = tabs.find((t) => t.id === activeTabId);
