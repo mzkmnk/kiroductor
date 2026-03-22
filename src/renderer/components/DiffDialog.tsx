@@ -843,6 +843,7 @@ const DiffDialog = memo(function DiffDialog({
               onModeChange={onModeChange}
               sessionId={sessionId}
               contextUsagePercentage={contextUsagePercentage}
+              className="px-0 pb-0"
             />
           </div>
         )}
