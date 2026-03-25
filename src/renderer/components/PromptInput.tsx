@@ -89,6 +89,8 @@ interface PromptInputProps {
   sessionId?: string | null;
   /** コンテキスト使用率（experimental、0〜100）。 */
   contextUsagePercentage?: number | null;
+  /** キューに積まれたプロンプトの件数。 */
+  queueSize?: number;
 }
 
 /**
@@ -137,6 +139,7 @@ function PromptInput({
   onModeChange,
   sessionId,
   contextUsagePercentage,
+  queueSize = 0,
 }: PromptInputProps) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -434,24 +437,34 @@ function PromptInput({
               </Button>
             )}
 
-            {isProcessing ? (
+            {/* キュー件数バッジ */}
+            {queueSize > 0 && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                送信待ち {queueSize}件
+              </span>
+            )}
+
+            {/* 送信ボタン（処理中はキューに追加、非処理中は直接送信） */}
+            <Button
+              onClick={handleSubmit}
+              disabled={disabled || !hasContent}
+              size="icon"
+              className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
+              aria-label={isProcessing ? 'Add to queue' : 'Send'}
+            >
+              <ArrowUp className="size-4" />
+            </Button>
+
+            {/* 停止ボタン（処理中のみ表示） */}
+            {isProcessing && (
               <Button
                 onClick={onCancel}
                 size="icon"
-                className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                variant="ghost"
+                className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
                 aria-label="Stop"
               >
                 <Square className="size-3.5" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={disabled || !hasContent}
-                size="icon"
-                className="size-8 rounded-lg bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-30"
-                aria-label="Send"
-              >
-                <ArrowUp className="size-4" />
               </Button>
             )}
           </div>

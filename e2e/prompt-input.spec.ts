@@ -39,7 +39,9 @@ test.describe('PromptInput', () => {
     await app.goto();
     await app.promptInput.fill('processing test');
     await app.sendButton.click();
-    await expect(app.promptInput).toBeDisabled();
+    // 処理中でもテキスト入力は有効（プロンプトキュー機能）
+    await expect(app.promptInput).toBeEnabled();
+    await expect(app.stopButton).toBeVisible();
     await expect(page).toHaveScreenshot('prompt-input-disabled.png');
   });
 
@@ -131,7 +133,7 @@ test.describe('PromptInput', () => {
     await app.goto();
     await app.promptInput.fill('processing test');
     await app.sendButton.click();
-    await expect(app.promptInput).toBeDisabled();
+    await expect(app.stopButton).toBeVisible();
     await expect(app.attachButton).not.toBeVisible();
   });
 

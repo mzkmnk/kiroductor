@@ -1,4 +1,4 @@
-import { useState, useReducer, useEffect, useRef } from 'react';
+import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
 import type { AgentMessage, Message, UserMessage } from '../shared/message-types';
 import type { SessionMapping } from '../main/features/config/config.repository';
 import type { AcpStatus } from '../main/features/acp-connection/connection.repository';
@@ -17,6 +17,8 @@ import { FileEditor } from './components/FileEditor';
 import { SidebarProvider, SidebarInset } from './components/ui/sidebar';
 import type { Tab } from './types/tab';
 import { AGENT_CHAT_TAB_ID } from './types/tab';
+import { usePromptQueue } from './hooks/use-prompt-queue';
+import { QueuePreview } from './components/QueuePreview';
 
 /**
  * チャット UI の状態。
@@ -118,6 +120,8 @@ function App() {
   /** セッションIDごとのスクロール位置。 */
   const scrollPositionsRef = useRef<Map<string, number>>(new Map());
   const [restoreScrollTop, setRestoreScrollTop] = useState<number | undefined>(undefined);
+  /** onPromptCompleted コールバックから drainNext を呼ぶための ref。 */
+  const drainNextRef = useRef<() => boolean>(() => false);
 
   /** アクティブセッションの diff stats を取得する。 */
   async function fetchDiffStats(sessionId: string) {
@@ -230,19 +234,27 @@ function App() {
       }
     });
 
-    // プロンプト完了通知 — processing 状態を解除
+    // プロンプト完了通知 — processing 状態を解除し、キュー先頭を自動送信
     const unsubCompleted = window.kiroductor.session.onPromptCompleted(({ sessionId }) => {
       setProcessingSessionIds((prev) => {
         const next = new Set(prev);
         next.delete(sessionId);
         return next;
       });
-      // 完了したのがアクティブセッションなら最終メッセージを反映
+      // 完了したのがアクティブセッションなら最終メッセージを反映し、
+      // getMessages 完了後にキュー先頭を送信する（楽観的メッセージが上書きされないようにするため）
       if (sessionId === activeSessionIdRef.current) {
-        window.kiroductor.session
-          .getMessages(sessionId)
-          .then((msgs) => dispatchChat({ type: 'set', messages: msgs }));
+        window.kiroductor.session.getMessages(sessionId).then((msgs) => {
+          dispatchChat({ type: 'set', messages: msgs });
+          // drainNext → sendPrompt が呼ばれれば setIsProcessing(true) が即座に実行される。
+          // キューが空なら isProcessing を false にする。
+          const drained = drainNextRef.current();
+          if (!drained) setIsProcessing(false);
+        });
         fetchDiffStats(sessionId);
+      } else {
+        const drained = drainNextRef.current();
+        if (!drained) setIsProcessing(false);
       }
       setPromptCompletedCount((c) => c + 1);
     });
@@ -265,20 +277,23 @@ function App() {
    */
   function handleCancel() {
     if (!activeSessionId) return;
+    clearQueue();
     window.kiroductor.session.cancel(activeSessionId);
   }
 
   /**
-   * ユーザーのプロンプトを送信する。
+   * プロンプトを実際に送信する。
    *
    * ユーザーメッセージを楽観的に即時表示してから IPC を呼ぶ。
    * onUpdate が届いたタイミングで main リポジトリの実データに置き換わる。
    *
    * @param text - 送信するテキスト
+   * @param images - 添付画像（任意）
    */
-  async function handleSubmit(text: string, images?: ImageAttachment[]) {
-    if (!activeSessionId) return;
-    const submittedSessionId = activeSessionId;
+  const sendPrompt = useCallback(async (text: string, images?: ImageAttachment[]) => {
+    const sessionId = activeSessionIdRef.current;
+    if (!sessionId) return;
+    const submittedSessionId = sessionId;
     // 楽観的更新: IPC 完了を待たずにユーザーメッセージを即座に表示する
     const optimisticMessage: UserMessage = {
       id: crypto.randomUUID(),
@@ -290,17 +305,29 @@ function App() {
     setIsProcessing(true);
     setProcessingSessionIds((prev) => new Set(prev).add(submittedSessionId));
     await window.kiroductor.session.prompt(text, submittedSessionId, images);
+    // メッセージ同期と isProcessing の解除は onPromptCompleted で行う。
+    // ここで getMessages → set すると、onPromptCompleted → drainNext で
+    // 追加された次の楽観的ユーザーメッセージを上書きしてしまうため。
+  }, []);
 
-    // まだ同じセッションを表示中の場合のみ UI を更新する
-    if (activeSessionIdRef.current === submittedSessionId) {
-      const msgs = await window.kiroductor.session.getMessages(submittedSessionId);
-      dispatchChat({ type: 'set', messages: msgs });
-      setIsProcessing(false);
-    }
-    // 切り替え済みの場合:
-    // - メッセージは main の MessageRepository に蓄積済み（戻れば見える）
-    // - isProcessing は切り替え時に handleSwitchSession で制御済み
-    // - processingSessionIds は onPromptCompleted で削除済み
+  const {
+    queue: promptQueue,
+    submitOrEnqueue,
+    clearQueue,
+    removeFromQueue,
+    drainNext,
+  } = usePromptQueue({
+    onSend: sendPrompt,
+  });
+
+  // onPromptCompleted コールバックから drainNext を呼べるよう ref に保存
+  useEffect(() => {
+    drainNextRef.current = drainNext;
+  }, [drainNext]);
+
+  /** ユーザーからの送信を処理する。処理中ならキューに追加する。 */
+  function handleSubmit(text: string, images?: ImageAttachment[]) {
+    submitOrEnqueue(text, isProcessing, images);
   }
 
   /** diff ダイアログを開き、差分データを取得する。 */
@@ -314,6 +341,7 @@ function App() {
   /** セッション切り替えハンドラ。メモリ上のメッセージを表示する。 */
   async function handleSwitchSession(sessionId: string, cwd: string) {
     if (sessionId === activeSessionId) return;
+    clearQueue();
 
     // 切り替え前に現セッションのスクロール位置を保存
     if (activeSessionId && chatViewRef.current) {
@@ -463,11 +491,13 @@ function App() {
                   isProcessing={isProcessing}
                   restoreScrollTop={restoreScrollTop}
                 />
+                <QueuePreview queue={promptQueue} onRemove={removeFromQueue} />
                 <PromptInput
                   onSubmit={handleSubmit}
                   onCancel={handleCancel}
                   isProcessing={isProcessing}
-                  disabled={isProcessing || isRestoring}
+                  disabled={isRestoring}
+                  queueSize={promptQueue.length}
                   currentModelId={currentModelId}
                   availableModels={availableModels}
                   onModelChange={handleSetModel}
